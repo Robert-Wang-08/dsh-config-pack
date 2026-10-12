@@ -1,0 +1,47 @@
+# ── MCP 服务器 ───────────────────────────────────────────────────────────
+# 默认全部关闭（ticktick 在配置了入口路径时自动开）。用 DSHPACK_MCP_* 开关打开。
+# 关闭直接写在 insert 行自己的 disabled 上，而不是「先插后禁」两层——单层即可生效。
+
+- insert:
+    # 本地 stdio：codegraph
+    - id: mcp-codegraph
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: !!js process['env'].DSHPACK_MCP_CODEGRAPH !== 'on'
+      config:
+        serverName: codegraph
+        transport: stdio
+        command: !!js process['env'].DSHPACK_CODEGRAPH_CMD || 'codegraph-mcp'
+        args: []
+
+    # 本地 stdio：ticktick。入口是 JS 文件，必须给出 node 与脚本两个绝对路径。
+    # 两者都是本机差异点；未配置入口时该行自动禁用。
+    - id: mcp-ticktick
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: !!js process['env'].DSHPACK_TICKTICK_ENTRY === undefined
+      config:
+        serverName: ticktick
+        transport: stdio
+        command: !!js process['env'].DSHPACK_NODE || 'node'
+        args:
+          - !!js process['env'].DSHPACK_TICKTICK_ENTRY || ''
+
+    # 远程 Streamable HTTP：腾讯文档 / 腾讯幻灯片。Authorization 从环境变量读取，不落盘。
+    - id: mcp-tencent-docs
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: !!js process['env'].DSHPACK_MCP_TENCENT_DOCS !== 'on'
+      config:
+        serverName: tencent-docs
+        transport: streamable-http
+        url: https://docs.qq.com/openapi/mcp
+        headers:
+          Authorization: !!js process['env'].TENCENT_DOCS_TOKEN || ''
+
+    - id: mcp-slide
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: !!js process['env'].DSHPACK_MCP_SLIDE !== 'on'
+      config:
+        serverName: slide-mcp
+        transport: streamable-http
+        url: https://docs.qq.com/api/v6/slide/mcp
+        headers:
+          Authorization: !!js process['env'].TENCENT_DOCS_TOKEN || ''

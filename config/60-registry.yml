@@ -1,0 +1,9 @@
+# ── 预设注册表 ───────────────────────────────────────────────────────────
+# selectedDefault 决定新会话默认用哪个预设。
+# 默认 standard（DSH 内置）；本包场景默认指向本机常用的多代理预设。
+
+- id: agent-preset-registry
+  name: "@deepseek-ai/dsh-agent-preset-registry"
+  config:
+    default: standard
+    selectedDefault: !!js process['env'].DSHPACK_SELECTED_PRESET || 'ptc-multi-agent'

@@ -1,0 +1,19 @@
+# ── 宿主 UI 接线 ─────────────────────────────────────────────────────────
+
+# 目录选择器：默认的 -auto 在 win32 + loopback 下解析为 native，对话框会被压在浏览器后面。
+# 改为页面内 -browse 版。该接缝只服务一个 directoryPicker slot，-auto 必须 disabled
+# 而不是与 -browse 并存（并存会 duplicate-service 启动失败）。
+# 想恢复自适应行为：删掉下面三行与紧邻的 insert 块。
+- id: directory-picker
+  disabled: true
+
+- insert:
+    - id: directory-picker-browse
+      name: '@deepseek-ai/dsh-host-directory-picker-browse'
+    - id: ui-directory-picker-browse
+      name: '@deepseek-ai/dsh-client-ui-directory-picker-browse'
+
+- id: ui-settings-general
+  name: "@deepseek-ai/dsh-client-ui-settings-general"
+  config:
+    welcomeNoticeVersion: !!js process['env'].DSHPACK_WELCOME_NOTICE || '2026-09-28.1'

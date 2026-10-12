@@ -1,0 +1,63 @@
+# ── 外部子代理 ───────────────────────────────────────────────────────────
+# ACP provider 行：opencode / kimi / cursor-agent。
+#
+# Windows 注意：opencode 与 cursor-agent 在 PATH 上只有 .cmd/.ps1 shim，没有 .exe，
+# 裸名 spawn 会失败并停在 ACP initialize/transport。必须经 cmd /c（POSIX 用 sh -c）包装。
+# kimi 是真实 exe，可直接 spawn。
+#
+# !!js 写法硬约束（YAML 层，不是风格）：表达式里不能出现「冒号加空格」，
+# 因此**禁用三元运算符**——`? 'a' : 'b'` 会被 YAML 当成映射键，直接解析失败。
+# 统一改写为 `(cond && 'a') || 'b'`（分支值均为真值时可安全降级）。
+# 同时不要以引号 / { / [ / ! 开头。
+
+- insert:
+    # opencode：默认让 AIS 2DSGLM 的 DeepSeek V4.1 Flash 承担原子查询/修改。
+    # opencode acp 不接受 --model，只能靠 OPENCODE_CONFIG_CONTENT 注入（与用户配置是合并语义）。
+    - id: subagent-acp-opencode
+      name: '@deepseek-ai/dsh-subagent-acp'
+      disabled: !!js process['env'].DSHPACK_ACP_OPENCODE === 'off'
+      config:
+        providerName: opencode
+        command: !!js (process.platform === 'win32' && 'cmd') || 'sh'
+        args:
+          - !!js (process.platform === 'win32' && '/c') || '-c'
+          - !!js (process.platform === 'win32' && 'opencode acp') || 'exec opencode acp'
+        permission: allow
+        env:
+          OPENCODE_CONFIG_CONTENT: !!js process['env'].DSHPACK_OPENCODE_CONFIG || '{"model":"ais-2dsglm/deepseek-v4.1-flash"}'
+
+    - id: subagent-acp-kimi
+      name: '@deepseek-ai/dsh-subagent-acp'
+      disabled: !!js process['env'].DSHPACK_ACP_KIMI === 'off'
+      config:
+        providerName: kimi
+        command: kimi
+        args: [ acp, --model, kimi-code/k3-256k ]
+        permission: allow
+
+    # cursor：默认关闭。cursor-agent 的代理路径把 HTTP/2 ping 超时写死 5s，经代理时传输不稳；
+    # 下面把 cursor 域名追加进小写 no_proxy（cursor-agent 只读小写，且按 host 后缀匹配）。
+    # 设 DSHPACK_CURSOR_KEEP_PROXY 可保留原行为。用数组拼接而非三元，规避冒号加空格。
+    - id: subagent-acp-cursor
+      name: '@deepseek-ai/dsh-subagent-acp'
+      disabled: !!js process['env'].DSHPACK_ACP_CURSOR !== 'on'
+      config:
+        providerName: cursor
+        command: !!js (process.platform === 'win32' && 'cmd') || 'sh'
+        args:
+          - !!js (process.platform === 'win32' && '/c') || '-c'
+          - !!js (process.platform === 'win32' && 'cursor-agent --model auto acp') || 'exec cursor-agent --model auto acp'
+        permission: allow
+        env:
+          no_proxy: !!js String((process['env'].no_proxy || '') + (process['env'].DSHPACK_CURSOR_KEEP_PROXY === undefined && ',cursor.sh' || '')).replace(/^,/, '')
+
+# ── 产品子代理：全权（bypass）覆盖 ───────────────────────────────────────
+# claude-code / codex 的 provider 行由各自 bundle 注册；这里在其后按顶层 id 定向覆盖 config。
+# 必须写成顶层行，不能放进上面的 insert 列表，否则重复 id。
+- id: subagent-claude-code
+  config:
+    permissionMode: bypassPermissions
+
+- id: subagent-codex
+  config:
+    permissionMode: dangerously-bypass-approvals-and-sandbox

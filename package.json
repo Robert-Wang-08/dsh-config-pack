@@ -1,0 +1,50 @@
+{
+  "name": "dsh-config-pack",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "A generic, git-distributable DSH configuration pack: plugin selection + profile config layer + agent presets, installable into any DSH profile with one command.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "config",
+    "pack.manifest.yaml",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "verify": "node scripts/verify.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-base": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-web-app": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-mcp-client": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-subagent-acp": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-subagent-claude-code": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-subagent-codex": "0.2.0-rc.2",
+    "dsh-chat-import": "0.25.2",
+    "dsh-mermaid-smooth": "0.1.0",
+    "dsh-notify-bell": "0.12.0",
+    "dsh-deepseek-keypool": "github:Robert-Wang-08/dsh-provider-failover",
+    "dsh-plugin-provider-badge": "github:Robert-Wang-08/dsh-plugin-provider-badge",
+    "dsh-plugin-sidebar-visibility": "github:Robert-Wang-08/dsh-plugin-sidebar-visibility",
+    "dsh-archived-sessions": "github:Robert-Wang-08/dsh-archived-sessions"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-base": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-web-app": "0.2.0-rc.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Robert-Wang-08/dsh-config-pack.git"
+  }
+}

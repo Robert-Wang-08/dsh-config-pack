@@ -1,0 +1,391 @@
+# dsh-config-pack v0.1.0 — GENERATED FILE, DO NOT EDIT.
+#
+# Source of truth: config/*.yml   Rebuild with: npm run build
+# Verify before publishing:       npm run verify
+#
+# 本文件是 DSH 的 profile patch 补丁层，由本包作为 bundle 提供。
+# 补丁语义（见 @deepseek-ai/dsh-base）：
+#   - 顶层 `- id: X` + config 会**整体替换** X 行的 config，不是合并；
+#   - `- insert:` 追加新行；
+#   - 后续组合包层与用户的 profile cordis.patch.yml 按 id 覆盖，**最后一次写入生效**；
+#   - 因此用户 profile 里若还留着同 id 的内联块，本文件对那一行就是死码。
+#
+# !!js 表达式写法约束（YAML 硬约束，不是风格问题）：
+#   - 写成不含「冒号加空格」的普通标量；
+#   - 不要以引号 / { / [ / ! 开头；
+#   - 否则块状上下文会把它当成映射键或标签解析。
+
+# ═══ config/10-subagents.yml ════════════════════════════════════════
+# ── 外部子代理 ───────────────────────────────────────────────────────────
+# ACP provider 行：opencode / kimi / cursor-agent。
+#
+# Windows 注意：opencode 与 cursor-agent 在 PATH 上只有 .cmd/.ps1 shim，没有 .exe，
+# 裸名 spawn 会失败并停在 ACP initialize/transport。必须经 cmd /c（POSIX 用 sh -c）包装。
+# kimi 是真实 exe，可直接 spawn。
+#
+# !!js 写法硬约束（YAML 层，不是风格）：表达式里不能出现「冒号加空格」，
+# 因此**禁用三元运算符**——`? 'a' : 'b'` 会被 YAML 当成映射键，直接解析失败。
+# 统一改写为 `(cond && 'a') || 'b'`（分支值均为真值时可安全降级）。
+# 同时不要以引号 / { / [ / ! 开头。
+
+- insert:
+    # opencode：默认让 AIS 2DSGLM 的 DeepSeek V4.1 Flash 承担原子查询/修改。
+    # opencode acp 不接受 --model，只能靠 OPENCODE_CONFIG_CONTENT 注入（与用户配置是合并语义）。
+    - id: subagent-acp-opencode
+      name: '@deepseek-ai/dsh-subagent-acp'
+      disabled: !!js process['env'].DSHPACK_ACP_OPENCODE === 'off'
+      config:
+        providerName: opencode
+        command: !!js (process.platform === 'win32' && 'cmd') || 'sh'
+        args:
+          - !!js (process.platform === 'win32' && '/c') || '-c'
+          - !!js (process.platform === 'win32' && 'opencode acp') || 'exec opencode acp'
+        permission: allow
+        env:
+          OPENCODE_CONFIG_CONTENT: !!js process['env'].DSHPACK_OPENCODE_CONFIG || '{"model":"ais-2dsglm/deepseek-v4.1-flash"}'
+
+    - id: subagent-acp-kimi
+      name: '@deepseek-ai/dsh-subagent-acp'
+      disabled: !!js process['env'].DSHPACK_ACP_KIMI === 'off'
+      config:
+        providerName: kimi
+        command: kimi
+        args: [ acp, --model, kimi-code/k3-256k ]
+        permission: allow
+
+    # cursor：默认关闭。cursor-agent 的代理路径把 HTTP/2 ping 超时写死 5s，经代理时传输不稳；
+    # 下面把 cursor 域名追加进小写 no_proxy（cursor-agent 只读小写，且按 host 后缀匹配）。
+    # 设 DSHPACK_CURSOR_KEEP_PROXY 可保留原行为。用数组拼接而非三元，规避冒号加空格。
+    - id: subagent-acp-cursor
+      name: '@deepseek-ai/dsh-subagent-acp'
+      disabled: !!js process['env'].DSHPACK_ACP_CURSOR !== 'on'
+      config:
+        providerName: cursor
+        command: !!js (process.platform === 'win32' && 'cmd') || 'sh'
+        args:
+          - !!js (process.platform === 'win32' && '/c') || '-c'
+          - !!js (process.platform === 'win32' && 'cursor-agent --model auto acp') || 'exec cursor-agent --model auto acp'
+        permission: allow
+        env:
+          no_proxy: !!js String((process['env'].no_proxy || '') + (process['env'].DSHPACK_CURSOR_KEEP_PROXY === undefined && ',cursor.sh' || '')).replace(/^,/, '')
+
+# ── 产品子代理：全权（bypass）覆盖 ───────────────────────────────────────
+# claude-code / codex 的 provider 行由各自 bundle 注册；这里在其后按顶层 id 定向覆盖 config。
+# 必须写成顶层行，不能放进上面的 insert 列表，否则重复 id。
+- id: subagent-claude-code
+  config:
+    permissionMode: bypassPermissions
+
+- id: subagent-codex
+  config:
+    permissionMode: dangerously-bypass-approvals-and-sandbox
+
+# ═══ config/20-mcp.yml ══════════════════════════════════════════════
+# ── MCP 服务器 ───────────────────────────────────────────────────────────
+# 默认全部关闭（ticktick 在配置了入口路径时自动开）。用 DSHPACK_MCP_* 开关打开。
+# 关闭直接写在 insert 行自己的 disabled 上，而不是「先插后禁」两层——单层即可生效。
+
+- insert:
+    # 本地 stdio：codegraph
+    - id: mcp-codegraph
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: !!js process['env'].DSHPACK_MCP_CODEGRAPH !== 'on'
+      config:
+        serverName: codegraph
+        transport: stdio
+        command: !!js process['env'].DSHPACK_CODEGRAPH_CMD || 'codegraph-mcp'
+        args: []
+
+    # 本地 stdio：ticktick。入口是 JS 文件，必须给出 node 与脚本两个绝对路径。
+    # 两者都是本机差异点；未配置入口时该行自动禁用。
+    - id: mcp-ticktick
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: !!js process['env'].DSHPACK_TICKTICK_ENTRY === undefined
+      config:
+        serverName: ticktick
+        transport: stdio
+        command: !!js process['env'].DSHPACK_NODE || 'node'
+        args:
+          - !!js process['env'].DSHPACK_TICKTICK_ENTRY || ''
+
+    # 远程 Streamable HTTP：腾讯文档 / 腾讯幻灯片。Authorization 从环境变量读取，不落盘。
+    - id: mcp-tencent-docs
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: !!js process['env'].DSHPACK_MCP_TENCENT_DOCS !== 'on'
+      config:
+        serverName: tencent-docs
+        transport: streamable-http
+        url: https://docs.qq.com/openapi/mcp
+        headers:
+          Authorization: !!js process['env'].TENCENT_DOCS_TOKEN || ''
+
+    - id: mcp-slide
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: !!js process['env'].DSHPACK_MCP_SLIDE !== 'on'
+      config:
+        serverName: slide-mcp
+        transport: streamable-http
+        url: https://docs.qq.com/api/v6/slide/mcp
+        headers:
+          Authorization: !!js process['env'].TENCENT_DOCS_TOKEN || ''
+
+# ═══ config/30-ui.yml ═══════════════════════════════════════════════
+# ── 宿主 UI 接线 ─────────────────────────────────────────────────────────
+
+# 目录选择器：默认的 -auto 在 win32 + loopback 下解析为 native，对话框会被压在浏览器后面。
+# 改为页面内 -browse 版。该接缝只服务一个 directoryPicker slot，-auto 必须 disabled
+# 而不是与 -browse 并存（并存会 duplicate-service 启动失败）。
+# 想恢复自适应行为：删掉下面三行与紧邻的 insert 块。
+- id: directory-picker
+  disabled: true
+
+- insert:
+    - id: directory-picker-browse
+      name: '@deepseek-ai/dsh-host-directory-picker-browse'
+    - id: ui-directory-picker-browse
+      name: '@deepseek-ai/dsh-client-ui-directory-picker-browse'
+
+- id: ui-settings-general
+  name: "@deepseek-ai/dsh-client-ui-settings-general"
+  config:
+    welcomeNoticeVersion: !!js process['env'].DSHPACK_WELCOME_NOTICE || '2026-09-28.1'
+
+# ═══ config/40-models.yml ═══════════════════════════════════════════
+# ── 模型与路由 ───────────────────────────────────────────────────────────
+# 新会话默认模型。改 DSHPACK_DEFAULT_PROVIDER / DSHPACK_DEFAULT_MODEL 即可换。
+- id: agent-default-model
+  name: "@deepseek-ai/dsh-agent-default-model"
+  config:
+    provider: !!js process['env'].DSHPACK_DEFAULT_PROVIDER || 'codex-relay'
+    model: !!js process['env'].DSHPACK_DEFAULT_MODEL || 'gpt-5.6-sol'
+
+# ── llm-pi-ai 路由表 ─────────────────────────────────────────────────────
+# 按 id 整体替换该行的 config。baseURL 与 apiKeyEnv 都可用环境变量覆盖，
+# 因此同一份包能落在不同网络环境中。apiKeyEnv 只写变量名，值不入库。
+#
+# 注意：路由名与模型名必须在本机 DSH 内置目录中存在，否则该档位等于空转。
+- id: llm-pi-ai
+  name: "@deepseek-ai/dsh-llm-pi-ai"
+  config:
+    providers:
+      codex-relay:
+        displayName: Codex Relay
+        api: openai-responses
+        baseURL: !!js process['env'].DSHPACK_BASE_CODEX_RELAY || 'http://47.101.159.7:39187/v1'
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_CODEX_RELAY || 'CRS_OAI_KEY'
+        models:
+          - id: gpt-5.6-sol
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-5.6
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-5.5
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-6-astra
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+      ais-2dsglm:
+        displayName: AIS 2DSGLM
+        api: openai-completions
+        baseURL: !!js process['env'].DSHPACK_BASE_AIS || 'http://47.101.159.7:29988/v1'
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_AIS || 'AIS_2DSGLM_API_KEY'
+        models:
+          - id: deepseek-v4.1-flash
+          - id: deepseek-v4-flash
+          - id: glm-5.3-flash
+      anthropic-relay:
+        displayName: Anthropic Relay
+        api: anthropic-messages
+        baseURL: !!js process['env'].DSHPACK_BASE_ANTHROPIC_RELAY || 'https://ai.orbitlink.me'
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_ANTHROPIC_RELAY || 'CLAUDE_RELAY_TOKEN'
+        models:
+          - id: claude-opus-5
+          - id: claude-sonnet-5
+          - id: claude-opus-4-8
+      # 官方 Codex：OAuth 凭据，需在该设备 Web Models 页登录一次。
+      openai-codex:
+        displayName: OpenAI Codex (official)
+      kimi-coding:
+        displayName: Kimi Coding
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_KIMI || 'LLMKEY_KIMI'
+      # OpenCode Go：沿用 DSH 内置目录模型清单。
+      opencode-go:
+        displayName: OpenCode Go
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_OPENCODE || 'OPENCODE_API_KEY'
+
+# ═══ config/50-presets.yml ══════════════════════════════════════════
+# ── 预设行 ───────────────────────────────────────────────────────────────
+#
+# preset-standard-codex 是 DSH 0.2 之前的目录式预设（$DSH_HOME/.agent-presets/<id>/）。
+# 0.2 起不再扫描该目录，因此改为普通 @deepseek-ai/dsh-agent-preset 行声明，
+# 供历史会话与其归档子会话按名继续引用。本块自本机 web profile 逐行搬入，内容未改。
+#
+# 多代理预设 preset-ptc-multi-agent 不在这里——它由 ptc-multi-agent-control 的 dsh-bundle 提供，
+# 避免同一个 preset id 被两个组件同时声明。
+
+- insert:
+    - id: preset-standard-codex
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: standard-codex
+        name: 标准模式 + Codex
+        description: 标准编码 Agent，并把 Codex、Claude Code、OpenCode、Kimi Code 四个外部子代理全部暴露给模型。
+        order: 2
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              suffix: Your working directory is {{cwd}}.
+              prefix: You are a coding agent powered by the {{model}} model.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+          - id: command-goal
+            name: '@deepseek-ai/dsh-command-goal'
+          - id: tool-goal
+            name: '@deepseek-ai/dsh-tool-goal'
+          - id: planning
+            name: cordis:group
+            group: true
+            isolate:
+              planMode: true
+            config:
+              - id: plan-mode
+                name: '@deepseek-ai/dsh-plan-mode'
+                config:
+                  section: |
+                    You are in plan mode. Stay in plan mode until exit_plan_mode succeeds or the user switches the session mode. Imperative language to implement changes means plan the implementation, not execute it. A user's conversational agreement — including an answer confirming something you asked — approves nothing and does not end plan mode; fold the confirmed decision into the plan and submit it through exit_plan_mode.
+
+                    Explore first. Use non-mutating reads, searches, static analysis, and checks to ground the plan in the actual repository. Do not edit or write files, change configuration, run formatters or code generation that rewrites tracked files, commit, or otherwise carry out the plan. Prefer existing functions and patterns over new machinery.
+
+                    The tool catalog stays the same across modes for request-cache stability. These plan-mode rules override any later tool description or guidance that suggests using mutation tools; those tools remain listed to keep the tool catalog unchanged. Do not use todo_write to track this planning phase: it tracks implementation after an approved plan, while the plan itself belongs in exit_plan_mode.
+
+                    Resolve discoverable facts by inspection. Use ask_user_question only for user-owned choices or material ambiguity that inspection cannot answer. Do not ask the user where code lives or how current behavior works when you can find out.
+
+                    Make the plan decision-complete: state the goal and success criteria; group implementation changes by subsystem; identify public API, schema, and data-flow changes; cover edge cases, failure modes, tests, acceptance criteria, and explicit assumptions. Keep it concise enough to review but detailed enough that another engineer can implement it without making design decisions.
+
+                    When ready, call exit_plan_mode with the complete plan markdown, starting with a # title. Make exit_plan_mode the only and final tool call in that assistant response: it presents the plan for approval, and implementation begins only in a later step after approval. Do not paste the final plan as a plain reply or ask "should I proceed?" through prose or ask_user_question. If review rejects it, incorporate the feedback and present again. If the review channel is unavailable or aborted, stay in plan mode and ask the user to switch modes manually; do not proceed with implementation.
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
+          - id: delegation
+            name: cordis:group
+            group: true
+            isolate:
+              workflowEngine: true
+            config:
+              - id: tool-subagent-control
+                name: '@deepseek-ai/dsh-tool-subagent-control'
+              - id: tool-subagent-list-agents
+                name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
+              - id: tool-subagent
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: spawn
+                  toolName: subagent
+                  modelSelectionSettings: true
+                  backgroundMode: continuable
+              - id: tool-subagent-fork
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: fork
+                  toolName: subagent_fork
+                  backgroundMode: continuable
+              - id: tool-subagent-codex
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: codex
+                  toolName: subagent_codex
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
+              - id: tool-subagent-claude-code
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: claude-code
+                  toolName: subagent_claude_code
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
+              - id: tool-subagent-opencode
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: opencode
+                  toolName: subagent_opencode
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
+              - id: tool-subagent-kimi
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: kimi
+                  toolName: subagent_kimi
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
+              - id: workflow-ptc
+                name: '@deepseek-ai/dsh-workflow-ptc'
+                config:
+                  provider: spawn
+              - id: tool-workflow
+                name: '@deepseek-ai/dsh-tool-workflow'
+              - id: tool-ralph
+                name: '@deepseek-ai/dsh-tool-ralph'
+                disabled: true
+                config:
+                  subagentProvider: spawn
+                  maxRounds: 64
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+          - id: tool-plugin-manager
+            name: '@deepseek-ai/dsh-plugin-manager/tools'
+            disabled: true
+
+# ═══ config/60-registry.yml ═════════════════════════════════════════
+# ── 预设注册表 ───────────────────────────────────────────────────────────
+# selectedDefault 决定新会话默认用哪个预设。
+# 默认 standard（DSH 内置）；本包场景默认指向本机常用的多代理预设。
+
+- id: agent-preset-registry
+  name: "@deepseek-ai/dsh-agent-preset-registry"
+  config:
+    default: standard
+    selectedDefault: !!js process['env'].DSHPACK_SELECTED_PRESET || 'ptc-multi-agent'

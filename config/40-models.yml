@@ -1,0 +1,59 @@
+# ── 模型与路由 ───────────────────────────────────────────────────────────
+# 新会话默认模型。改 DSHPACK_DEFAULT_PROVIDER / DSHPACK_DEFAULT_MODEL 即可换。
+- id: agent-default-model
+  name: "@deepseek-ai/dsh-agent-default-model"
+  config:
+    provider: !!js process['env'].DSHPACK_DEFAULT_PROVIDER || 'codex-relay'
+    model: !!js process['env'].DSHPACK_DEFAULT_MODEL || 'gpt-5.6-sol'
+
+# ── llm-pi-ai 路由表 ─────────────────────────────────────────────────────
+# 按 id 整体替换该行的 config。baseURL 与 apiKeyEnv 都可用环境变量覆盖，
+# 因此同一份包能落在不同网络环境中。apiKeyEnv 只写变量名，值不入库。
+#
+# 注意：路由名与模型名必须在本机 DSH 内置目录中存在，否则该档位等于空转。
+- id: llm-pi-ai
+  name: "@deepseek-ai/dsh-llm-pi-ai"
+  config:
+    providers:
+      codex-relay:
+        displayName: Codex Relay
+        api: openai-responses
+        baseURL: !!js process['env'].DSHPACK_BASE_CODEX_RELAY || 'http://47.101.159.7:39187/v1'
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_CODEX_RELAY || 'CRS_OAI_KEY'
+        models:
+          - id: gpt-5.6-sol
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-5.6
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-5.5
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-6-astra
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+      ais-2dsglm:
+        displayName: AIS 2DSGLM
+        api: openai-completions
+        baseURL: !!js process['env'].DSHPACK_BASE_AIS || 'http://47.101.159.7:29988/v1'
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_AIS || 'AIS_2DSGLM_API_KEY'
+        models:
+          - id: deepseek-v4.1-flash
+          - id: deepseek-v4-flash
+          - id: glm-5.3-flash
+      anthropic-relay:
+        displayName: Anthropic Relay
+        api: anthropic-messages
+        baseURL: !!js process['env'].DSHPACK_BASE_ANTHROPIC_RELAY || 'https://ai.orbitlink.me'
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_ANTHROPIC_RELAY || 'CLAUDE_RELAY_TOKEN'
+        models:
+          - id: claude-opus-5
+          - id: claude-sonnet-5
+          - id: claude-opus-4-8
+      # 官方 Codex：OAuth 凭据，需在该设备 Web Models 页登录一次。
+      openai-codex:
+        displayName: OpenAI Codex (official)
+      kimi-coding:
+        displayName: Kimi Coding
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_KIMI || 'LLMKEY_KIMI'
+      # OpenCode Go：沿用 DSH 内置目录模型清单。
+      opencode-go:
+        displayName: OpenCode Go
+        apiKeyEnv: !!js process['env'].DSHPACK_KEY_OPENCODE || 'OPENCODE_API_KEY'

@@ -1,0 +1,69 @@
+# dsh-config-pack 自描述清单
+# ---------------------------------------------------------------------------
+# 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
+schema: dsh-pack/v1
+name: dsh-config-pack
+version: 0.1.0
+requires_dsh: ">=0.2.0-rc.2 <0.3.0"
+
+# 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
+# 一旦声明同 id，就会遮蔽本包（profile patch 是最后一层，按 id 覆盖、后写胜）。
+# verify.mjs 命中即报错退出。
+owns:
+  - subagent-acp-opencode
+  - subagent-acp-kimi
+  - subagent-acp-cursor
+  - subagent-claude-code
+  - subagent-codex
+  - mcp-codegraph
+  - mcp-ticktick
+  - mcp-tencent-docs
+  - mcp-slide
+  - directory-picker
+  - directory-picker-browse
+  - ui-directory-picker-browse
+  - agent-default-model
+  - llm-pi-ai
+  - ui-settings-general
+  - preset-standard-codex
+  - agent-preset-registry
+
+# 本包会启用/禁用的插件开关（默认值写在 config/*.yml 的 !!js 表达式里）。
+# 设为任意非空值即翻转。改完必须重启 DSH——环境变量不会进入已运行的进程。
+switches:
+  - { name: DSHPACK_ACP_OPENCODE, default: "on",  effect: "启用 ACP 子代理 opencode" }
+  - { name: DSHPACK_ACP_KIMI,     default: "on",  effect: "启用 ACP 子代理 kimi" }
+  - { name: DSHPACK_ACP_CURSOR,   default: "off", effect: "启用 ACP 子代理 cursor-agent" }
+  - { name: DSHPACK_MCP_CODEGRAPH,   default: "off", effect: "启用 codegraph MCP" }
+  - { name: DSHPACK_MCP_TENCENT_DOCS, default: "off", effect: "启用腾讯文档 MCP（需 TENCENT_DOCS_TOKEN）" }
+  - { name: DSHPACK_MCP_SLIDE,       default: "off", effect: "启用腾讯幻灯片 MCP（需 TENCENT_DOCS_TOKEN）" }
+  - { name: DSHPACK_MCP_TICKTICK,    default: "off", effect: "启用 TickTick MCP（需 DSHPACK_TICKTICK_ENTRY）" }
+
+# 本机差异点，必须逐台设置；只登记名字与用途，绝不含值。
+requires_env:
+  - { name: DSHPACK_NODE,            scope: User, required: false, why: "MCP stdio 用的 node 绝对路径；不设则用 PATH 上的 node" }
+  - { name: DSHPACK_TICKTICK_ENTRY,  scope: User, required: false, why: "ticktick-mcp 的 dist/index.js 绝对路径；未设则 ticktick 行被禁用" }
+  - { name: TENCENT_DOCS_TOKEN,      scope: User, required: false, why: "腾讯文档 MCP 的 Authorization" }
+  - { name: CRS_OAI_KEY,             scope: User, required: true,  why: "codex-relay 路由凭据" }
+  - { name: AIS_2DSGLM_API_KEY,      scope: User, required: false, why: "ais-2dsglm 路由凭据" }
+  - { name: CLAUDE_RELAY_TOKEN,      scope: User, required: false, why: "anthropic-relay 路由凭据" }
+  - { name: LLMKEY_KIMI,             scope: User, required: false, why: "kimi-coding 路由凭据" }
+  - { name: OPENCODE_API_KEY,        scope: User, required: false, why: "opencode-go 路由凭据" }
+
+# CLI 登录态：装不了，只能逐台确认。
+requires_cli:
+  - { cmd: codex,        probe: "codex --version",        auth: "自定义 provider 用 CRS_OAI_KEY；官网另用 codex-auth" }
+  - { cmd: cursor-agent, probe: "cursor-agent status",    auth: "cursor-agent login" }
+  - { cmd: opencode,     probe: "opencode --version",     auth: "凭据在 <XDG_DATA_HOME>/opencode/auth.json，勿改 XDG_DATA_HOME" }
+  - { cmd: kimi,         probe: "kimi --version",         auth: "kimi 自身登录态" }
+  - { cmd: claude,       probe: "claude --version",       auth: "Claude Code 自身登录态" }
+
+# 绝不跨设备复制。
+never_sync:
+  - { path: "%USERPROFILE%/.dsh/.credentials.yaml", reason: "含明文密钥" }
+  - { path: "%USERPROFILE%/.dsh/sessions",          reason: "本机会话历史，与设备绑定" }
+
+# 本包不覆盖、由别的组件负责的行（仅登记，供人核对）。
+delegated:
+  - { id: preset-ptc-multi-agent, provided_by: "ptc-multi-agent-control 的 dsh-bundle" }
+  - { id: dsh-deepseek-keypool,   provided_by: "dsh-deepseek-keypool 插件自带的 profile 覆盖（本包只装插件，不写档位）" }
