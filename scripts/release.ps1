@@ -103,7 +103,9 @@ if ($Commit) {
     git add -A
     git commit -m ('release: v' + $new + ' — ' + $Note) | Out-Host
     if ($LASTEXITCODE -ne 0) { Fail 'git commit failed' }
-    git tag ('v' + $new)
+    # 必须用 annotated tag：git push --follow-tags 只推送 annotated tag，
+    # lightweight tag 不会上传，于是 github:...#vX.Y.Z 这种安装 spec 在远端解析不到。
+    git tag -a ('v' + $new) -m ('dsh-config-pack v' + $new + ' — ' + $Note)
     if ($LASTEXITCODE -ne 0) { Fail ('git tag v' + $new + ' failed') }
     Ok ('committed and tagged v' + $new)
     if ($Push) {
@@ -115,5 +117,5 @@ if ($Commit) {
 } else {
   Write-Host ''
   Write-Host '准备完成。确认无误后执行：' -ForegroundColor Cyan
-  Write-Host ('    git add -A; git commit -m "release: v' + $new + ' — ' + $Note + '"; git tag v' + $new + '; git push --follow-tags')
+  Write-Host ('    git add -A; git commit; git tag -a v' + $new + ' -m <note>; git push --follow-tags')
 }

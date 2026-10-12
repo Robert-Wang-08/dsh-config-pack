@@ -2,6 +2,11 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## Unreleased
+
+### Fixed
+- `release.ps1` 用 lightweight tag（`git tag vX.Y.Z`）配合 `--follow-tags`，而 `--follow-tags` **只推送 annotated tag**，导致 tag 从未上远端，`github:...#vX.Y.Z` 形式的安装 spec 解析不到。改为 `git tag -a` + `-m`。
+
 ## 0.1.0
 
 ### Added
