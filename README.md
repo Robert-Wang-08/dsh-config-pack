@@ -4,7 +4,7 @@
 经 git 分发，一条命令装进任意 DSH profile。
 
 ```powershell
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.2
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.3
 ```
 
 ---
@@ -37,7 +37,7 @@ L3 由包**自描述**，不再靠文档口口相传。
 ```powershell
 # 1) 装进一个新 profile（推荐，不会和现有 profile 打架）
 #    必须把三个子代理包一起显式装上，理由见下面的警告。
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.2 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.3 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
 
 # 2) 校验（只读，不动任何文件）
 node scripts/verify.mjs --profile packed
@@ -69,8 +69,8 @@ dsh packed
 
 ```powershell
 git -C <repo> fetch --tags origin
-git -C <repo> checkout v0.3.2
-dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.3.2
+git -C <repo> checkout v0.3.3
+dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.3.3
 ```
 
 回滚使用旧 tag 重跑同一条安装命令。
