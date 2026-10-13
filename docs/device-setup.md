@@ -126,6 +126,23 @@ profile 目录由第一次 `dsh plugin add` 自动创建；创建后编辑其中
 
 实测结果（v0.3.1，全新 profile）：`--dump-config` exit 0、65836 字节、stderr **无任何** `patch: entry ... not found`、`subagent_codex_relay` 出现 1 次；composed = 21 tool row / 10 registered provider name / **0 dangling**。
 
+## 2.3 registry 与镜像源（2026-10-13 第二台设备实测）
+
+结论先行：**优先用镜像源**；上游只在镜像确实缺某个版本时临时一用。
+
+在该 profile 的 `.npmrc` 写：
+
+    registry=https://registry.npmmirror.com
+
+- 直连 `registry.npmjs.org` 的实测代价：本次升级首次 `add` 出现 `error (23)`、约 48 KiB/s、反复重试，15 分钟仍未完成；
+  改用镜像后**同一条 `add` 1m44s 完成**。
+- 镜像的代价是 packument 可能陈旧，解析具体版本时报 `NO_MATCHING_VERSION`。处理顺序：
+  1. `pnpm store prune`（清掉陈旧 metadata，实测输出 `Removed all cached metadata files`）；
+  2. 重试；仍不行才把该 profile 临时切回上游；
+  3. **切回镜像后必须重跑 §6 校验** —— 半装态会留下不一致。
+- **半装态**（`remove` 成功、`add` 未完成：`dsh.profile.bundles` 在册但依赖已卸载）不要手改 bundles 清单，
+  直接重跑那条完整 `add`（本包仍写在最后）。
+
 ---
 ## 3. 升级与回滚
 
@@ -205,7 +222,10 @@ $DSH_HOME/plugins/provider-failover/route-config.json
 | 装插件报 `ERR_PNPM_IGNORED_BUILDS` | pnpm 默认拦截 git 宿主插件的构建脚本 | 按报错提示写入该 profile 的 `allowBuilds` 后重跑（§2.1 约束 2 / §2.2） |
 | 从 git tag 安装报 `ERR_PNPM_EXOTIC_SUBDEP` | 本包的 git 宿主依赖成了异种子依赖 | 在该 profile 的 `pnpm-workspace.yaml` 写 `blockExoticSubdeps: false`（§2.2） |
 | 插件已装但行仍 `not found`，重装无效 | 依赖已存在，`reconcile` 不再登记 | 先 `dsh plugin remove` 再 `add`（§2.1 约束 2） |
-| `dsh plugin add` 直接失败 | 目标设备 registry / 网络解析不到依赖 | `dsh plugin add` 的退出码是唯一判据；先解决 registry/网络 |
+| `dsh plugin add` 直接失败 | 目标设备 registry / 网络解析不到依赖 | `dsh plugin add` 的退出码是唯一判据；先解决 registry/网络（§2.3） |
+| 安装/升级卡在上游 registry（极慢、`error (23)`、反复重试） | 直连 `registry.npmjs.org` | 该 profile 的 `.npmrc` 切镜像源（§2.3）；实测同一条 `add` 由 15 分钟未完成变为 1m44s |
+| 镜像报某包 `NO_MATCHING_VERSION` | 镜像 packument 陈旧 | 先 `pnpm store prune` 再重试；仍不行才临时切上游，**切回镜像后重跑 §6 校验**（§2.3） |
+| `remove` 成功但 `add` 中途失败 | 网络中断，profile 处于半装态 | 不要手改 `dsh.profile.bundles`；直接重跑完整 `add`（本包排最后）（§2.3） |
 
 ---
 
