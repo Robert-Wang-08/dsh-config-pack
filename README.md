@@ -26,6 +26,7 @@ L3 由包**自描述**，不再靠文档口口相传。
 - **Git（本仓库的 annotated tag）是通用 DSH 配置、预设、故障转移档位和个性化模板的唯一发布源。** 安装、升级和回滚必须钉住 tag；不要从 SkillHub 的旧 `dsh-preset-pack` bundle 安装。
 - **SkillHub 只管理内部 skill 与隐私/个人单文件**，例如 PTC skill、目录映射、key 指针和环境变量清单。真实凭据仍不进 Git，也不进入公共同步载荷。
 - `templates/device-config.env.example` 是个性化文件模板。复制到 SkillHub 管理的个人文件后填写设备值；本仓库只保留占位符和非敏感默认值。
+- **子代理超时根因与本地环境修正**（2026-10-13）见 [`docs/subagent-timeout-fixes-20261013.md`](docs/subagent-timeout-fixes-20261013.md)：kimi/cursor ACP 子代理超时诊断、HTTP/1.1 强制、Orca hooks 清理与调度规则固化。
 - **设备落地与本地个性化**（去隐私版）见 [`docs/device-setup.md`](docs/device-setup.md)：安装/升级/校验、`DSHPACK_ROUTE_*` 覆盖、本机路由层的位置与重启要求、故障排查。含实际设备路径与个人路由偏好的**完整全流程**在 SkillHub 的 `dsh-preset-pack` skill。
 
 ---
