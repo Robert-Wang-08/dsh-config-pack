@@ -1,6 +1,6 @@
 {
   "name": "dsh-config-pack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
   "description": "A generic, git-distributable DSH configuration pack: plugin selection + profile config layer + agent presets, installable into any DSH profile with one command.",
@@ -13,11 +13,18 @@
     "config",
     "pack.manifest.yaml",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "scripts",
+    "templates"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "compare": "node scripts/compare-profile.mjs",
+    "metrics": "node scripts/metrics.mjs",
+    "metrics:scan": "node scripts/metrics.mjs scan --sessions",
+    "metrics:stats": "node scripts/metrics.mjs stats --sessions",
+    "metrics:selftest": "node scripts/metrics.mjs selftest"
   },
   "dsh": {
     "bundle": {
@@ -37,7 +44,8 @@
     "dsh-deepseek-keypool": "github:Robert-Wang-08/dsh-provider-failover",
     "dsh-plugin-provider-badge": "github:Robert-Wang-08/dsh-plugin-provider-badge",
     "dsh-plugin-sidebar-visibility": "github:Robert-Wang-08/dsh-plugin-sidebar-visibility",
-    "dsh-archived-sessions": "github:Robert-Wang-08/dsh-archived-sessions"
+    "dsh-archived-sessions": "github:Robert-Wang-08/dsh-archived-sessions",
+    "fzstd": "^0.1.1"
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-base": "0.2.0-rc.2",

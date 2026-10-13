@@ -17,14 +17,14 @@
 
 .PARAMETER Source
   包的来源 spec，默认本仓库目录的绝对路径。分发场景请用 git spec，例如
-  github:Robert-Wang-08/dsh-config-pack#v1.0.0
+  github:Robert-Wang-08/dsh-config-pack#v0.2.0
 
 .PARAMETER Uninstall
   走 dsh plugin remove。注意：卸载不会恢复被本包覆盖的行。
 
 .EXAMPLE
   pwsh scripts/install.ps1
-  pwsh scripts/install.ps1 -ProfileName web -Source github:Robert-Wang-08/dsh-config-pack#v1.0.0
+  pwsh scripts/install.ps1 -ProfileName web -Source github:Robert-Wang-08/dsh-config-pack#v0.2.0
 #>
 [CmdletBinding()]
 param(
