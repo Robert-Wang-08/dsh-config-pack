@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.3.3
+
+pin dsh-deepseek-keypool dependency to annotated tag v3.4.0
+
 ## 0.3.2
 
 document remote-tag install recipe: blockExoticSubdeps, allowBuilds, pack last

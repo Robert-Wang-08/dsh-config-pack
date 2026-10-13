@@ -1,6 +1,6 @@
 {
   "name": "dsh-config-pack",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": false,
   "type": "module",
   "description": "A generic, git-distributable DSH configuration pack: plugin selection + profile config layer + agent presets, installable into any DSH profile with one command.",
@@ -41,7 +41,7 @@
     "dsh-chat-import": "0.25.2",
     "dsh-mermaid-smooth": "0.1.0",
     "dsh-notify-bell": "0.12.0",
-    "dsh-deepseek-keypool": "github:Robert-Wang-08/dsh-provider-failover",
+    "dsh-deepseek-keypool": "github:Robert-Wang-08/dsh-provider-failover#v3.4.0",
     "dsh-plugin-provider-badge": "github:Robert-Wang-08/dsh-plugin-provider-badge",
     "dsh-plugin-sidebar-visibility": "github:Robert-Wang-08/dsh-plugin-sidebar-visibility",
     "dsh-archived-sessions": "github:Robert-Wang-08/dsh-archived-sessions",
