@@ -7,6 +7,9 @@
 # 路由 id 因设备而异（至少 DeepSeek 备用路由：本机 opencode-go，另一台 opencodego）。
 # 全部 route 用 DSHPACK_ROUTE_* 覆盖；默认值见 pack.manifest.yaml requires_env。
 # 绝不要把 API 密钥写进本文件。
+# 本插件的 agent/request 与 agent/request-error 只服务主控 LLM 请求；
+# 不把 subagent_codex 的工具失败误当成主控失败，也不负责子代理跨 provider 重派发。
+# subagent_codex_relay 是独立工具入口，不能通过本档位表伪装成官方 Codex fallback。
 
 - id: dsh-deepseek-keypool
   config:

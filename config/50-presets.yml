@@ -115,6 +115,19 @@
                   toolName: subagent_codex
                   backgroundMode: one-shot
                   maxDepth: provider-managed
+              # Official Codex remains the OAuth/app-server path.
+              - id: tool-subagent-codex-relay
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: spawn
+                  toolName: subagent_codex_relay
+                  agentOptions:
+                    provider: codex-relay
+                    model: gpt-5.6-sol
+                    reasoningEffort: high
+                    maxTokens: 32768
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
               - id: tool-subagent-claude-code
                 name: '@deepseek-ai/dsh-tool-subagent'
                 config:
