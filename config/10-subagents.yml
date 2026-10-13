@@ -1,5 +1,7 @@
 # ── 外部子代理 ───────────────────────────────────────────────────────────
-# ACP provider 行：opencode / kimi / cursor-agent。
+# ACP provider 行：opencode / kimi / cursor（本包 owns）。
+# PTC 专用的 opencode-dsv41 / kimi-docs / cursor-grok 由 ptc-multi-agent-control
+# 的 dsh-bundle 提供（见 pack.manifest.yaml -> delegated），本包不得同 id 声明。
 #
 # Windows 注意：opencode 与 cursor-agent 在 PATH 上只有 .cmd/.ps1 shim，没有 .exe，
 # 裸名 spawn 会失败并停在 ACP initialize/transport。必须经 cmd /c（POSIX 用 sh -c）包装。
@@ -13,6 +15,8 @@
 - insert:
     # opencode：默认让 AIS 2DSGLM 的 DeepSeek V4.1 Flash 承担原子查询/修改。
     # opencode acp 不接受 --model，只能靠 OPENCODE_CONFIG_CONTENT 注入（与用户配置是合并语义）。
+    # 模型 id 必须用 OpenCode 自己的 provider id（ais1dsglm），不是本包 DSH 侧的 llm-pi-ai 路由名
+    # （ais-2dsglm，见 config/40-models.yml）——两者命名空间不同，混用会让 OpenCode 解析不到模型。
     - id: subagent-acp-opencode
       name: '@deepseek-ai/dsh-subagent-acp'
       disabled: !!js process['env'].DSHPACK_ACP_OPENCODE === 'off'
@@ -24,7 +28,7 @@
           - !!js (process.platform === 'win32' && 'opencode acp') || 'exec opencode acp'
         permission: allow
         env:
-          OPENCODE_CONFIG_CONTENT: !!js process['env'].DSHPACK_OPENCODE_CONFIG || '{"model":"ais-2dsglm/deepseek-v4.1-flash"}'
+          OPENCODE_CONFIG_CONTENT: !!js process['env'].DSHPACK_OPENCODE_CONFIG || '{"model":"ais1dsglm/deepseek-v4.1-flash"}'
 
     - id: subagent-acp-kimi
       name: '@deepseek-ai/dsh-subagent-acp'
@@ -32,12 +36,14 @@
       config:
         providerName: kimi
         command: kimi
-        args: [ acp, --model, kimi-code/k3-256k ]
+        args: [ '--model', kimi-code/k3-256k, acp ]
         permission: allow
 
     # cursor：默认关闭。cursor-agent 的代理路径把 HTTP/2 ping 超时写死 5s，经代理时传输不稳；
     # 下面把 cursor 域名追加进小写 no_proxy（cursor-agent 只读小写，且按 host 后缀匹配）。
-    # 设 DSHPACK_CURSOR_KEEP_PROXY 可保留原行为。用数组拼接而非三元，规避冒号加空格。
+    #   DSHPACK_CURSOR_KEEP_PROXY 为真 -> 沿用调用方的 no_proxy，未设时用默认 localhost,127.0.0.1,::1；
+    #   否则 -> 在现有列表后补上 cursor.sh；
+    # 空字符串视为未设置。用数组拼接而非三元，规避冒号加空格。
     - id: subagent-acp-cursor
       name: '@deepseek-ai/dsh-subagent-acp'
       disabled: !!js process['env'].DSHPACK_ACP_CURSOR !== 'on'
@@ -49,7 +55,7 @@
           - !!js (process.platform === 'win32' && 'cursor-agent --model auto acp') || 'exec cursor-agent --model auto acp'
         permission: allow
         env:
-          no_proxy: !!js String((process['env'].no_proxy || '') + (process['env'].DSHPACK_CURSOR_KEEP_PROXY === undefined && ',cursor.sh' || '')).replace(/^,/, '')
+          no_proxy: !!js process['env'].DSHPACK_CURSOR_KEEP_PROXY && (process['env'].no_proxy||'localhost,127.0.0.1,::1') || (process['env'].no_proxy||'').split(',').concat('cursor.sh').filter(Boolean).join(',')
 
 # ── 产品子代理：全权（bypass）覆盖 ───────────────────────────────────────
 # claude-code / codex 的 provider 行由各自 bundle 注册；这里在其后按顶层 id 定向覆盖 config。
