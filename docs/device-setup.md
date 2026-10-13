@@ -30,9 +30,13 @@ git ls-remote --tags https://github.com/Robert-Wang-08/dsh-config-pack.git
 dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#<RELEASE_TAG> `
   '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' `
   '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' `
-  '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
+  '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2' `
+  '@deepseek-ai/dsh-web-app@0.2.0-rc.2'
 
-# 2) 只读校验
+# 2) git 宿主插件（本机路由层的加载器；构建脚本策略见 §2.1 约束 2）
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-provider-failover
+
+# 3) 只读校验
 node <repo>/scripts/verify.mjs --profile packed
 
 # 3) 起
@@ -46,6 +50,38 @@ dsh packed
 
 ---
 
+## 2.1 干净 profile 复验出的三条硬约束
+
+以下三条是 2026-10-13 在一个**全新 profile**（DSH 默认只带 dsh-base）上实测得出，本仓库此前的安装段没有覆盖。
+
+### 约束 1：本包必须排在它要覆盖的行所属 bundle 之后
+
+补丁只能覆盖**先声明**的行。顺序不对时这些行不会生效，stderr 会逐条打出：
+
+    dsh: [dsh-config-pack] patch: entry "directory-picker" not found
+    dsh: [dsh-config-pack] patch: entry "ui-settings-general" not found
+    dsh: [dsh-config-pack] patch: entry "dsh-deepseek-keypool" not found
+    dsh: [dsh-config-pack] patch: entry "agent-preset-registry" not found
+
+实测：本包排在 dsh-web-app / keypool 插件**之前**时出现上述 4 行；把本包移到 `dsh.profile.bundles` 末位后重建，4 行全部消失，组合结果由 26475 字节增至 65836 字节——说明覆盖这时才真正生效。
+
+正确顺序（末位是本包）：
+
+    bundles: [ @deepseek-ai/dsh-base, @deepseek-ai/dsh-subagent-claude-code,
+               @deepseek-ai/dsh-subagent-codex, @deepseek-ai/dsh-web-app,
+               dsh-deepseek-keypool, dsh-config-pack ]
+
+### 约束 2：git 宿主插件会被构建脚本策略拦下，中途失败后的重试不会自动补登记
+
+- 首次 add 可能报 `ERR_PNPM_IGNORED_BUILDS`（本次实测键是 `koffi`）。DSH 会在报错里给出做法：把 pnpm 打印的那个键写进该 profile 的 `pnpm-workspace.yaml` 的 `allowBuilds`（`true` 或 `false`），再重跑同一条命令。
+- 若首次失败时依赖已被写进 profile 的 `package.json`，重试会因为「依赖不是首次出现」而**不再登记为 bundle**（`reconcile` 只激活新出现的依赖），于是插件行继续 `not found`。恢复办法：先 `dsh plugin remove` 掉这些包，再重新 `add`。
+- 判据不是退出码，而是 stderr 里**既没有** `did not activate`，**也没有** `patch: entry ... not found`。
+
+### 约束 3：web app 必须显式加进 profile 依赖
+
+本包在 `dependencies` 里声明 `@deepseek-ai/dsh-web-app`，只能保证它被装进 `node_modules`，**不等于**它会进入 `dsh.profile.bundles`。干净 profile 上必须显式 `add` 一次，否则 `directory-picker` / `ui-settings-general` / `agent-preset-registry` 这些行同样不存在。
+
+---
 ## 3. 升级与回滚
 
 ```powershell
@@ -100,6 +136,7 @@ $DSH_HOME/plugins/provider-failover/route-config.json
 | --- | --- | --- |
 | 组合配置可解析 | `dsh --profile packed --dump-config` | `exit 0` |
 | 无未激活条目 | 启动 DSH 的输出 | **没有** `did not activate` |
+| 无失配补丁行 | 组合或启动时的 stderr | **没有** `patch: entry ... not found` |
 | 占有边界与 provider 唯一 | `node scripts/verify.mjs --profile packed` | `OK` |
 | 组合后无悬空 provider | `dsh --profile packed --dump-config > composed.yml; node scripts/verify.mjs --composed composed.yml` | `0 dangling` |
 | 目标 profile 是否遮蔽本包 | `node scripts/compare-profile.mjs` | 无 pack 独占 id 被覆盖 |
@@ -119,6 +156,9 @@ $DSH_HOME/plugins/provider-failover/route-config.json
 | `verify.mjs --profile X` 报 shadowing | 目标 profile 的 patch 仍声明本包 `owns` 的 id | 让那些行退出，按 id 独占，不要靠文件修改时间猜胜者 |
 | 改了默认路由但不生效 | 改的是包内联表，被本机 `route-config.json` 覆盖 | 改本机路由文件，或临时移除它；改完**重启 DSH** |
 | 改了本机路由文件但不生效 | 插件只在启动时读一次 | 重启 DSH |
+| stderr 出现 `patch: entry ... not found` | 本包排在被覆盖行所属 bundle 之前 | 把 `dsh-config-pack` 移到 `dsh.profile.bundles` 末位（§2.1 约束 1） |
+| 装插件报 `ERR_PNPM_IGNORED_BUILDS` | pnpm 默认拦截 git 宿主插件的构建脚本 | 按报错提示写入该 profile 的 `allowBuilds` 后重跑（§2.1 约束 2） |
+| 插件已装但行仍 `not found`，重装无效 | 依赖已存在，`reconcile` 不再登记 | 先 `dsh plugin remove` 再 `add`（§2.1 约束 2） |
 | `dsh plugin add` 直接失败 | 目标设备 registry / 网络解析不到依赖 | `dsh plugin add` 的退出码是唯一判据；先解决 registry/网络 |
 
 ---

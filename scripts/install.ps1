@@ -13,7 +13,8 @@
 
 .PARAMETER ProfileName
   目标 profile 名，默认 packed。若该 profile 不存在，DSH 会用 DEFAULT_PROFILE_BUNDLES
-  （只有 @deepseek-ai/dsh-base）建它；本包的 dependencies 负责把 dsh-web-app 一并带进来。
+  （只有 @deepseek-ai/dsh-base）建它。注意：web app 与 git 宿主插件必须另外显式 add，
+  且本包要排在 dsh.profile.bundles 末位；否则覆盖不生效（详见 docs/device-setup.md §2.1）。
 
 .PARAMETER Source
   包的来源 spec，默认本仓库目录的绝对路径。分发场景请用 git spec，例如
