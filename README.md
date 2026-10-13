@@ -4,7 +4,7 @@
 经 git 分发，一条命令装进任意 DSH profile。
 
 ```powershell
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.0
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.1
 ```
 
 ---
@@ -37,7 +37,7 @@ L3 由包**自描述**，不再靠文档口口相传。
 ```powershell
 # 1) 装进一个新 profile（推荐，不会和现有 profile 打架）
 #    必须把三个子代理包一起显式装上，理由见下面的警告。
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.0 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.1 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
 
 # 2) 校验（只读，不动任何文件）
 node scripts/verify.mjs --profile packed
@@ -54,8 +54,13 @@ dsh packed
 >
 > 佐证（本机实测，非推测）：`profiles/web/package.json` 里这三个包是**直接声明**的，
 > 而伴生 bundle `@local/dsh-ptc-multi-agent-mode` 也声明了其中两个——两者同时存在，
-> 与「必须装进 profile 根」一致。本次改动**没有**在一个全新 profile 上复验过完整安装，
-> 所以请以「装完没有 `did not activate`」为唯一判据。
+> 与「必须装进 profile 根」一致。
+>
+> **2026-10-13 已在全新 profile 上复验完毕。** 除本条之外还测出三条硬约束：web app 必须显式加入
+> profile 依赖；本包必须排在它要覆盖的行所属 bundle **之后**（否则 stderr 打 `patch: entry ... not found`，
+> 覆盖静默失效）；git 宿主插件要先按其报错处理 pnpm 的 `allowBuilds` 再装，中途失败后重试不会自动补登记。
+> 判据是 stderr 里**既没有** `did not activate`，**也没有** `patch: entry ... not found`。
+> 完整步骤与实测数据见 [`docs/device-setup.md`](docs/device-setup.md) §2.1。
 
 ### 升级
 
@@ -63,8 +68,8 @@ dsh packed
 
 ```powershell
 git -C <repo> fetch --tags origin
-git -C <repo> checkout v0.3.0
-dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.3.0
+git -C <repo> checkout v0.3.1
+dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.3.1
 ```
 
 回滚使用旧 tag 重跑同一条安装命令。
