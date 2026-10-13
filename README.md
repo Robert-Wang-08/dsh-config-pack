@@ -4,7 +4,7 @@
 经 git 分发，一条命令装进任意 DSH profile。
 
 ```powershell
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.2.0
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.0
 ```
 
 ---
@@ -26,6 +26,7 @@ L3 由包**自描述**，不再靠文档口口相传。
 - **Git（本仓库的 annotated tag）是通用 DSH 配置、预设、故障转移档位和个性化模板的唯一发布源。** 安装、升级和回滚必须钉住 tag；不要从 SkillHub 的旧 `dsh-preset-pack` bundle 安装。
 - **SkillHub 只管理内部 skill 与隐私/个人单文件**，例如 PTC skill、目录映射、key 指针和环境变量清单。真实凭据仍不进 Git，也不进入公共同步载荷。
 - `templates/device-config.env.example` 是个性化文件模板。复制到 SkillHub 管理的个人文件后填写设备值；本仓库只保留占位符和非敏感默认值。
+- **设备落地与本地个性化**（去隐私版）见 [`docs/device-setup.md`](docs/device-setup.md)：安装/升级/校验、`DSHPACK_ROUTE_*` 覆盖、本机路由层的位置与重启要求、故障排查。含实际设备路径与个人路由偏好的**完整全流程**在 SkillHub 的 `dsh-preset-pack` skill。
 
 ---
 
@@ -36,7 +37,7 @@ L3 由包**自描述**，不再靠文档口口相传。
 ```powershell
 # 1) 装进一个新 profile（推荐，不会和现有 profile 打架）
 #    必须把三个子代理包一起显式装上，理由见下面的警告。
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.2.0 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.0 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
 
 # 2) 校验（只读，不动任何文件）
 node scripts/verify.mjs --profile packed
@@ -62,8 +63,8 @@ dsh packed
 
 ```powershell
 git -C <repo> fetch --tags origin
-git -C <repo> checkout v0.2.0
-dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.2.0
+git -C <repo> checkout v0.3.0
+dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.3.0
 ```
 
 回滚使用旧 tag 重跑同一条安装命令。
@@ -213,6 +214,17 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
    需要数组时用 `String(...)` 之类以标识符开头的写法包装。
 
 这两条有自动化检查：`npm run verify`。
+
+---
+
+## Codex 子代理路由
+
+本包同时暴露两个不同的 Codex 能力入口：
+
+- `subagent_codex` 仍使用 `openai-codex` 官方 app-server 和 OpenAI OAuth/Office 额度。
+- `subagent_codex_relay` 是独立的通用 spawn 子代理，固定使用现有 `codex-relay/gpt-5.6-sol`，通过 `openai-responses` 从 `config/40-models.yml` 读取 endpoint 和 `CRS_OAI_KEY` 引用；它不会启动官方 Codex app-server。
+
+主控 provider failover 和子代理 provider failover 是两套机制。当前配置包提供独立 relay 入口，但 DSH 0.2 的配置层没有稳定的工具结果重派发 hook，因此不能把主控 `agent/request-error` 误称为子代理自动 fallback；quota 自动重派发、attempt 去重和跨 provider receipt 聚合需要运行时调度层支持。完整分类、receipt 约定和排障步骤见 `docs/codex-subagent-failover.md`。
 
 ---
 

@@ -232,7 +232,7 @@
 | 已模板化 | `mcp-*` / `agent-default-model` / `llm-pi-ai` / `ui-settings-general` / `agent-preset-registry` | pack 用 `!!js`+环境变量；profile 多为字面量或本机路径 → **以 pack 为权威，个性化留在设备 env** |
 | 等价 | `subagent-claude-code` / `subagent-codex` / `directory-picker*` / `preset-standard-codex` | 结构与关键值一致 |
 | 设备偏好（勿回写 pack） | `agent-default-model` 的 profile 值 `opencode-go` / `deepseek-v4-flash-vision-exp` | 属本机偏好；pack 默认 `codex-relay` / `gpt-5.6-sol`，用 `DSHPACK_DEFAULT_*` 覆盖 |
-| 设备路径（勿回写 pack） | `mcp-ticktick` 的 `C:\NODE_HOME\...` / `D:\SHARED_DRIVE\...` | 只通过 `DSHPACK_NODE` / `DSHPACK_TICKTICK_ENTRY` |
+| 设备路径（勿回写 pack） | `mcp-ticktick` 的 node 解释器绝对路径 / 入口脚本绝对路径 | 只通过 `DSHPACK_NODE` / `DSHPACK_TICKTICK_ENTRY`（本机具体值属私有，记在 SkillHub 的 `dsh-preset-pack` skill） |
 | pack 独有 | `subagent-acp-cursor` | 保留 |
 | profile 有、pack 无（不同 id） | `subagent-acp-opencode` / `subagent-acp-kimi` 在两侧同名；PTC 的 `*-dsv41/docs/grok` 不在 pack | 归属边界已用 `delegated` 钉死 |
 

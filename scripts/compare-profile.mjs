@@ -103,7 +103,7 @@ function pickFields(block) {
   if (routes.length) out._routes = routes;
   const prov = [...block.matchAll(/^\s{6}([a-z0-9-]+):\s*$/gm)].map((m) => m[1]);
   if (prov.length) out._providers = prov;
-  out._hasAbsPath = /[A-Za-z]:\\|\\\\shareddrive|\\\\nodehome/.test(block);
+  out._hasAbsPath = /[A-Za-z]:\\|\\[A-Za-z0-9._-]+\\/.test(block);
   out._hasJs = /!!js/.test(block);
   out._hasEnv =
     /process\[['"]env['"]\]|process\.env|DSHPACK_|TENCENT_DOCS|CRS_OAI|AIS_2DSGLM|CLAUDE_RELAY|LLMKEY_|OPENCODE_API/.test(

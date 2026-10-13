@@ -1,4 +1,4 @@
-# dsh-config-pack v0.2.0 — GENERATED FILE, DO NOT EDIT.
+# dsh-config-pack v0.3.0 — GENERATED FILE, DO NOT EDIT.
 #
 # Source of truth: config/*.yml   Rebuild with: npm run build
 # Verify before publishing:       npm run verify
@@ -77,6 +77,9 @@
 
 # ── 产品子代理：全权（bypass）覆盖 ───────────────────────────────────────
 # claude-code / codex 的 provider 行由各自 bundle 注册；这里在其后按顶层 id 定向覆盖 config。
+# subagent_codex_relay 复用 dsh-subagent-spawn-in-process 的通用执行器，
+# 通过工具配置的 agentOptions 绑定 llm-pi-ai 的 codex-relay/gpt-5.6-sol；
+# 它不加载 @deepseek-ai/dsh-subagent-codex，也不使用 OpenAI OAuth。
 # 必须写成顶层行，不能放进上面的 insert 列表，否则重复 id。
 - id: subagent-claude-code
   config:
@@ -227,6 +230,9 @@
 # 路由 id 因设备而异（至少 DeepSeek 备用路由：本机 opencode-go，另一台 opencodego）。
 # 全部 route 用 DSHPACK_ROUTE_* 覆盖；默认值见 pack.manifest.yaml requires_env。
 # 绝不要把 API 密钥写进本文件。
+# 本插件的 agent/request 与 agent/request-error 只服务主控 LLM 请求；
+# 不把 subagent_codex 的工具失败误当成主控失败，也不负责子代理跨 provider 重派发。
+# subagent_codex_relay 是独立工具入口，不能通过本档位表伪装成官方 Codex fallback。
 
 - id: dsh-deepseek-keypool
   config:
@@ -450,6 +456,19 @@
                 config:
                   provider: codex
                   toolName: subagent_codex
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
+              # Official Codex remains the OAuth/app-server path.
+              - id: tool-subagent-codex-relay
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: spawn
+                  toolName: subagent_codex_relay
+                  agentOptions:
+                    provider: codex-relay
+                    model: gpt-5.6-sol
+                    reasoningEffort: high
+                    maxTokens: 32768
                   backgroundMode: one-shot
                   maxDepth: provider-managed
               - id: tool-subagent-claude-code

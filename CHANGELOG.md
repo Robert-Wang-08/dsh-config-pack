@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.3.0
+
+add subagent_codex_relay preset entry, de-privatized device setup guide, local route layer docs
+
 ## 0.2.0
 
 ### Added
