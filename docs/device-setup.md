@@ -82,6 +82,51 @@ dsh packed
 本包在 `dependencies` 里声明 `@deepseek-ai/dsh-web-app`，只能保证它被装进 `node_modules`，**不等于**它会进入 `dsh.profile.bundles`。干净 profile 上必须显式 `add` 一次，否则 `directory-picker` / `ui-settings-general` / `agent-preset-registry` 这些行同样不存在。
 
 ---
+## 2.2 从远端 tag 安装的实测配方（2026-10-13）
+
+在一台全新 profile 上用 `github:Robert-Wang-08/dsh-config-pack#v0.3.1` 实测走通。关键点：**profile 级的 pnpm 设置必须先写**，否则从 git spec 安装根本走不完。
+
+### 第一步：写 profile 的 pnpm 设置
+
+profile 目录由第一次 `dsh plugin add` 自动创建；创建后编辑其中的 `pnpm-workspace.yaml`：
+
+    packages:
+      - .
+    nodeLinker: hoisted
+    autoInstallPeers: false
+    blockExoticSubdeps: false
+    allowBuilds:
+      '@deepseek-ai/dsh-subprocess-local': false
+      '@google/genai': false
+      koffi: false
+      node-pty: false
+      protobufjs: false
+
+- `blockExoticSubdeps: false` 是**必需**的：本包自身依赖若干 git 宿主包（keypool 插件、会话归档、两个 UI 插件），从 git spec 安装时它们会变成「异种子依赖」被 pnpm 默认拒绝，报 `ERR_PNPM_EXOTIC_SUBDEP`。实测**把异种依赖显式列进直接依赖不能绕过**，只有关掉该开关可行。（用本地路径 `link:` 安装不会遇到这条。）
+- `allowBuilds` 的键名以安装报错里 pnpm 打印的为准；`true` / `false` 由你决定——`false` 表示跳过其构建脚本（更保守），需要终端等原生能力时再逐项放开。
+
+### 第二步：一条命令装齐，本包写在最后
+
+    dsh plugin --profile packed add `
+      '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' `
+      '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' `
+      '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2' `
+      '@deepseek-ai/dsh-web-app@0.2.0-rc.2' `
+      'github:Robert-Wang-08/dsh-provider-failover' `
+      'github:Robert-Wang-08/dsh-config-pack#<RELEASE_TAG>'
+
+`dsh.profile.bundles` 的顺序**就是命令行参数的顺序**，所以本包必须写在参数最后，天然满足 §2.1 约束 1。
+
+> 若在这一步之前已经有过**失败的**安装尝试，依赖可能已被写进 `package.json`，此时 bundle 不会登记。先 `dsh plugin --profile packed remove <这些包>`，再执行上面的完整命令。
+
+### 第三步：校验
+
+    dsh --profile packed --dump-config > composed.yml
+    node <repo>/scripts/verify.mjs --composed composed.yml
+
+实测结果（v0.3.1，全新 profile）：`--dump-config` exit 0、65836 字节、stderr **无任何** `patch: entry ... not found`、`subagent_codex_relay` 出现 1 次；composed = 21 tool row / 10 registered provider name / **0 dangling**。
+
+---
 ## 3. 升级与回滚
 
 ```powershell
@@ -157,7 +202,8 @@ $DSH_HOME/plugins/provider-failover/route-config.json
 | 改了默认路由但不生效 | 改的是包内联表，被本机 `route-config.json` 覆盖 | 改本机路由文件，或临时移除它；改完**重启 DSH** |
 | 改了本机路由文件但不生效 | 插件只在启动时读一次 | 重启 DSH |
 | stderr 出现 `patch: entry ... not found` | 本包排在被覆盖行所属 bundle 之前 | 把 `dsh-config-pack` 移到 `dsh.profile.bundles` 末位（§2.1 约束 1） |
-| 装插件报 `ERR_PNPM_IGNORED_BUILDS` | pnpm 默认拦截 git 宿主插件的构建脚本 | 按报错提示写入该 profile 的 `allowBuilds` 后重跑（§2.1 约束 2） |
+| 装插件报 `ERR_PNPM_IGNORED_BUILDS` | pnpm 默认拦截 git 宿主插件的构建脚本 | 按报错提示写入该 profile 的 `allowBuilds` 后重跑（§2.1 约束 2 / §2.2） |
+| 从 git tag 安装报 `ERR_PNPM_EXOTIC_SUBDEP` | 本包的 git 宿主依赖成了异种子依赖 | 在该 profile 的 `pnpm-workspace.yaml` 写 `blockExoticSubdeps: false`（§2.2） |
 | 插件已装但行仍 `not found`，重装无效 | 依赖已存在，`reconcile` 不再登记 | 先 `dsh plugin remove` 再 `add`（§2.1 约束 2） |
 | `dsh plugin add` 直接失败 | 目标设备 registry / 网络解析不到依赖 | `dsh plugin add` 的退出码是唯一判据；先解决 registry/网络 |
 

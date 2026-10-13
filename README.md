@@ -4,7 +4,7 @@
 经 git 分发，一条命令装进任意 DSH profile。
 
 ```powershell
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.1
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.2
 ```
 
 ---
@@ -37,7 +37,7 @@ L3 由包**自描述**，不再靠文档口口相传。
 ```powershell
 # 1) 装进一个新 profile（推荐，不会和现有 profile 打架）
 #    必须把三个子代理包一起显式装上，理由见下面的警告。
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.1 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.2 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
 
 # 2) 校验（只读，不动任何文件）
 node scripts/verify.mjs --profile packed
@@ -60,7 +60,8 @@ dsh packed
 > profile 依赖；本包必须排在它要覆盖的行所属 bundle **之后**（否则 stderr 打 `patch: entry ... not found`，
 > 覆盖静默失效）；git 宿主插件要先按其报错处理 pnpm 的 `allowBuilds` 再装，中途失败后重试不会自动补登记。
 > 判据是 stderr 里**既没有** `did not activate`，**也没有** `patch: entry ... not found`。
-> 完整步骤与实测数据见 [`docs/device-setup.md`](docs/device-setup.md) §2.1。
+> **从远端 tag 安装还有一条前置**：profile 的 `pnpm-workspace.yaml` 必须先写 `blockExoticSubdeps: false`（本包自带 git 宿主依赖，否则报 `ERR_PNPM_EXOTIC_SUBDEP`）与 `allowBuilds`，并把本包写在 `dsh plugin add` 参数**最后**。
+> 完整步骤与实测数据见 [`docs/device-setup.md`](docs/device-setup.md) §2.1/§2.2。
 
 ### 升级
 
@@ -68,8 +69,8 @@ dsh packed
 
 ```powershell
 git -C <repo> fetch --tags origin
-git -C <repo> checkout v0.3.1
-dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.3.1
+git -C <repo> checkout v0.3.2
+dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.3.2
 ```
 
 回滚使用旧 tag 重跑同一条安装命令。

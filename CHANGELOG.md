@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.3.2
+
+document remote-tag install recipe: blockExoticSubdeps, allowBuilds, pack last
+
 ## 0.3.1
 
 document verified clean-profile install constraints: bundle order, allowBuilds, explicit web-app
