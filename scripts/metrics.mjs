@@ -881,7 +881,7 @@ const HELP = [
   '  selftest  Offline, deterministic fixture test. Writes only inside its own temp dir.',
   '',
   'Options:',
-  '  --sessions <dir>   Root of a DSH session store, e.g. ...\\.dsh\\sessions\\--D-src-ynm3000--',
+  '  --sessions <dir>   Root of a DSH session store, e.g. ...\\.dsh\\sessions\\--D-src-example--',
   '  --group-by <keys>  Comma list from: route, executor, model   (default: model)',
   '  --labels <file>    JSON: {"<sessionId>":{"task_id","first_pass_success","accepted",',
   '                     "route","executor","model","attempt_index"}}',
