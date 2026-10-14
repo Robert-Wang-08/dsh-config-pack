@@ -148,6 +148,16 @@
       "consumers": [
         "dsh-bundle/cordis.patch.yml:tool-presentation.disabled"
       ]
+    },
+    "acpPlugin": {
+      "consumers": [
+        "ptc.local.json:acpPlugin",
+        "dsh-bundle/cordis.patch.yml:subagent-acp-opencode-dsv41|subagent-acp-kimi-docs|subagent-acp-cursor-grok.name",
+        "dsh-bundle/cordis.patch.yml:same three rows.PTC_ACP_* ladder and guardWorkspaceReuse",
+        "ptc-multi-agent-control/assets/dsh-bundle/cordis.patch.yml:same three rows",
+        "ptc.local.patch.yml:same three rows (name plus ladder)",
+        "ptc.env.example:PTC_ACP_*"
+      ]
     }
   }
 }

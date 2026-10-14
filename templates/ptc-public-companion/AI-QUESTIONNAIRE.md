@@ -13,9 +13,10 @@ Question order:
 5. Design models: `claude-opus-5`, `claude-opus-4-8`.
 6. For opencode, cursor-agent, and kimi only, ask for an executable-path environment-variable name plus a safe command-name fallback. Never accept a path as the fallback.
 7. Ask whether ACP child processes use a proxy, then proxy/no-proxy environment-variable names (`HTTPS_PROXY`, `NO_PROXY`) and whether Cursor keeps the proxy. Never ask for a proxy URL.
-8. Ask toggles: OpenCode on, Kimi docs on, Cursor off, Claude plan reviews on, presentation on.
-9. Validate and show only non-secret settings and environment-variable names, then offer generate, revise, or restart.
+8. Ask which subagent plugin backs the three ACP provider rows: `upstream` (default) or `resilient`. Never ask for timeout values: the resilient plugin's graded ladder is emitted as `PTC_ACP_<UPPER_SNAKE_FIELD>` environment overrides with the documented defaults, and upstream rows carry no ladder keys at all.
+9. Ask toggles: OpenCode on, Kimi docs on, Cursor off, Claude plan reviews on, presentation on.
+10. Validate and show only non-secret settings and environment-variable names, then offer generate, revise, or restart.
 
-Do not add fields for credentials, shared sources, codex/claude/node executable paths, ACP task timeouts, or retry counts. Those surfaces are intentionally unsupported: provider/CLI authentication stays external; shared archives are manual; the adapters do not expose portable executable overrides or task timeouts here; retry policy is fixed to one retry for transport failures only.
+Do not add fields for credentials, shared sources, codex/claude/node executable paths, ACP task timeouts, or retry counts. Those surfaces are intentionally unsupported: provider/CLI authentication stays external; shared archives are manual; the adapters do not expose portable executable overrides or task timeouts here; retry policy is fixed to one retry for transport failures only. The `acpPlugin` answer is a plugin identity choice rather than a timeout field, and it only decides whether the three ACP rows use the upstream plugin (no timeout support) or the resilient plugin with its environment-driven ladder.
 
 Pass the confirmed JSON to `node scripts/generate-ptc-companion.mjs --answers <answers.json> --out <local-companion>`.

@@ -9,7 +9,8 @@
     "provider",
     "cli",
     "proxy",
-    "features"
+    "features",
+    "acpPlugin"
   ],
   "properties": {
     "schema_version": {
@@ -199,6 +200,13 @@
           "type": "boolean"
         }
       }
+    },
+    "acpPlugin": {
+      "description": "Which subagent plugin backs the three ACP provider rows. upstream is the public default and the only public-safe choice: the resilient plugin lives in a private Git repository. Selecting resilient also emits the graded timeout ladder as PTC_ACP_* environment overrides, because those keys are silently inert under the upstream plugin.",
+      "enum": [
+        "upstream",
+        "resilient"
+      ]
     }
   }
 }

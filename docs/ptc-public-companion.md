@@ -52,6 +52,15 @@ Every schema leaf has an entry in consumption-map.json, and the verifier require
 
 The questionnaire intentionally omits credential names and values, shared-source paths and hashes, codex/Claude/node executable overrides, ACP task timeouts, and retry counts. Authentication remains in DSH providers and CLI stores; shared archives are verified and extracted manually; the adapters do not expose the omitted portable settings; retry policy is fixed to one retry for classified transport failures only. Unknown or removed fields are rejected rather than silently stored.
 
+`acpPlugin` is the one field that decides which plugin the three ACP provider rows load. `upstream`
+(`@deepseek-ai/dsh-subagent-acp`, the default) declares no timeout field at all; `resilient`
+(`@local/dsh-subagent-acp-resilient`, currently a private Git repository) adds the graded timeout ladder, emitted
+as `PTC_ACP_<UPPER_SNAKE_FIELD_NAME>` environment overrides with the plugin's documented defaults. The name and
+the ladder are always emitted together, because DSH's plugin config schema passes unknown keys through and the
+ladder under the upstream plugin is silently inert — no error, no effect. The public default therefore stays on
+`upstream`, no timeout value is ever collected as an answer, and no public artifact hard-depends on the private
+repository. See `../templates/ptc-public-companion/README.md` for the ladder's coherence rules.
+
 ## Other delivery channels
 
 An organization may distribute a separately approved archive after independent SHA256 verification. Internal users may also use an independently managed private channel, but that channel is optional and is not the source of the public Git template. No credential stores, CLI auth state, sessions, local ledgers, or personal paths may be copied into this repository.

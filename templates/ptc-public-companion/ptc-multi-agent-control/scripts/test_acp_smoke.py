@@ -247,6 +247,41 @@ class TestRouteConstruction(unittest.TestCase):
             else:
                 ENVIRON[smoke.VAR_KIMI] = original
 
+    def test_opencode_acp_override_takes_priority(self) -> None:
+        # 与 bundle 同语义：PTC_OPENCODE_ACP 是完整内层命令串，优先于 CLI 命令名。
+        keys = (smoke.VAR_OPENCODE_ACP, smoke.VAR_CLI_OPENCODE)
+        saved = {key: ENVIRON.get(key) for key in keys}
+        ENVIRON[smoke.VAR_CLI_OPENCODE] = "ignored-opencode"
+        ENVIRON[smoke.VAR_OPENCODE_ACP] = "custom-opencode --flag acp"
+        try:
+            routes = smoke.build_routes(keep_proxy=True)
+            self.assertEqual(routes["opencode-dsv41"].shell_command, "custom-opencode --flag acp")
+        finally:
+            for key, value in saved.items():
+                if value is None:
+                    ENVIRON.pop(key, None)
+                else:
+                    ENVIRON[key] = value
+
+    def test_opencode_default_command_follows_cli_var(self) -> None:
+        # 未设 override 时，PTC_CLI_OPENCODE 改变默认命令名；两者都未设时用裸 opencode。
+        keys = (smoke.VAR_OPENCODE_ACP, smoke.VAR_CLI_OPENCODE)
+        saved = {key: ENVIRON.get(key) for key in keys}
+        ENVIRON.pop(smoke.VAR_OPENCODE_ACP, None)
+        ENVIRON.pop(smoke.VAR_CLI_OPENCODE, None)
+        try:
+            self.assertEqual(smoke.build_routes(keep_proxy=True)["opencode-dsv41"].shell_command,
+                             "opencode acp")
+            ENVIRON[smoke.VAR_CLI_OPENCODE] = "my-opencode"
+            self.assertEqual(smoke.build_routes(keep_proxy=True)["opencode-dsv41"].shell_command,
+                             "my-opencode acp")
+        finally:
+            for key, value in saved.items():
+                if value is None:
+                    ENVIRON.pop(key, None)
+                else:
+                    ENVIRON[key] = value
+
 
 class TestCli(SmokeTestBase):
     def test_unknown_route_exits_2(self) -> None:

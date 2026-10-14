@@ -25,12 +25,44 @@ export const DEFAULTS = {
     kimi: { pathEnv: 'PTC_CLI_KIMI', defaultCommand: 'kimi' }
   },
   proxy: { enabled: false, urlEnv: 'HTTPS_PROXY', noProxyEnv: 'NO_PROXY', keepCursorProxy: false },
-  features: { opencode: true, kimiDocs: true, cursor: false, claudePlan: true, presentation: true }
+  features: { opencode: true, kimiDocs: true, cursor: false, claudePlan: true, presentation: true },
+  acpPlugin: 'upstream'
 };
+/** The two interchangeable ACP subagent provider plugins the three ACP rows may target. */
+export const ACP_PLUGIN_NAMES = {
+  upstream: '@deepseek-ai/dsh-subagent-acp',
+  resilient: '@local/dsh-subagent-acp-resilient'
+};
+export const ACP_PLUGIN_KEYS = Object.keys(ACP_PLUGIN_NAMES);
+/** The three ACP provider rows the plugin choice and the timeout ladder apply to. */
+export const ACP_ROW_IDS = ['subagent-acp-opencode-dsv41', 'subagent-acp-kimi-docs', 'subagent-acp-cursor-grok'];
+/**
+ * Documented defaults of the resilient plugin's graded timeout ladder. Only emitted for
+ * acpPlugin=resilient, because the upstream plugin has no timeout field at all and the
+ * loader's schema passes unknown keys through: the same keys under upstream are silently inert.
+ */
+export const ACP_LADDER_DEFAULTS = {
+  processStartTimeoutMs: 30000,
+  startupTimeoutMs: 60000,
+  idleWarnMs: 180000,
+  idleTimeoutMs: 600000,
+  softTimeoutMs: 600000,
+  absoluteTimeoutMs: 1200000,
+  complexSoftTimeoutMs: 1200000,
+  complexHardTimeoutMs: 2700000,
+  activityExtensionMs: 15000,
+  activityProbeMs: 30000,
+  exitSettleMs: 3000,
+  recoverySettleMs: 5000,
+  disposeFinalGraceMs: 10000,
+  disposalTimeoutMs: 30000
+};
+const ACP_GUARD_FIELD = 'guardWorkspaceReuse';
+const ACP_GUARD_ENV = 'PTC_ACP_GUARD_WORKSPACE_REUSE';
 const PROVIDER_KEYS = Object.keys(DEFAULTS.provider);
 const CLI_KEYS = Object.keys(DEFAULTS.cli);
 const FEATURE_KEYS = Object.keys(DEFAULTS.features);
-const TOP_LEVEL_KEYS = ['schema_version', 'provider', 'cli', 'proxy', 'features'];
+const TOP_LEVEL_KEYS = ['schema_version', 'provider', 'cli', 'proxy', 'features', 'acpPlugin'];
 const PROXY_KEYS = Object.keys(DEFAULTS.proxy);
 const GENERATED_ARTIFACTS = [
   'ptc.local.json', 'ptc.local.patch.yml', 'ptc.env.example', 'companion.manifest.json',
@@ -105,6 +137,7 @@ export function normalizeAnswers(inputAnswers = {}) {
   answers.proxy.urlEnv = envName(answers.proxy.urlEnv, 'proxy.urlEnv');
   answers.proxy.noProxyEnv = envName(answers.proxy.noProxyEnv, 'proxy.noProxyEnv');
   for (const key of FEATURE_KEYS) answers.features[key] = Boolean(answers.features[key]);
+  if (!ACP_PLUGIN_KEYS.includes(answers.acpPlugin)) throw new Error('acpPlugin must be one of: ' + ACP_PLUGIN_KEYS.join(', '));
   return answers;
 }
 function loadAnswers(answerArg) {
@@ -114,6 +147,56 @@ function loadAnswers(answerArg) {
 }
 function envLookup(name) { return "process['env'][" + JSON.stringify(name) + ']'; }
 function jsEnv(name, fallback) { return '!!js ' + envLookup(name) + ' || ' + JSON.stringify(fallback); }
+/** `PTC_ACP_<UPPER_SNAKE_FIELD_NAME>` environment override name for one ladder field. */
+export function acpEnvName(field) { return 'PTC_ACP_' + field.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase(); }
+function acpEnvLookup(field) { return "process['env']." + acpEnvName(field); }
+/**
+ * Ladder lines in the pack's `!!js` style. Every expression stays a plain scalar with no
+ * ": " and no leading quote/{/[ /!: YAML ends the scalar at a colon-space and mis-reads the
+ * rest as a mapping, which is exactly how a silent invalid config is produced.
+ */
+export function acpLadderLines(indent) {
+  const lines = Object.entries(ACP_LADDER_DEFAULTS)
+    .map(([field, fallback]) => indent + field + ': !!js Number(' + acpEnvLookup(field) + ' || ' + fallback + ')');
+  lines.push(indent + ACP_GUARD_FIELD + ": !!js (process['env']." + ACP_GUARD_ENV + " ?? '1') !== '0'");
+  return lines;
+}
+/**
+ * Point the three ACP provider rows at another plugin and give each row its own ladder block.
+ * Throws when the template stops declaring exactly those three rows, so template drift cannot
+ * degrade into an emitted bundle whose name and ladder disagree.
+ */
+function selectAcpRows(source, pluginName) {
+  const lines = source.split('\n');
+  const ids = new Set(ACP_ROW_IDS);
+  const output = [];
+  let rewritten = 0;
+  for (let index = 0; index < lines.length; index++) {
+    const header = /^(\s*)- id: ([A-Za-z0-9-]+)\s*$/.exec(lines[index]);
+    if (!header || !ids.has(header[2])) { output.push(lines[index]); continue; }
+    const indent = header[1];
+    output.push(lines[index]);
+    let named = false;
+    while (index + 1 < lines.length) {
+      const next = lines[index + 1];
+      const trimmed = next.trim();
+      const nextIndent = next.length - next.trimStart().length;
+      if (trimmed !== '' && nextIndent <= indent.length) break;
+      index++;
+      if (!named && nextIndent === indent.length + 2 && /^name:\s/.test(trimmed)) {
+        output.push(indent + "  name: '" + pluginName + "'");
+        named = true;
+        continue;
+      }
+      output.push(next);
+      if (named && nextIndent === indent.length + 2 && trimmed === 'config:') output.push(...acpLadderLines(indent + '    '));
+    }
+    if (!named) throw new Error('public DSH bundle ACP row ' + header[2] + ' declares no name field');
+    rewritten++;
+  }
+  if (rewritten !== ACP_ROW_IDS.length) throw new Error('public DSH bundle must declare exactly ' + ACP_ROW_IDS.length + ' ACP provider rows, found ' + rewritten);
+  return output.join('\n');
+}
 function featureDisabled(env, enabled) { return enabled ? "!!js process['env']." + env + " === 'off'" : "!!js process['env']." + env + " !== 'on'"; }
 function shellCommand(item, suffix) {
   const executable = '(' + envLookup(item.pathEnv) + ' || ' + JSON.stringify(item.defaultCommand) + ')';
@@ -136,17 +219,22 @@ export function renderPatch(inputAnswers) {
     '      HTTPS_PROXY: !!js ' + envLookup(a.proxy.urlEnv) + " || ''",
     '      https_proxy: !!js ' + envLookup(a.proxy.urlEnv) + " || ''"
   ] : [];
+  const acpName = "  name: '" + ACP_PLUGIN_NAMES[a.acpPlugin] + "'";
+  const acpLadder = a.acpPlugin === 'upstream' ? [] : acpLadderLines('    ');
   return [
     '# Generated by generate-ptc-companion.mjs. Keep this file in a local never-sync directory.',
     '# Apply after the generated dsh-bundle. Values are defaults plus environment-variable references.', '',
-    '- id: subagent-acp-opencode-dsv41', "  name: '@deepseek-ai/dsh-subagent-acp'", '  disabled: ' + featureDisabled('PTC_FEATURE_OPENCODE', a.features.opencode),
-    '  config:', '    providerName: opencode-dsv41', '    command: ' + shell, '    args:', '      - ' + flag, '      - ' + opencode,
+    '- id: subagent-acp-opencode-dsv41', acpName, '  disabled: ' + featureDisabled('PTC_FEATURE_OPENCODE', a.features.opencode),
+    '  config:', ...acpLadder, '    providerName: opencode-dsv41', '    command: ' + shell, '    args:', '      - ' + flag,
+    '      - ' + opencode,
     '    permission: allow', '    env:', '      OPENCODE_CONFIG_CONTENT: ' + jsEnv('PTC_OPENCODE_CONFIG_CONTENT', JSON.stringify({ model: 'ais1dsglm/' + a.provider.executeModel })), ...proxyEnv, '',
-    '- id: subagent-acp-kimi-docs', "  name: '@deepseek-ai/dsh-subagent-acp'", '  disabled: ' + featureDisabled('PTC_FEATURE_KIMI_DOCS', a.features.kimiDocs),
-    '  config:', '    providerName: kimi-docs', '    command: ' + kimiCommand, '    args:', "      - '--model'", '      - ' + jsEnv('PTC_KIMI_DOCS_MODEL', a.provider.docsModel), '      - acp',
+    '- id: subagent-acp-kimi-docs', acpName, '  disabled: ' + featureDisabled('PTC_FEATURE_KIMI_DOCS', a.features.kimiDocs),
+    '  config:', ...acpLadder, '    providerName: kimi-docs', '    command: ' + kimiCommand, '    args:', "      - '--model'",
+    '      - ' + jsEnv('PTC_KIMI_DOCS_MODEL', a.provider.docsModel), '      - acp',
     '    permission: allow', ...(a.proxy.enabled ? ['    env:', ...proxyEnv] : []), '',
-    '- id: subagent-acp-cursor-grok', "  name: '@deepseek-ai/dsh-subagent-acp'", '  disabled: ' + featureDisabled('PTC_FEATURE_CURSOR', a.features.cursor),
-    '  config:', '    providerName: cursor-grok', '    command: ' + shell, '    args:', '      - ' + flag, '      - ' + cursor,
+    '- id: subagent-acp-cursor-grok', acpName, '  disabled: ' + featureDisabled('PTC_FEATURE_CURSOR', a.features.cursor),
+    '  config:', ...acpLadder, '    providerName: cursor-grok', '    command: ' + shell, '    args:', '      - ' + flag,
+    '      - ' + cursor,
     '    permission: allow', '    env:', '      no_proxy: ' + noProxy, ...proxyEnv, '',
     '- id: subagent-claude-opus5-plan', "  name: '@deepseek-ai/dsh-subagent-claude-code'", '  disabled: ' + featureDisabled('PTC_FEATURE_CLAUDE_PLAN', a.features.claudePlan),
     '  config:', '    providerName: claude-opus5-plan', '    model: ' + jsEnv('PTC_CLAUDE_DESIGN_MODEL', a.provider.designModel), '    permissionMode: plan', '',
@@ -164,29 +252,53 @@ export function renderRuntimeConfig(inputAnswers) {
     design: { model: a.provider.designModel, fallbackModel: a.provider.designFallbackModel }
   };
 }
-export function renderBundle(inputAnswers) {
+export function renderBundleFrom(source, inputAnswers) {
   const a = normalizeAnswers(inputAnswers);
-  const source = readFileSync(join(templateRoot, 'dsh-bundle', 'cordis.patch.yml'), 'utf8');
   const marker = /provider: codex-relay\r?\n\s+model: gpt-5\.6-sol\r?\n\s+reasoningEffort: high/;
   if (!marker.test(source)) throw new Error('public DSH bundle controller marker is missing');
-  return source.replace(marker, 'provider: ' + a.provider.controller + '\n                    model: ' + a.provider.controllerModel + '\n                    reasoningEffort: ' + a.provider.controllerEffort);
+  const rendered = source.replace(marker, 'provider: ' + a.provider.controller + '\n                    model: ' + a.provider.controllerModel + '\n                    reasoningEffort: ' + a.provider.controllerEffort);
+  if (a.acpPlugin === 'upstream') return rendered;
+  return selectAcpRows(rendered, ACP_PLUGIN_NAMES[a.acpPlugin]);
+}
+export function renderBundle(inputAnswers) {
+  return renderBundleFrom(readFileSync(join(templateRoot, 'dsh-bundle', 'cordis.patch.yml'), 'utf8'), inputAnswers);
+}
+/**
+ * The skill ships its own verbatim copy of the bundle under assets/dsh-bundle/, which the skill
+ * references document as an install source. It is rendered from its own source so the copy a
+ * reader installs carries the same plugin choice and ladder as dsh-bundle/cordis.patch.yml.
+ */
+export function renderSkillBundle(inputAnswers) {
+  return renderBundleFrom(readFileSync(join(templateRoot, 'ptc-multi-agent-control', 'assets', 'dsh-bundle', 'cordis.patch.yml'), 'utf8'), inputAnswers);
 }
 function renderConfig(inputAnswers) {
   const a = normalizeAnswers(inputAnswers);
-  return { schema_version: COMPANION_SCHEMA, generated_by: 'dsh-config-pack/scripts/generate-ptc-companion.mjs', skill_version: SKILL_VERSION, privacy: { credentials: 'not-collected', paths: 'environment-variable-names-only', never_sync: true }, providers: a.provider, cli: a.cli, proxy: a.proxy, features: a.features };
+  return { schema_version: COMPANION_SCHEMA, generated_by: 'dsh-config-pack/scripts/generate-ptc-companion.mjs', skill_version: SKILL_VERSION, privacy: { credentials: 'not-collected', paths: 'environment-variable-names-only', never_sync: true }, providers: a.provider, cli: a.cli, proxy: a.proxy, features: a.features, acpPlugin: a.acpPlugin };
 }
 function renderEnvExample(inputAnswers) {
   const a = normalizeAnswers(inputAnswers);
   const lines = ['# Variable names selected by the public PTC questionnaire. Values stay local.', '# Executable paths are optional; command-name fallbacks are used when blank.'];
   for (const key of CLI_KEYS) lines.push(a.cli[key].pathEnv + '=');
-  lines.push('', '# Proxy source variables. The generator never asks for or writes proxy URL values.', a.proxy.urlEnv + '=', a.proxy.noProxyEnv + '=', '', '# Optional runtime overrides supported by the DSH bundle.', 'PTC_OPENCODE_CONFIG_CONTENT=', 'PTC_CURSOR_ACP=', 'PTC_KIMI_DOCS_MODEL=', 'PTC_CLAUDE_DESIGN_MODEL=', 'PTC_CLAUDE_FALLBACK_MODEL=', 'PTC_FEATURE_OPENCODE=', 'PTC_FEATURE_KIMI_DOCS=', 'PTC_FEATURE_CURSOR=', 'PTC_FEATURE_CLAUDE_PLAN=', 'PTC_FEATURE_PRESENTATION=', '# Optional self-provider switch; set to on only when the target profile lacks a bundle that provides agentPresets.', 'PTC_PROVIDE_PRESET_REGISTRY=', '');
+  lines.push('', '# Proxy source variables. The generator never asks for or writes proxy URL values.', a.proxy.urlEnv + '=', a.proxy.noProxyEnv + '=', '', '# Optional runtime overrides supported by the DSH bundle.', 'PTC_OPENCODE_CONFIG_CONTENT=', 'PTC_OPENCODE_ACP=', 'PTC_CURSOR_ACP=', 'PTC_KIMI_DOCS_MODEL=', 'PTC_CLAUDE_DESIGN_MODEL=', 'PTC_CLAUDE_FALLBACK_MODEL=', 'PTC_FEATURE_OPENCODE=', 'PTC_FEATURE_KIMI_DOCS=', 'PTC_FEATURE_CURSOR=', 'PTC_FEATURE_CLAUDE_PLAN=', 'PTC_FEATURE_PRESENTATION=', '# Optional self-provider switch; set to on only when the target profile lacks a bundle that provides agentPresets.', 'PTC_PROVIDE_PRESET_REGISTRY=', '');
+  lines.push(
+    '# Graded ACP timeout ladder. Only the resilient plugin reads these; the upstream plugin has no',
+    '# timeout field and ignores them silently. Blank means the emitted default is used.',
+    ...Object.keys(ACP_LADDER_DEFAULTS).map((field) => acpEnvName(field) + '='),
+    ACP_GUARD_ENV + '=',
+    ''
+  );
   return [...new Set(lines)].join('\n');
 }
-function renderReadme() {
+function renderReadme(inputAnswers) {
+  const a = normalizeAnswers(inputAnswers);
   return [
     '# Local PTC companion', '',
     'This complete public companion is generated for one machine and is deny-listed from Git by default.', '',
     '- Install dsh-bundle/ into the target DSH profile with the documented ACP and Claude packages.',
+    ...(a.acpPlugin === 'resilient' ? [
+      '- The selected resilient ACP plugin (@local/dsh-subagent-acp-resilient) is a separate package: install it',
+      '  into the profile root as well, because DSH resolves every row name: from the profile, not from this bundle.'
+    ] : []),
     '- Copy or link ptc-multi-agent-control/ to ~/.agents/skills/ptc-multi-agent-control.',
     '- Apply ptc.local.patch.yml after the generated bundle.',
     '- ptc.local.json records non-secret settings; ptc.env.example contains variable names with blank values.',
@@ -208,7 +320,7 @@ function renderReadme() {
   ].join('\n');
 }
 function renderManifest(inputAnswers) {
-  normalizeAnswers(inputAnswers);
+  const a = normalizeAnswers(inputAnswers);
   const fieldConsumption = JSON.parse(readFileSync(join(templateRoot, 'consumption-map.json'), 'utf8'));
   return {
     schema_version: 'ptc-public-companion-manifest/v1', skill_version: SKILL_VERSION,
@@ -224,7 +336,9 @@ function renderManifest(inputAnswers) {
       'credential names or values: configure authentication in DSH providers and CLI login stores',
       'shared-source paths or hashes: verify and extract shared archives manually before generation',
       'codex/claude/node executable overrides: their DSH adapters do not expose a portable command setting here',
-      'ACP task timeouts: the supported DSH ACP configuration has no portable task-timeout field',
+      a.acpPlugin === 'resilient'
+        ? 'ACP task timeouts: provided by the selected resilient ACP plugin; the upstream plugin declares no timeout field and ignores the ladder silently'
+        : 'ACP task timeouts: the supported DSH ACP configuration has no portable task-timeout field',
       'retry count: policy is fixed to one retry for transport failures only'
     ],
     clean_profile_verified: false
@@ -236,7 +350,7 @@ function generatedFiles(answers) {
     'ptc.local.patch.yml': renderPatch(answers),
     'ptc.env.example': renderEnvExample(answers),
     'companion.manifest.json': JSON.stringify(renderManifest(answers), null, 2) + '\n',
-    'README.md': renderReadme(),
+    'README.md': renderReadme(answers),
     '.gitignore': '# Generated PTC companion; never sync local output.\n*\n!.gitignore\n!README.md\n'
   };
 }
@@ -248,6 +362,7 @@ function writeSet(outDir, answers) {
   copyArtifact(join(templateRoot, 'dsh-bundle'), join(outDir, 'dsh-bundle'));
   writeFileSync(join(outDir, 'dsh-bundle', 'cordis.patch.yml'), renderBundle(answers), 'utf8');
   copyArtifact(join(templateRoot, 'ptc-multi-agent-control'), join(outDir, 'ptc-multi-agent-control'));
+  writeFileSync(join(outDir, 'ptc-multi-agent-control', 'assets', 'dsh-bundle', 'cordis.patch.yml'), renderSkillBundle(answers), 'utf8');
   writeFileSync(join(outDir, 'ptc-multi-agent-control', 'assets', 'public-runtime-config.json'), JSON.stringify(renderRuntimeConfig(answers), null, 2) + '\n', 'utf8');
   const metadata = { schema_version: COMPANION_SCHEMA, skill_version: SKILL_VERSION, artifacts: [...GENERATED_ARTIFACTS, '.ptc-generation.json'] };
   writeFileSync(join(outDir, '.ptc-generation.json'), JSON.stringify(metadata, null, 2) + '\n', 'utf8');
@@ -306,6 +421,7 @@ async function promptAnswers() {
     result.proxy.urlEnv = await ask('Proxy URL environment variable name', DEFAULTS.proxy.urlEnv);
     result.proxy.noProxyEnv = await ask('No-proxy environment variable name', DEFAULTS.proxy.noProxyEnv);
     result.proxy.keepCursorProxy = await bool('Keep Cursor on the proxy', DEFAULTS.proxy.keepCursorProxy);
+    result.acpPlugin = await ask('ACP plugin for the three ACP rows (' + ACP_PLUGIN_KEYS.join('|') + ')', DEFAULTS.acpPlugin);
     for (const key of FEATURE_KEYS) result.features[key] = await bool('Enable feature ' + key, DEFAULTS.features[key]);
     const regenerate = await rl.question('Generate with these answers? [Y/n]: ');
     if (regenerate.trim().toLowerCase() === 'n') throw new Error('interactive generation cancelled');

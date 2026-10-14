@@ -52,7 +52,7 @@ function schemaLeaves(node, prefix = '') {
 if (schema && answers && consumption) {
   if (answers.schema_version !== 'ptc-public-answers/v1') fail('unexpected answers schema version');
   if (schema.type !== 'object' || schema.additionalProperties !== false) fail('answers schema root must reject unknown fields');
-  const expectedSections = ['schema_version', 'provider', 'cli', 'proxy', 'features'];
+  const expectedSections = ['schema_version', 'provider', 'cli', 'proxy', 'features', 'acpPlugin'];
   if (JSON.stringify(schema.required) !== JSON.stringify(expectedSections)) fail('answers schema sections differ from supported questionnaire');
   for (const removed of ['credentials', 'sharedSource', 'timeouts']) if (schema.properties[removed] || answers[removed]) fail('unsupported fake configuration remains: ' + removed);
   const leaves = schemaLeaves(schema).sort();
