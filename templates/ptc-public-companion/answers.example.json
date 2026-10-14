@@ -39,5 +39,6 @@
     "cursor": false,
     "claudePlan": true,
     "presentation": true
-  }
+  },
+  "acpPlugin": "upstream"
 }

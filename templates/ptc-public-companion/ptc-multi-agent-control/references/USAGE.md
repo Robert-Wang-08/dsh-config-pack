@@ -86,11 +86,37 @@ dsh plugin --profile <名字> add <bundle 绝对路径> `
 | 变量 | 默认值 |
 | --- | --- |
 | `PTC_OPENCODE_CONFIG_CONTENT` | `{"model":"ais1dsglm/deepseek-v4.1-flash"}` |
+| `PTC_OPENCODE_ACP` | 未设（整体覆盖 OpenCode 的内层命令串；设了就完全替换默认的 `<PTC_CLI_OPENCODE> acp`） |
+| `PTC_CLI_OPENCODE` | `opencode`（OpenCode 可执行命令名；仅当 `PTC_OPENCODE_ACP` 未设时追加 `acp`） |
 | `PTC_CURSOR_ACP` | `cursor-agent --model auto acp`（默认让 Cursor 自选；要指定就写 `--model grok-4.7-high`） |
 | `PTC_KIMI_DOCS_MODEL` | `kimi-code/k3-256k`（别名清单见 SKILL.md；长文档可选 `kimi-code/kimi-for-coding` 或 `kimi-code/k3`，均为 1M 上下文） |
 | `PTC_CLAUDE_DESIGN_MODEL` | `claude-opus-5` |
 | `PTC_CLAUDE_FALLBACK_MODEL` | `claude-opus-4-8` |
 | `PTC_CURSOR_KEEP_PROXY` | 未设（默认让 Cursor 域名绕开代理，见坑 5） |
+
+### ACP 插件与超时梯子
+
+三条 ACP 行（`subagent-acp-opencode-dsv41` / `subagent-acp-kimi-docs` / `subagent-acp-cursor-grok`）指向哪个插件，
+由生成器答案 `acpPlugin` 决定，默认 `upstream`：
+
+| 取值 | 插件 | 超时能力 |
+| --- | --- | --- |
+| `upstream`（默认） | `@deepseek-ai/dsh-subagent-acp` | **完全没有超时字段**：`dispose()` 无界等待子进程退出，子进程挂住时父级工具调用不会返回 |
+| `resilient` | `@local/dsh-subagent-acp-resilient` | 同 `providerName`/`command`/`args`/`permission`/`env` 语义，另加分级超时梯子（`processStartTimeoutMs` … `disposalTimeoutMs` 与 `guardWorkspaceReuse`），每个值都写成 `PTC_ACP_<字段名 UPPER_SNAKE>` 环境覆盖，未设置时用插件文档默认值 |
+
+插件名与梯子**成对**发射，不能拆开：DSH 的插件配置 schema 不拒绝未知键，把梯子键写在
+`@deepseek-ai/dsh-subagent-acp` 旁边只会**静默失效**——不报错，也不生效。所以这个选择同时落到生成的
+`dsh-bundle/cordis.patch.yml`、skill 自带的 `assets/dsh-bundle/cordis.patch.yml`，以及生成的
+`ptc.local.patch.yml`（后者的顶层 `- id:` 行会整体替换该行的 config，必须重复插件名和梯子）。
+
+resilient 插件目前只在私有仓库（`github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1`），公开模板不能硬依赖
+私有仓库，所以公开默认保持 `upstream`。要用 resilient，必须把该包也**显式装进 profile 根**——DSH 从 profile 根
+解析 `name:`，bundle 自己的依赖声明不够（与上面「后两个包必须显式列出」同一条加载器规则）。
+
+加载期一致性由 resilient 插件自己校验：`processStartTimeoutMs <= startupTimeoutMs`、
+`softTimeoutMs <= absoluteTimeoutMs <= complexHardTimeoutMs`、`complexSoftTimeoutMs <= complexHardTimeoutMs`，
+且所有值必须是正的有限数；`idleWarnMs > idleTimeoutMs` 不是错误，会被夹到 `idleTimeoutMs` 并告警。
+`PTC_ACP_*` 的完整变量名与默认值清单见生成物 `ptc.env.example`。
 
 ### 换机器时的五个坑（已实测）
 
@@ -156,8 +182,8 @@ python scripts/acp_smoke.py --command "some-agent acp"
 | `auth` | `Authentication required` | 重新登录子代理 CLI；重试无用 |
 | `transport` | `RetriableError ... keepalive ping timed out` | 查代理健康度；可重试一次 |
 
-模型与命令取自与 bundle 相同的环境变量（`PTC_OPENCODE_CONFIG_CONTENT`、`PTC_CURSOR_ACP`、
-`PTC_KIMI_DOCS_MODEL`），所以不会与资产各写一套而漂移。cursor 路由会先做 `--list-models`
+模型与命令取自与 bundle 相同的环境变量（`PTC_OPENCODE_CONFIG_CONTENT`、`PTC_OPENCODE_ACP`、
+`PTC_CLI_OPENCODE`、`PTC_CURSOR_ACP`、`PTC_KIMI_DOCS_MODEL`），所以不会与资产各写一套而漂移。cursor 路由会先做 `--list-models`
 预检，模型名非法时**不消耗会话**。离线单测：`python scripts/test_acp_smoke.py`。
 
 模型锁定只能由子代理自报或 provider 的权威查询验证；无法观测时必须标记为 `unverified`。

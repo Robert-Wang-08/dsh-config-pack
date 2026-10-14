@@ -12,6 +12,31 @@ The generated directory contains local settings, a local patch, an environment-n
 
 The generator intentionally does not collect credential fields, shared-source fields, codex/claude/node executable overrides, ACP task timeouts, or retry counts. Authentication stays in providers/CLI stores, shared archives remain manual, unsupported adapter settings are not promised, and transport retry is a fixed skill policy.
 
+## ACP plugin choice and the timeout ladder
+
+The three ACP provider rows target exactly one plugin, selected by the `acpPlugin` answer (default `upstream`):
+
+- `upstream` — `@deepseek-ai/dsh-subagent-acp` (public npm). It declares no timeout field at all: a hung ACP child
+  can hold the delegating tool call open, because its `dispose()` waits for child exit without a bound.
+- `resilient` — `@local/dsh-subagent-acp-resilient`. Same `providerName` / `command` / `args` / `permission` /
+  `env` semantics plus a graded timeout ladder (`processStartTimeoutMs` through `disposalTimeoutMs`, plus
+  `guardWorkspaceReuse`), each emitted as a `PTC_ACP_<UPPER_SNAKE_FIELD_NAME>` environment override carrying the
+  plugin's documented default.
+
+The plugin name and the ladder are emitted together on purpose. DSH's plugin config schema does not reject
+unknown keys, so ladder keys written next to the upstream plugin name are silently inert — no error, no effect.
+The selection is therefore applied everywhere the rows appear: the generated `dsh-bundle/cordis.patch.yml`, the
+skill's own `assets/dsh-bundle/cordis.patch.yml` copy, and the generated `ptc.local.patch.yml` (a later `- id:`
+layer replaces the row, so it must repeat both the name and the ladder).
+
+The resilient plugin currently lives in a private Git repository
+(`github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1`), and a public template must not hard-depend on a
+private repository, so the public default stays on `upstream`. Selecting `resilient` is a local opt-in; install
+that package into the profile root as well, because DSH resolves every row `name:` from the profile, not from the
+bundle. Coherence rules the resilient plugin enforces at load: `processStartTimeoutMs <= startupTimeoutMs`,
+`softTimeoutMs <= absoluteTimeoutMs <= complexHardTimeoutMs`, `complexSoftTimeoutMs <= complexHardTimeoutMs`, and
+every value a positive finite number; `idleWarnMs > idleTimeoutMs` is clamped with a warning instead of rejected.
+
 A clean-profile end-to-end acceptance of this public companion was executed on 2026-10-14. It found and fixed two
 blocking defects (the generated `ptc.local.patch.yml` Windows ACP quoting, and the missing `agentPresets`
 provider); after the fixes the generated patch drives a real ACP subagent call successfully and `--dump-config`

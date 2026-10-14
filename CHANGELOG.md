@@ -2,6 +2,24 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.5.0
+
+公开伴生模板新增 acpPlugin 选择（upstream 默认 / resilient 私有加固版），并固化 PTC_ACP_* 超时阶梯环境变量。
+
+### Added
+- 问答键 acpPlugin（enum，默认 upstream）：选 upstream 时生成的 bundle 与既有公开模板逐字节相同；选 resilient 时三条 ACP 行的 name 切到 @local/dsh-subagent-acp-resilient 并注入完整分级超时阶梯。
+- 15 个 PTC_ACP_* 环境变量（进程启动 30s / 会话建立 60s / 空闲告警 3min / 空闲 10min / 绝对 20min / 复杂软硬 20min-45min / 活动延长 / 活动探针 / 退出沉降 / 恢复沉降 / dispose 宽限 / 处置超时 / 工作区复用守卫），全部列进生成的 ptc.env.example。
+- 生成器同步产出 skill 自带的 assets/dsh-bundle/cordis.patch.yml：USAGE.md 要求从该目录安装，若只改顶层副本会交付静默失效的阶梯。
+
+### Changed
+- 公开模板默认仍指向上游 @deepseek-ai/dsh-subagent-acp：resilient 插件是私有仓库，公开产物不引用。
+- 去隐私化 Cursor 代理策略（不再在 bundle 内强制 no_proxy，保留 HTTP/1.1 修正），两份 bundle 模板保持一致。
+- 行为断言 68 -> 77。
+
+### Notes
+- 上游插件不声明任何超时字段，而 schemastery 会透传未知键：阶梯配在上游 name 下不会报错，只会静默失效。因此插件名与阶梯必须成对出现（selectAcpRows 强制 3 行）。
+- 需要在 profile 根安装插件：dsh plugin --profile <name> add github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1
+
 ## 0.4.0
 
 新增公开配置工作流（Git 模板 + AI 问答生成 PTC 伴生配置）与子智能体逐次模型选择策略。

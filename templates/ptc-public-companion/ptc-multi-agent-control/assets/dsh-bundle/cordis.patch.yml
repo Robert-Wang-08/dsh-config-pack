@@ -59,13 +59,10 @@
         args:
           - !!js process.platform==='win32'?'/c':'-c'
           - !!js process['env'].PTC_CURSOR_ACP || (process.platform==='win32'?'cursor-agent --model auto acp':'exec cursor-agent --model auto acp')
-        # 经代理时 cursor-agent 走的 HTTP/2 路径把 ping 超时写死成 5s，且无从配置
+        # 代理策略：继承父进程的 HTTP_PROXY/HTTPS_PROXY/NO_PROXY 环境，不在 bundle 内强制直连。
         # （直连路径是 10s/20s；network.* 里只暴露 useHttp1ForAgent，没有超时项）。
-        # 让 Cursor 域名直连即可绕开这条脆弱路径。cursor-agent 只读小写 no_proxy，
-        # 且按 host 后缀匹配，因此 'cursor.sh' 覆盖 api2.cursor.sh 与 *.api5.cursor.sh。
-        # 若你的网络必须经代理才能访问 Cursor，把 PTC_CURSOR_KEEP_PROXY 设为非空值即保留代理。
-        env:
-          no_proxy: !!js process['env'].PTC_CURSOR_KEEP_PROXY && (process['env'].no_proxy||'localhost,127.0.0.1,::1') || (process['env'].no_proxy||'').split(',').concat('cursor.sh').filter(Boolean).join(',')
+        # Cursor 的网络访问由用户代理与系统网络策略决定；需要直连时由外部环境显式设置 no_proxy。
+        # 保留 HTTP/1.1 修正，避免 Cursor agent 的 HTTP/2 ping 超时问题。
         permission: allow
 
     # 复杂方案：GPT-5.6 Sol high 主控设计；Opus 5（回退 Opus 4.8）作独立只读 review。

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { normalizeAnswers, renderPatch, renderRuntimeConfig, DEFAULTS, SKILL_VERSION } from './generate-ptc-companion.mjs';
+import { normalizeAnswers, renderPatch, renderBundle, renderSkillBundle, renderRuntimeConfig, acpEnvName, ACP_LADDER_DEFAULTS, DEFAULTS, SKILL_VERSION } from './generate-ptc-companion.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const generator = join(root, 'scripts', 'generate-ptc-companion.mjs');
 const verifier = join(root, 'scripts', 'verify-ptc-public-template.mjs');
@@ -33,6 +33,27 @@ for (const token of ['CUSTOM_OPENCODE', 'open-code', 'CUSTOM_CURSOR', 'cursor-te
 check('local patch no longer declares a top-level tool-presentation override', !/- id: tool-presentation/.test(patch));
 const bundleTemplate = read(join(root, 'templates', 'ptc-public-companion', 'dsh-bundle', 'cordis.patch.yml'));
 check('presentation toggle lives on the bundle preset inner row', /- id: tool-presentation[\s\S]{0,200}disabled: !!js process\['env'\]\.PTC_FEATURE_PRESENTATION === 'off'/.test(bundleTemplate));
+const upstreamBundle = renderBundle({});
+const resilientBundle = renderBundle({ acpPlugin: 'resilient' });
+const countLines = (text, line) => text.split(/\r?\n/).filter((entry) => entry.trim() === line).length;
+check('default bundle keeps the upstream ACP plugin on all three rows', (upstreamBundle.match(/name: '@deepseek-ai\/dsh-subagent-acp'/g) || []).length === 3);
+check('default bundle emits no ACP timeout ladder key', Object.keys(ACP_LADDER_DEFAULTS).every((field) => countLines(upstreamBundle, field + ':') === 0 && !new RegExp('^\\s*' + field + ':', 'm').test(upstreamBundle)) && !/^\s*guardWorkspaceReuse:/m.test(upstreamBundle));
+check('resilient bundle points all three ACP rows at the resilient plugin', (resilientBundle.match(/name: '@local\/dsh-subagent-acp-resilient'/g) || []).length === 3);
+const missingLadder = Object.entries(ACP_LADDER_DEFAULTS)
+  .map(([field, fallback]) => [field, countLines(resilientBundle, field + ': !!js Number(' + "process['env']." + acpEnvName(field) + ' || ' + fallback + ')')])
+  .filter(([, hits]) => hits !== 3)
+  .map(([field, hits]) => field + ': ' + hits + ' row(s)');
+check('resilient bundle declares every ladder key with its documented default on all three rows', missingLadder.length === 0, missingLadder.join('\n'));
+check('resilient bundle declares the workspace guard on all three rows', countLines(resilientBundle, "guardWorkspaceReuse: !!js (process['env'].PTC_ACP_GUARD_WORKSPACE_REUSE ?? '1') !== '0'") === 3);
+const unsafeJs = resilientBundle.split(/\r?\n/).filter((line) => line.includes('!!js') && !line.trimStart().startsWith('#')).filter((line) => {
+  const expression = line.split('!!js', 2)[1].trim();
+  return /:\s/.test(expression) || /^["'{[]/.test(expression) || expression.startsWith('!');
+});
+check('resilient bundle !!js scalars stay YAML-safe', unsafeJs.length === 0, unsafeJs.join('\n'));
+check('skill bundle copy follows the same plugin choice', renderSkillBundle({ acpPlugin: 'resilient' }).includes("name: '@local/dsh-subagent-acp-resilient'") && renderSkillBundle({}).includes("name: '@deepseek-ai/dsh-subagent-acp'"));
+check('resilient local patch repeats the plugin name and ladder', (renderPatch({ acpPlugin: 'resilient' }).match(/name: '@local\/dsh-subagent-acp-resilient'/g) || []).length === 3 && (renderPatch({ acpPlugin: 'resilient' }).match(/guardWorkspaceReuse/g) || []).length === 3 && !/guardWorkspaceReuse/.test(renderPatch({})));
+let rejectedPlugin = false; try { normalizeAnswers({ acpPlugin: 'unknown-plugin' }); } catch { rejectedPlugin = true; }
+check('unknown acpPlugin is rejected', rejectedPlugin);
 const runtime = renderRuntimeConfig(custom);
 check('runtime consumes controller and fallback', runtime.controller.provider === 'controller-test' && runtime.controller.fallbackModel === 'fallback-model-test');
 check('runtime consumes execute and docs providers', runtime.execute.provider === 'execute-test' && runtime.docs.provider === 'docs-test');

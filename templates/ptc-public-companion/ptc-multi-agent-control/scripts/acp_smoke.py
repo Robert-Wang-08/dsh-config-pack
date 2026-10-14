@@ -38,14 +38,19 @@ DEFAULT_TIMEOUT = 90.0
 DEFAULT_PROMPT = "只回复你的模型标识。"
 MODEL_ASK = "只回复你的模型标识。"
 
-# 与 assets/dsh-bundle/cordis.patch.yml 保持同一事实源：模型一律从这些环境变量读，
+# 与 assets/dsh-bundle/cordis.patch.yml 保持同一事实源：模型与命令一律从这些环境变量读，
 # 只有默认值在两边各写一份（bundle 无法被本脚本安全解析，且脚本需能独立运行）。
+# OpenCode 命令的优先级与 bundle 一致：PTC_OPENCODE_ACP 是完整内层命令串的整体覆盖，
+# 未设置时才回落到 PTC_CLI_OPENCODE（可执行命令名，默认 opencode）再追加 acp。
 VAR_OPENCODE = "PTC_OPENCODE_CONFIG_CONTENT"
+VAR_OPENCODE_ACP = "PTC_OPENCODE_ACP"
+VAR_CLI_OPENCODE = "PTC_CLI_OPENCODE"
 VAR_CURSOR = "PTC_CURSOR_ACP"
 VAR_CURSOR_KEEP_PROXY = "PTC_CURSOR_KEEP_PROXY"
 VAR_KIMI = "PTC_KIMI_DOCS_MODEL"
 
 DEFAULT_OPENCODE_CONFIG = '{"model":"ais1dsglm/deepseek-v4.1-flash"}'
+DEFAULT_OPENCODE_CMD = "opencode"
 DEFAULT_CURSOR_CMD = "cursor-agent --model auto acp"
 DEFAULT_KIMI_MODEL = "kimi-code/k3-256k"
 
@@ -138,6 +143,9 @@ def _first_executable(shell_command: str) -> str | None:
 def build_routes(keep_proxy: bool) -> dict[str, Route]:
     """构造内置路由。模型与命令均取自与 bundle 相同的环境变量。"""
     opencode_conf = ENVIRON.get(VAR_OPENCODE) or DEFAULT_OPENCODE_CONFIG
+    # 内层命令串与 bundle 同序：整体覆盖优先，其次 PTC_CLI_OPENCODE/默认名追加 acp。
+    opencode_cmd = ENVIRON.get(VAR_OPENCODE_ACP) or (
+        (ENVIRON.get(VAR_CLI_OPENCODE) or DEFAULT_OPENCODE_CMD) + " acp")
     cursor_cmd = ENVIRON.get(VAR_CURSOR) or DEFAULT_CURSOR_CMD
     cursor_model = _cursor_model_from(cursor_cmd)
     kimi_model = ENVIRON.get(VAR_KIMI) or DEFAULT_KIMI_MODEL
@@ -151,7 +159,7 @@ def build_routes(keep_proxy: bool) -> dict[str, Route]:
     return {
         "opencode-dsv41": Route(
             name="opencode-dsv41",
-            shell_command="opencode acp",
+            shell_command=opencode_cmd,
             child_env={"OPENCODE_CONFIG_CONTENT": opencode_conf},
             model="deepseek-v4.1-flash",
             expect_hint="deepseek-v4.1-flash",
