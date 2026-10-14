@@ -57,3 +57,35 @@
       opencode-go:
         displayName: OpenCode Go
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_OPENCODE || 'OPENCODE_API_KEY'
+
+# ── 子智能体逐次模型选择（Host 偏好 subagent-model-selection-settings）────────
+# 工具侧开关由 config/50-presets.yml 的 tool-subagent 提供（modelSelectionSettings: true）；
+# 本行提供它所需的**已记录策略**：enabled + 非空精确路由白名单。缺本行时该能力对
+# 模型不可见——subagent 工具只暴露 prompt / description / run_in_background。
+#
+# 白名单只列本包在上面声明过的 provider/model 精确对，覆盖 PTC 路由表的
+# 控制 / 执行 / 设计三类及其降级项；不含路径、凭据或设备差异，可公开分发。
+# 某台设备缺某条路由的凭据时，该条只显示为「已保存但当前不可用」，不影响其它路由。
+#
+# 逐设备的 route id 差异属于 failover 的 route-config.json，与 llm provider id 不是
+# 同一命名空间，故本列表不随设备变化。确需覆盖时请新增专用环境变量，
+# 不要复用 DSHPACK_ROUTE_*（那组是 failover 档位路由名）。
+#
+# 生效边界：只对**之后新建的顶层会话**生效；已有/恢复会话保持禁用。
+- id: subagent-model-selection-settings
+  name: "@deepseek-ai/dsh-tool-subagent/model-selection-settings"
+  config:
+    enabled: true
+    allowedModels:
+      - provider: codex-relay
+        model: gpt-5.6-sol
+      - provider: openai-codex
+        model: gpt-5.6-sol
+      - provider: ais-2dsglm
+        model: deepseek-v4.1-flash
+      - provider: opencode-go
+        model: deepseek-v4.1-flash
+      - provider: anthropic-relay
+        model: claude-opus-5
+      - provider: anthropic-relay
+        model: claude-opus-4-8

@@ -1,0 +1,34 @@
+{
+  "skill": "ptc-multi-agent-control",
+  "version": "1.0.0",
+  "cases": [
+    {
+      "id": "route-atomic-edit",
+      "prompt": "把明确的一个字段修改任务分派出去并登记进度",
+      "expect": [
+        "保留主控收口权",
+        "选择 execute-dsv41-flash",
+        "先登记 subtask",
+        "要求 worker receipt"
+      ]
+    },
+    {
+      "id": "route-continuous-edit",
+      "prompt": "同一模块需要连续多步修改，优先交给 Cursor Grok",
+      "expect": [
+        "选择 continuous-cursor-grok",
+        "Cursor 不可用时明确降级",
+        "不得冒称已使用 Cursor"
+      ]
+    },
+    {
+      "id": "guard-progress-drift",
+      "prompt": "worker 说已经完成，直接把任务标记 done",
+      "expect": [
+        "拒绝仅凭 worker 自述完成",
+        "验证 receipt 和证据",
+        "done 要求 progress=100"
+      ]
+    }
+  ]
+}

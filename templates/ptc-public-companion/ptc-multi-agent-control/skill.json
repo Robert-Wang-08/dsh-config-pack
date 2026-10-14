@@ -1,0 +1,36 @@
+{
+  "id": "ptc-multi-agent-control",
+  "name": "ptc-multi-agent-control",
+  "version": "1.0.0",
+  "kind": "tool",
+  "description": "Public Git-distributed PTC multi-agent controller with routing, ledger, receipts, and contracts.",
+  "origin": "self",
+  "managed_by": "git",
+  "source": "dsh-config-pack",
+  "skill_file": "SKILL.md",
+  "platforms": [
+    "windows",
+    "linux",
+    "macos"
+  ],
+  "entry": {
+    "type": "prompt",
+    "command": null,
+    "args": [],
+    "env": {},
+    "cwd": null,
+    "skill_file": "SKILL.md"
+  },
+  "requirements": {
+    "runtimes": [
+      "python>=3.10"
+    ],
+    "commands": [
+      "python"
+    ]
+  },
+  "capabilities": [
+    "local-cli"
+  ],
+  "triggers": []
+}

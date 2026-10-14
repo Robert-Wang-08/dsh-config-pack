@@ -1,0 +1,43 @@
+{
+  "schema_version": "ptc-public-answers/v1",
+  "provider": {
+    "controller": "codex-relay",
+    "controllerModel": "gpt-5.6-sol",
+    "controllerEffort": "high",
+    "fallbackProvider": "openai-codex",
+    "fallbackModel": "gpt-5.6-sol",
+    "executeProvider": "ais-2dsglm",
+    "executeModel": "deepseek-v4.1-flash",
+    "docsProvider": "kimi-coding",
+    "docsModel": "kimi-code/k3-256k",
+    "designModel": "claude-opus-5",
+    "designFallbackModel": "claude-opus-4-8"
+  },
+  "cli": {
+    "opencode": {
+      "pathEnv": "PTC_CLI_OPENCODE",
+      "defaultCommand": "opencode"
+    },
+    "cursor": {
+      "pathEnv": "PTC_CLI_CURSOR",
+      "defaultCommand": "cursor-agent"
+    },
+    "kimi": {
+      "pathEnv": "PTC_CLI_KIMI",
+      "defaultCommand": "kimi"
+    }
+  },
+  "proxy": {
+    "enabled": false,
+    "urlEnv": "HTTPS_PROXY",
+    "noProxyEnv": "NO_PROXY",
+    "keepCursorProxy": false
+  },
+  "features": {
+    "opencode": true,
+    "kimiDocs": true,
+    "cursor": false,
+    "claudePlan": true,
+    "presentation": true
+  }
+}

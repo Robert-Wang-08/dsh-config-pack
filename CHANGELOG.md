@@ -2,6 +2,45 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.4.0
+
+新增公开配置工作流（Git 模板 + AI 问答生成 PTC 伴生配置）与子智能体逐次模型选择策略。
+**公开 companion 尚未通过 clean-profile 端到端验收**，见下文 Added 末条与 `docs/ptc-public-companion-acceptance-20261014.md`。
+
+### Added
+- 公开 PTC 伴生模板现包含完整去隐私化 skill（route/ledger/check-model/ACP 自检、tests/assets/references）和完整 12 行 DSH bundle；版本与 Git source metadata 自动校验。
+- 生成器交付本机设置、最终 patch、env-name example、消费清单、完整 skill 与 bundle；overwrite/rollback 可备份恢复目录树，rollback metadata 不再写本机绝对路径。
+- schema 删除无真实消费者的 credentials、shared source、task timeout、transport retry 与 codex/Claude/node CLI 字段；保留字段均由 consumption-map 映射到 route config、bundle、patch 或 env example。
+- 离线验证与 64 条行为断言覆盖完整路由/账本/ACP 测试、字段消费闭包、秘密/路径扫描、重复 id、版本一致、目录覆盖回滚和 persona 降级语义。
+- 文档说明公开 skill 安装到 ~/.agents/skills/ptc-multi-agent-control，SkillHub 非依赖。
+- **2026-10-14 已执行 clean-profile 端到端验收，结论为未通过**，详见 [`docs/ptc-public-companion-acceptance-20261014.md`](docs/ptc-public-companion-acceptance-20261014.md)。实测缺陷：
+  - 叠加生成的 `ptc.local.patch.yml` 后，opencode/cursor 行的 `cmd /c "<cli>" acp` 引号写法使 ACP 子进程在
+    Windows 上 initialize 即 process-exit（去掉本地 patch 后同一 profile 立即成功），该本地 patch 目前是阻断项；
+  - 伴生 bundle 只提供 preset 定义，不提供 `agentPresets` 服务（由 `dsh-web-app` 的 `agent-preset-registry` 行提供），
+    在不含 web app 的 profile 中 preset 无法激活，PTC 工具面整体缺席；
+  - 本地 patch 的顶层 `- id: tool-presentation` 无对应顶层条目，解析报 `patch: entry "tool-presentation" not found`
+    并被静默丢弃，`PTC_FEATURE_PRESENTATION` 开关实际失效；
+  - `dsh --dump-config` 既不对 `!!js` 求值、也不报告激活失败，因此文档原先的“跑一次 dump 看有没有 did not activate”判据不成立。
+- 发布包显式排除 Python __pycache__ / .pyc；ACP 自检在子进程退出后关闭管道，避免测试期 ResourceWarning。
+- `config/40-models.yml` 新增 Host 偏好 `subagent-model-selection-settings`（`enabled: true` + 6 条去隐私精确路由白名单），
+  使 `tool-subagent` 的 `modelSelectionSettings` 真正对模型生效：`subagent` 工具才会暴露 `provider` / `model` / `reasoning_effort`
+  三个可选参数并注册 `list_subagent_models`；白名单只列本包自己声明过的 provider/model 精确对，覆盖 PTC 控制 / 执行 / 设计
+  三类及降级项，不含路径或凭据。该策略只对**新建的顶层会话**生效；`owns` 同步为 20 个 id。
+
+### Fixed（2026-10-14 验收后修复，复验见同报告 §8）
+- D1：生成的 `ptc.local.patch.yml` 不再给 ACP 可执行名加引号；opencode 行新增 `PTC_OPENCODE_ACP` 整体实参覆盖，
+  cursor 行默认值同样去引号。复验：同一条 DSH 级 ACP 调用由 `initialize/process-exit` 失败转为正常返回。
+- D2：伴生 bundle 新增 env 门控的 `ptc-agent-preset-registry` 行（默认关闭，避免与 `dsh-web-app` 双提供者），
+  并把前置条件写入生成物的 manifest / README / env example；`delegated-contract` 与校验器同步为 13 行。
+- D3：`PTC_FEATURE_PRESENTATION` 开关下沉到 bundle 内层 preset 的 `tool-presentation` 行，本地 patch 不再声明顶层
+  `tool-presentation`；叠加本地 patch 的 `--dump-config` stderr 由报错变为空。
+- `acp_smoke.py` 的 spawn 判定改为起进程前的 `shutil.which()` 预检，修掉 zh-CN/代码页 936 下因 cmd 本地化中文提示
+  把 spawn 误判为 initialize 的问题。
+- 文档纠正：`dsh-headless` 一次性运行器**不合成** preset 会话（`dsh-headless/lib/index.js`），因此 PTC 工具面只能在
+  具备预设选择能力的客户端会话（web/tui）中呈现；一条一次性的 headless 运行即使服务齐备也仍是基础工具集。
+- 公开模板内残留的 `ptc-multi-agent-control/scripts/__pycache__/acp_smoke.cpython-312.pyc` 已清除：它会让
+  `verify:ptc-public` 与 `npm test` 长期失败（模板 `.gitignore` 是 allowlist，git 不会漏出去，但本地门禁被蒙住）。
+
 ## 0.3.3
 
 pin dsh-deepseek-keypool dependency to annotated tag v3.4.0

@@ -1,0 +1,4 @@
+# Generated PTC companion; never sync local output.
+*
+!.gitignore
+!README.md

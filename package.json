@@ -1,6 +1,6 @@
 {
   "name": "dsh-config-pack",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "private": false,
   "type": "module",
   "description": "A generic, git-distributable DSH configuration pack: plugin selection + profile config layer + agent presets, installable into any DSH profile with one command.",
@@ -15,16 +15,21 @@
     "README.md",
     "CHANGELOG.md",
     "scripts",
+    "docs",
     "templates"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
-    "verify": "node scripts/verify.mjs",
+    "verify": "node scripts/verify.mjs && npm run verify:ptc-public",
+    "verify:ptc-public": "node scripts/verify-ptc-public-template.mjs",
     "compare": "node scripts/compare-profile.mjs",
     "metrics": "node scripts/metrics.mjs",
     "metrics:scan": "node scripts/metrics.mjs scan --sessions",
     "metrics:stats": "node scripts/metrics.mjs stats --sessions",
-    "metrics:selftest": "node scripts/metrics.mjs selftest"
+    "metrics:selftest": "node scripts/metrics.mjs selftest",
+    "test": "npm run test:ptc-public",
+    "test:ptc-public": "node scripts/test-ptc-public-template.mjs",
+    "ptc:generate": "node scripts/generate-ptc-companion.mjs"
   },
   "dsh": {
     "bundle": {

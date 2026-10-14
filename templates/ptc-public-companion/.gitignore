@@ -1,0 +1,15 @@
+# Template allowlist. Generated output must live outside this repository.
+*
+!.gitignore
+!README.md
+!AI-QUESTIONNAIRE.md
+!answers.example.json
+!companion.patch.yml.example
+!delegated-contract.json
+!answers.schema.json
+!consumption-map.json
+!never-sync.gitignore
+!dsh-bundle/
+!dsh-bundle/*
+!ptc-multi-agent-control/
+!ptc-multi-agent-control/**
