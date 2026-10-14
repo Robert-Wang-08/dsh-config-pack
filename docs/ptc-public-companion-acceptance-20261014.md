@@ -32,13 +32,13 @@
 | DSH 版本 | 0.2.0-rc.2 |
 | 全新 profile | `ptc-clean-test`，由发行模板 `headless` 初始化 |
 | profile 层 | `@deepseek-ai/dsh-base` + `@deepseek-ai/dsh-headless`（**不含** web profile 的任何插件） |
-| 生成物目录 | `D:/src/ynm3000/.ptc/ptc-clean-acceptance/companion`（非 Git 跟踪） |
-| 证据目录 | `D:/src/ynm3000/.ptc/ptc-clean-acceptance/` |
+| 生成物目录 | `<WORKSPACE>/.ptc/ptc-clean-acceptance/companion`（非 Git 跟踪） |
+| 证据目录 | `<WORKSPACE>/.ptc/ptc-clean-acceptance/` |
 
 两条刻意的隔离决定，及其源码依据：
 
 1. **不触碰 SkillHub Junction。** 本机 `~/.agents/skills/ptc-multi-agent-control` 是 Junction，指向被治理规则保护的
-   `D:/nutstore/Skill+Tool/skillhub/store/installed/ptc-multi-agent-control`。验收改用
+   `<SHARED_DRIVE>/skillhub/store/installed/ptc-multi-agent-control`。验收改用
    `DSH_AGENTS_HOME` 重定向到独立目录：
    依据 `@deepseek-ai/dsh-skill-filesystem/lib/index.js`：
    - 第 78 行 `this.agentsHome = resolve(config.agentsHome ?? process.env.DSH_AGENTS_HOME ?? join(homedir(), ".agents"))`
