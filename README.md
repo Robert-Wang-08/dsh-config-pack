@@ -4,7 +4,7 @@
 经 git 分发，一条命令装进任意 DSH profile。
 
 ```powershell
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.3
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.4.0
 ```
 
 ---
@@ -21,13 +21,27 @@ dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.3
 
 L3 由包**自描述**，不再靠文档口口相传。
 
+## 公开 PTC 伴生配置
+
+公开用户不依赖 SkillHub：默认走 **Git 模板 + AI 问答**。生成器交付本机设置、最终 profile patch、完整 DSH bundle，以及去隐私化的完整 `ptc-multi-agent-control` skill（含 route/ledger/check-model/ACP 自检脚本、离线测试、schema 与 references）。
+
+```powershell
+# AI 问答模板：templates/ptc-public-companion/AI-QUESTIONNAIRE.md
+node scripts/generate-ptc-companion.mjs --interactive --out <local-companion>
+node scripts/generate-ptc-companion.mjs --answers <answers.json> --out <local-companion> --dry-run
+node scripts/generate-ptc-companion.mjs --answers <answers.json> --out <local-companion>
+```
+
+把 `<local-companion>/ptc-multi-agent-control` 复制或链接到 `~/.agents/skills/ptc-multi-agent-control`，安装生成的 `dsh-bundle/` 及 profile-root ACP/Claude 依赖，再把 `ptc.local.patch.yml` 作为最后一层应用。若 skill 不存在或加载失败，preset 会明确降级为手工协调，不会声称拥有完整自动路由或账本能力。
+
+问卷只保留真实消费者支持的字段。凭据、共享源、codex/Claude/node 可执行路径、ACP task timeout 与可配置重试已从 schema 删除；未知字段会被拒绝。完整说明见 [`docs/ptc-public-companion.md`](docs/ptc-public-companion.md)，隐私审计见 [`docs/ptc-privacy-audit.md`](docs/ptc-privacy-audit.md)。**公开 companion 尚未完成 clean-profile 端到端安装验收**；离线测试不能替代插件激活与 `!!js` 求值验证。
+
 ### 发布渠道边界
 
-- **Git（本仓库的 annotated tag）是通用 DSH 配置、预设、故障转移档位和个性化模板的唯一发布源。** 安装、升级和回滚必须钉住 tag；不要从 SkillHub 的旧 `dsh-preset-pack` bundle 安装。
-- **SkillHub 只管理内部 skill 与隐私/个人单文件**，例如 PTC skill、目录映射、key 指针和环境变量清单。真实凭据仍不进 Git，也不进入公共同步载荷。
-- `templates/device-config.env.example` 是个性化文件模板。复制到 SkillHub 管理的个人文件后填写设备值；本仓库只保留占位符和非敏感默认值。
-- **子代理超时根因与本地环境修正**（2026-10-13）见 [`docs/subagent-timeout-fixes-20261013.md`](docs/subagent-timeout-fixes-20261013.md)：kimi/cursor ACP 子代理超时诊断、HTTP/1.1 强制、Orca hooks 清理与调度规则固化。
-- **设备落地与本地个性化**（去隐私版）见 [`docs/device-setup.md`](docs/device-setup.md)：安装/升级/校验、`DSHPACK_ROUTE_*` 覆盖、本机路由层的位置与重启要求、故障排查。含实际设备路径与个人路由偏好的**完整全流程**在 SkillHub 的 `dsh-preset-pack` skill。
+- **Git（本仓库的 annotated tag）是通用 DSH 配置、公开 PTC skill/bundle、故障转移档位和模板的发布源。** 安装、升级和回滚必须钉住 tag。
+- 私有管理渠道可继续承载目录映射、key 指针和环境变量清单，但不是公开 PTC 完整性的依赖。真实凭据始终不进 Git。
+- `templates/device-config.env.example` 只保留占位符和非敏感默认值。
+- 子代理超时根因与设备落地说明见 [`docs/subagent-timeout-fixes-20261013.md`](docs/subagent-timeout-fixes-20261013.md) 与 [`docs/device-setup.md`](docs/device-setup.md)。
 
 ---
 
@@ -38,7 +52,7 @@ L3 由包**自描述**，不再靠文档口口相传。
 ```powershell
 # 1) 装进一个新 profile（推荐，不会和现有 profile 打架）
 #    必须把三个子代理包一起显式装上，理由见下面的警告。
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.3 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.4.0 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
 
 # 2) 校验（只读，不动任何文件）
 node scripts/verify.mjs --profile packed
@@ -70,8 +84,8 @@ dsh packed
 
 ```powershell
 git -C <repo> fetch --tags origin
-git -C <repo> checkout v0.3.3
-dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.3.3
+git -C <repo> checkout v0.4.0
+dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.4.0
 ```
 
 回滚使用旧 tag 重跑同一条安装命令。
@@ -110,7 +124,8 @@ dsh plugin --profile <p> add <spec>
 
 ```powershell
 npm run build     # config/*.yml → cordis.patch.yml（生成物，入库）
-npm run verify    # 只读校验
+npm run verify    # 包校验 + PTC 公开模板隐私/契约校验
+npm test          # PTC 生成器 dry-run/overwrite/rollback 行为测试
 node scripts/verify.mjs --profile web   # 额外检查目标 profile 是否遮蔽本包
 ```
 
@@ -232,6 +247,34 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
 - `subagent_codex_relay` 是独立的通用 spawn 子代理，固定使用现有 `codex-relay/gpt-5.6-sol`，通过 `openai-responses` 从 `config/40-models.yml` 读取 endpoint 和 `CRS_OAI_KEY` 引用；它不会启动官方 Codex app-server。
 
 主控 provider failover 和子代理 provider failover 是两套机制。当前配置包提供独立 relay 入口，但 DSH 0.2 的配置层没有稳定的工具结果重派发 hook，因此不能把主控 `agent/request-error` 误称为子代理自动 fallback；quota 自动重派发、attempt 去重和跨 provider receipt 聚合需要运行时调度层支持。完整分类、receipt 约定和排障步骤见 `docs/codex-subagent-failover.md`。
+
+---
+
+## 子智能体逐次模型选择
+
+`config/50-presets.yml` 的 `tool-subagent` 行开了 `modelSelectionSettings: true`，但**工具侧开关本身不够**：
+`subagent` 工具只在 Host 偏好 `subagent-model-selection-settings` 有**已记录的非空精确路由白名单**时，
+才向模型暴露 `provider` / `model` / `reasoning_effort` 三个可选参数并注册 `list_subagent_models`；
+策略为空时工具只暴露 `prompt` / `description` / `run_in_background`——表现就是"派发参数里的显式路由永远是空的"。
+
+本包在 `config/40-models.yml` 里提供这条策略（`enabled: true` + 6 条白名单），
+覆盖 PTC 路由表的控制 / 执行 / 设计三类及其降级项：
+
+| provider | model | 用途 |
+|---|---|---|
+| `codex-relay` | `gpt-5.6-sol` | 主控 / 设计 / 复核首选 |
+| `openai-codex` | `gpt-5.6-sol` | GPT 组降级（官方 OAuth） |
+| `ais-2dsglm` | `deepseek-v4.1-flash` | 执行 / 验证首选 |
+| `opencode-go` | `deepseek-v4.1-flash` | DS 组降级 |
+| `anthropic-relay` | `claude-opus-5` | 模糊设计首选 |
+| `anthropic-relay` | `claude-opus-4-8` | 设计降级 |
+
+白名单只列本包自己声明过的 provider/model 精确对，不含路径或凭据，可公开分发；某台设备缺某条路由的凭据时，
+该条只显示为"已保存但当前不可用"，不影响其它路由。**不要用 `DSHPACK_ROUTE_*` 覆盖这份白名单**：
+那组是 failover 的档位路由名（如 `opencodego`），与 llm provider id 不是同一命名空间。
+
+边界：策略只对保存之后**新建的顶层会话**生效，已有或恢复的会话保持禁用；改完需重启 DSH 再开新会话。
+自带 `agentOptions` 的工具实例（如 `subagent_codex_relay`）不受本策略影响——它的路由是行级固定的。
 
 ---
 

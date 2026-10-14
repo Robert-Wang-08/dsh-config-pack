@@ -1,0 +1,153 @@
+{
+  "schema_version": "ptc-public-consumption-map/v1",
+  "fields": {
+    "schema_version": {
+      "consumers": [
+        "scripts/generate-ptc-companion.mjs:input-version-check",
+        "ptc.local.json"
+      ]
+    },
+    "provider.controller": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.provider",
+        "dsh-bundle/cordis.patch.yml:tool-subagent-codex-relay.agentOptions.provider"
+      ]
+    },
+    "provider.controllerModel": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.model",
+        "dsh-bundle/cordis.patch.yml:tool-subagent-codex-relay.agentOptions.model"
+      ]
+    },
+    "provider.controllerEffort": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.effort",
+        "dsh-bundle/cordis.patch.yml:tool-subagent-codex-relay.agentOptions.reasoningEffort"
+      ]
+    },
+    "provider.fallbackProvider": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.fallbackProvider"
+      ]
+    },
+    "provider.fallbackModel": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.fallbackModel"
+      ]
+    },
+    "provider.executeProvider": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:execute.provider"
+      ]
+    },
+    "provider.executeModel": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:execute.model",
+        "ptc.local.patch.yml:OPENCODE_CONFIG_CONTENT"
+      ]
+    },
+    "provider.docsProvider": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:docs.provider"
+      ]
+    },
+    "provider.docsModel": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:docs.model",
+        "ptc.local.patch.yml:PTC_KIMI_DOCS_MODEL"
+      ]
+    },
+    "provider.designModel": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:design.model",
+        "ptc.local.patch.yml:PTC_CLAUDE_DESIGN_MODEL"
+      ]
+    },
+    "provider.designFallbackModel": {
+      "consumers": [
+        "ptc-multi-agent-control/assets/public-runtime-config.json:design.fallbackModel",
+        "ptc.local.patch.yml:PTC_CLAUDE_FALLBACK_MODEL"
+      ]
+    },
+    "cli.opencode.pathEnv": {
+      "consumers": [
+        "ptc.local.patch.yml:opencode command",
+        "ptc.env.example"
+      ]
+    },
+    "cli.opencode.defaultCommand": {
+      "consumers": [
+        "ptc.local.patch.yml:opencode command"
+      ]
+    },
+    "cli.cursor.pathEnv": {
+      "consumers": [
+        "ptc.local.patch.yml:cursor command",
+        "ptc.env.example"
+      ]
+    },
+    "cli.cursor.defaultCommand": {
+      "consumers": [
+        "ptc.local.patch.yml:cursor command"
+      ]
+    },
+    "cli.kimi.pathEnv": {
+      "consumers": [
+        "ptc.local.patch.yml:kimi command",
+        "ptc.env.example"
+      ]
+    },
+    "cli.kimi.defaultCommand": {
+      "consumers": [
+        "ptc.local.patch.yml:kimi command"
+      ]
+    },
+    "proxy.enabled": {
+      "consumers": [
+        "ptc.local.patch.yml:proxy env inclusion"
+      ]
+    },
+    "proxy.urlEnv": {
+      "consumers": [
+        "ptc.local.patch.yml:proxy source",
+        "ptc.env.example"
+      ]
+    },
+    "proxy.noProxyEnv": {
+      "consumers": [
+        "ptc.local.patch.yml:cursor no_proxy source",
+        "ptc.env.example"
+      ]
+    },
+    "proxy.keepCursorProxy": {
+      "consumers": [
+        "ptc.local.patch.yml:cursor no_proxy policy"
+      ]
+    },
+    "features.opencode": {
+      "consumers": [
+        "ptc.local.patch.yml:subagent-acp-opencode-dsv41.disabled"
+      ]
+    },
+    "features.kimiDocs": {
+      "consumers": [
+        "ptc.local.patch.yml:subagent-acp-kimi-docs.disabled"
+      ]
+    },
+    "features.cursor": {
+      "consumers": [
+        "ptc.local.patch.yml:subagent-acp-cursor-grok.disabled"
+      ]
+    },
+    "features.claudePlan": {
+      "consumers": [
+        "ptc.local.patch.yml:claude plan rows.disabled"
+      ]
+    },
+    "features.presentation": {
+      "consumers": [
+        "dsh-bundle/cordis.patch.yml:tool-presentation.disabled"
+      ]
+    }
+  }
+}

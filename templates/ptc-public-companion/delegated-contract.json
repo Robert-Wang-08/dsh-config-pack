@@ -1,0 +1,98 @@
+{
+  "schema_version": "ptc-delegated-contract/v1",
+  "source": "ptc-multi-agent-control/assets/dsh-bundle",
+  "privacy_note": "Public interfaces only; no credentials, paths, session history, or personal preferences.",
+  "rows": [
+    {
+      "id": "preset-ptc-multi-agent",
+      "role": "public preset",
+      "provider": "@deepseek-ai/dsh-agent-preset",
+      "consumer": "DSH preset registry",
+      "validation": "preset selectable without embedded credentials"
+    },
+    {
+      "id": "subagent-acp-opencode-dsv41",
+      "role": "atomic execution",
+      "provider": "opencode-dsv41",
+      "consumer": "subagent_opencode_dsv41",
+      "validation": "providerName resolves and command is shell-safe"
+    },
+    {
+      "id": "subagent-acp-kimi-docs",
+      "role": "documentation",
+      "provider": "kimi-docs",
+      "consumer": "subagent_kimi_docs",
+      "validation": "providerName resolves and model is configurable"
+    },
+    {
+      "id": "subagent-acp-cursor-grok",
+      "role": "continuous edits",
+      "provider": "cursor-grok",
+      "consumer": "subagent_cursor_grok",
+      "validation": "providerName resolves and cursor is opt-in"
+    },
+    {
+      "id": "subagent-claude-opus5-plan",
+      "role": "design review",
+      "provider": "claude-opus5-plan",
+      "consumer": "subagent_claude_opus5_plan",
+      "validation": "plan permission mode remains read-only"
+    },
+    {
+      "id": "subagent-claude-opus48-plan",
+      "role": "fallback design review",
+      "provider": "claude-opus48-plan",
+      "consumer": "subagent_claude_opus48_plan",
+      "validation": "plan permission mode remains read-only"
+    },
+    {
+      "id": "tool-subagent-opencode-dsv41",
+      "role": "tool binding",
+      "provider": "opencode-dsv41",
+      "consumer": "subagent_opencode_dsv41 tool",
+      "validation": "tool provider matches ACP row"
+    },
+    {
+      "id": "tool-subagent-kimi-docs",
+      "role": "tool binding",
+      "provider": "kimi-docs",
+      "consumer": "subagent_kimi_docs tool",
+      "validation": "tool provider matches ACP row"
+    },
+    {
+      "id": "tool-subagent-cursor-grok",
+      "role": "tool binding",
+      "provider": "cursor-grok",
+      "consumer": "subagent_cursor_grok tool",
+      "validation": "tool provider matches ACP row"
+    },
+    {
+      "id": "tool-subagent-claude-opus5-plan",
+      "role": "tool binding",
+      "provider": "claude-opus5-plan",
+      "consumer": "subagent_claude_opus5_plan tool",
+      "validation": "tool provider matches plan row"
+    },
+    {
+      "id": "tool-subagent-claude-opus48-plan",
+      "role": "tool binding",
+      "provider": "claude-opus48-plan",
+      "consumer": "subagent_claude_opus48_plan tool",
+      "validation": "tool provider matches plan row"
+    },
+    {
+      "id": "tool-presentation",
+      "role": "presentation",
+      "provider": "@deepseek-ai/dsh-agent-tool-presentation",
+      "consumer": "PTC presentation tool",
+      "validation": "tool optional and contains no user data"
+    },
+    {
+      "id": "ptc-agent-preset-registry",
+      "role": "optional preset service provider",
+      "provider": "@deepseek-ai/dsh-agent-preset-registry",
+      "consumer": "agentPresets service for the ptc-multi-agent preset",
+      "validation": "opt-in provider resolves and stays disabled unless PTC_PROVIDE_PRESET_REGISTRY=on"
+    }
+  ]
+}

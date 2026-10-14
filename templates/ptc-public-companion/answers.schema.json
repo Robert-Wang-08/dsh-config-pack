@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dsh-config-pack:ptc-public-answers:v1",
+  "title": "PTC public companion answers",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "provider",
+    "cli",
+    "proxy",
+    "features"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ptc-public-answers/v1"
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controller",
+        "controllerModel",
+        "controllerEffort",
+        "fallbackProvider",
+        "fallbackModel",
+        "executeProvider",
+        "executeModel",
+        "docsProvider",
+        "docsModel",
+        "designModel",
+        "designFallbackModel"
+      ],
+      "properties": {
+        "controller": {
+          "type": "string",
+          "minLength": 1
+        },
+        "controllerModel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "controllerEffort": {
+          "enum": [
+            "low",
+            "high",
+            "max"
+          ]
+        },
+        "fallbackProvider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fallbackModel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executeProvider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executeModel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "docsProvider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "docsModel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "designModel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "designFallbackModel": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "cli": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "opencode",
+        "cursor",
+        "kimi"
+      ],
+      "properties": {
+        "opencode": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pathEnv",
+            "defaultCommand"
+          ],
+          "properties": {
+            "pathEnv": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "defaultCommand": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]+$"
+            }
+          }
+        },
+        "cursor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pathEnv",
+            "defaultCommand"
+          ],
+          "properties": {
+            "pathEnv": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "defaultCommand": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]+$"
+            }
+          }
+        },
+        "kimi": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pathEnv",
+            "defaultCommand"
+          ],
+          "properties": {
+            "pathEnv": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "defaultCommand": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]+$"
+            }
+          }
+        }
+      }
+    },
+    "proxy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "urlEnv",
+        "noProxyEnv",
+        "keepCursorProxy"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "urlEnv": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "noProxyEnv": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "keepCursorProxy": {
+          "type": "boolean"
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "opencode",
+        "kimiDocs",
+        "cursor",
+        "claudePlan",
+        "presentation"
+      ],
+      "properties": {
+        "opencode": {
+          "type": "boolean"
+        },
+        "kimiDocs": {
+          "type": "boolean"
+        },
+        "cursor": {
+          "type": "boolean"
+        },
+        "claudePlan": {
+          "type": "boolean"
+        },
+        "presentation": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

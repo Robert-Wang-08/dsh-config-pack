@@ -18,7 +18,7 @@
     # 模型 id 必须用 OpenCode 自己的 provider id（ais1dsglm），不是本包 DSH 侧的 llm-pi-ai 路由名
     # （ais-2dsglm，见 config/40-models.yml）——两者命名空间不同，混用会让 OpenCode 解析不到模型。
     - id: subagent-acp-opencode
-      name: '@deepseek-ai/dsh-subagent-acp'
+      name: '@local/dsh-subagent-acp-resilient'
       disabled: !!js process['env'].DSHPACK_ACP_OPENCODE === 'off'
       config:
         providerName: opencode
@@ -27,17 +27,27 @@
           - !!js (process.platform === 'win32' && '/c') || '-c'
           - !!js (process.platform === 'win32' && 'opencode acp') || 'exec opencode acp'
         permission: allow
+        startupTimeoutMs: 120000
+        idleTimeoutMs: 300000
+        absoluteTimeoutMs: 1800000
+        activityExtensionMs: 60000
+        recoverySettleMs: 5000
         env:
           OPENCODE_CONFIG_CONTENT: !!js process['env'].DSHPACK_OPENCODE_CONFIG || '{"model":"ais1dsglm/deepseek-v4.1-flash"}'
 
     - id: subagent-acp-kimi
-      name: '@deepseek-ai/dsh-subagent-acp'
+      name: '@local/dsh-subagent-acp-resilient'
       disabled: !!js process['env'].DSHPACK_ACP_KIMI === 'off'
       config:
         providerName: kimi
         command: kimi
         args: [ '--model', kimi-code/k3-256k, acp ]
         permission: allow
+        startupTimeoutMs: 120000
+        idleTimeoutMs: 300000
+        absoluteTimeoutMs: 1800000
+        activityExtensionMs: 60000
+        recoverySettleMs: 5000
 
     # cursor：默认关闭。cursor-agent 的代理路径把 HTTP/2 ping 超时写死 5s，经代理时传输不稳；
     # 下面把 cursor 域名追加进小写 no_proxy（cursor-agent 只读小写，且按 host 后缀匹配）。
@@ -45,7 +55,7 @@
     #   否则 -> 在现有列表后补上 cursor.sh；
     # 空字符串视为未设置。用数组拼接而非三元，规避冒号加空格。
     - id: subagent-acp-cursor
-      name: '@deepseek-ai/dsh-subagent-acp'
+      name: '@local/dsh-subagent-acp-resilient'
       disabled: !!js process['env'].DSHPACK_ACP_CURSOR !== 'on'
       config:
         providerName: cursor
@@ -54,6 +64,11 @@
           - !!js (process.platform === 'win32' && '/c') || '-c'
           - !!js (process.platform === 'win32' && 'cursor-agent --model auto acp') || 'exec cursor-agent --model auto acp'
         permission: allow
+        startupTimeoutMs: 120000
+        idleTimeoutMs: 300000
+        absoluteTimeoutMs: 1800000
+        activityExtensionMs: 60000
+        recoverySettleMs: 5000
         env:
           no_proxy: !!js process['env'].DSHPACK_CURSOR_KEEP_PROXY && (process['env'].no_proxy||'localhost,127.0.0.1,::1') || (process['env'].no_proxy||'').split(',').concat('cursor.sh').filter(Boolean).join(',')
 

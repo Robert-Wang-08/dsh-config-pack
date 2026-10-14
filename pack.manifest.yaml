@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.3.3
+version: 0.4.0
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
@@ -25,6 +25,7 @@ owns:
   - ui-directory-picker-browse
   - agent-default-model
   - llm-pi-ai
+  - subagent-model-selection-settings
   - ui-settings-general
   - preset-standard-codex
   - agent-preset-registry
@@ -74,6 +75,22 @@ requires_cli:
 never_sync:
   - { path: "%USERPROFILE%/.dsh/.credentials.yaml", reason: "含明文密钥" }
   - { path: "%USERPROFILE%/.dsh/sessions",          reason: "本机会话历史，与设备绑定" }
+  - { path: "<local-companion>/",                    reason: "生成的 PTC 本机伴生配置；目录内自带 deny-by-default .gitignore" }
+
+public_companion:
+  schema: ptc-public-companion/v1
+  template: templates/ptc-public-companion
+  bundle: templates/ptc-public-companion/dsh-bundle
+  skill: templates/ptc-public-companion/ptc-multi-agent-control
+  skill_version: 1.0.0
+  contract_rows: 12
+  generated_artifacts: 9
+  consumption_map: templates/ptc-public-companion/consumption-map.json
+  generator: scripts/generate-ptc-companion.mjs
+  verifier: scripts/verify-ptc-public-template.mjs
+  credentials: not-collected
+  clean_profile_verified: false
+  output: local-never-sync-directory
 
 # 本包不覆盖、由别的组件负责的行（仅登记；verify 会拒绝本包再声明这些 id）。
 delegated:

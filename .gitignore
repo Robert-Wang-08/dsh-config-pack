@@ -3,3 +3,5 @@ pnpm-lock.yaml
 *.tgz
 .release-tmp/
 *.log
+__pycache__/
+*.py[cod]
