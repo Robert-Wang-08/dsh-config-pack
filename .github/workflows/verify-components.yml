@@ -1,0 +1,25 @@
+name: verify components
+
+# The component lock is only an enforced invariant if something re-checks it. Two triggers:
+#   - every push and pull request, so a broken pin never reaches main;
+#   - a weekly run, because a git tag can be moved, deleted or recreated at any time upstream and
+#     nothing in this repository would otherwise notice.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+jobs:
+  components:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Component lock vs published reality
+        run: node scripts/verify-components.mjs

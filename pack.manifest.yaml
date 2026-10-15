@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.5.0
+version: 0.6.0
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
@@ -91,6 +91,57 @@ public_companion:
   credentials: not-collected
   clean_profile_verified: false
   output: local-never-sync-directory
+
+# 组合锁（release train 的唯一事实源）
+# ---------------------------------------------------------------------------
+# 每个组件独立发布、各自钉不可变 annotated tag；总仓库只声明"本次组合由哪些版本构成"。
+# tag 名是可以被移动的，所以这里记录**解引用后的 commit SHA**：
+# scripts/verify-components.mjs 会匿名重新解析每个 tag，凡解析结果与 commit 不一致即失败退出。
+# 本表与 package.json 的依赖 spec 必须一致，不一致时验证器同样拒绝。
+components:
+  - id: provider-failover
+    package: dsh-deepseek-keypool
+    repo: https://github.com/Robert-Wang-08/dsh-provider-failover.git
+    tag: v3.4.0
+    commit: d0c6c2d6c1b0af78a0fbb60e89d86c4571b41f0e
+    installable: true
+  - id: archived-sessions
+    package: dsh-archived-sessions
+    repo: https://github.com/Robert-Wang-08/dsh-archived-sessions.git
+    tag: v0.4.1
+    commit: ca08ed9c109b7fd41f1b98e2314efe9ad80a998e
+    installable: true
+  - id: provider-badge
+    package: dsh-plugin-provider-badge
+    repo: https://github.com/Robert-Wang-08/dsh-plugin-provider-badge.git
+    tag: v0.1.0
+    commit: 84873291a3c8bdb085aee9bef4efe3b7d5b167e0
+    installable: true
+  - id: sidebar-visibility
+    package: dsh-plugin-sidebar-visibility
+    repo: https://github.com/Robert-Wang-08/dsh-plugin-sidebar-visibility.git
+    tag: v0.0.3
+    commit: 737501af4c48dd17bd74ef9d6d77022d75d5aaf3
+    installable: true
+  - id: subagent-monitor
+    package: dsh-plugin-subagent-monitor
+    repo: https://github.com/Robert-Wang-08/dsh-plugin-subagent-monitor.git
+    tag: v0.1.0
+    commit: 8ae0a9918de70363490ab691f475a1baae04e42c
+    installable: true
+  - id: acp-resilient
+    package: '@local/dsh-subagent-acp-resilient'
+    repo: https://github.com/Robert-Wang-08/dsh-subagent-acp-resilient.git
+    tag: v0.2.1
+    commit: 2959e9330caa2e9061cf419278df2445ebb837dd
+    installable: true
+  - id: permission-compat
+    package: dsh-permission-compat
+    repo: https://github.com/Robert-Wang-08/dsh-permission-compat.git
+    tag: v0.1.0
+    commit: ea50f0d608a8e5266eb7cde76ebb0cd531ad1506
+    installable: false
+    why: "宿主补丁工具：直接改写已安装的 dsh 模块，不能作为 dsh plugin 依赖安装，因此不在单命令路径内"
 
 # 本包不覆盖、由别的组件负责的行（仅登记；verify 会拒绝本包再声明这些 id）。
 delegated:
