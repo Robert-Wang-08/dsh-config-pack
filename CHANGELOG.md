@@ -2,6 +2,17 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.6.2
+
+修掉 README 里与实际行为**相矛盾**的安装说明。
+
+### Changed
+- README 安装章节由"手工装三个子代理包 + 手改 `pnpm-workspace.yaml` + 显式跑校验"改为**一条** `pwsh scripts/install.ps1 -ProfileName <p>`，并说明安装器只调一次 `dsh plugin add`、失败时按 pnpm 错误码有界自愈、最后校验 bundle 登记。
+- 升级章节的 `#v0.4.0` 更新为当期 tag，并给出安装器写法。
+- 历史硬约束段落保留，但明确标注为**根因与排障口径**（对应前置已由 `scripts/prepare-profile.mjs` 在 `add` 之前写好），不再要求人工执行。
+- 补上"顺序很关键"的实测结论：第一次 `add` 失败后直接重试，依赖已落盘，DSH 不会再登记 `dsh.profile.bundles`。
+- 「为什么不需要安装脚本」一节改为准确表述：本包**不编辑 `cordis.patch.yml`**；开发命令表补上 `node scripts/verify-components.mjs` 与 `docs/one-command-install.md` 入口。
+
 ## 0.6.1
 
 补齐 0.6.0 遗漏的文档面：新工具此前在仓库里**零文档**，而 README 仍在教已经被自动化掉的旧手工流程。

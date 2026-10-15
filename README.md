@@ -50,17 +50,24 @@ node scripts/generate-ptc-companion.mjs --answers <answers.json> --out <local-co
 ### 正常设备
 
 ```powershell
-# 1) 装进一个新 profile（推荐，不会和现有 profile 打架）
-#    必须把三个子代理包一起显式装上，理由见下面的警告。
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.4.0 '@deepseek-ai/dsh-subagent-acp@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2'
+# 一条命令：建 profile、写 pnpm 前置、装包、校验 bundle 登记，全在里面
+pwsh scripts/install.ps1 -ProfileName packed
 
-# 2) 校验（只读，不动任何文件）
-node scripts/verify.mjs --profile packed
-
-# 3) 起
+# 起
 dsh packed
 ```
 
+`install.ps1` 默认从 `github:Robert-Wang-08/dsh-config-pack#v0.6.1` 安装。它只调**一次**
+`dsh plugin add`（装包与激活仍由 DSH 自己完成），失败时按 pnpm 错误码做有界自愈后重试，
+最后校验 `dsh.profile.bundles` 里确实登记了本包。完整说明见
+[`docs/one-command-install.md`](docs/one-command-install.md)。
+
+> ⚠️ **顺序很关键。** 第一次 `add` 失败后直接重试，依赖其实已经落盘，DSH **不会**再为新依赖
+> 登记 `dsh.profile.bundles`，结果是"装上了但整包不生效"。这也是下面这些历史硬约束曾经必须
+> 手工处理的原因——现在由 `scripts/prepare-profile.mjs` 在 `add` **之前**写好。
+
+> 以下几段保留的是**根因与排障口径**；对应的前置现在由 `install.ps1` 自动处理，不再需要手工执行。
+>
 > ⚠️ **为什么必须显式安装那三个子代理包。** DSH 的插件加载器从 **profile 根**解析行的
 > `name:`，不是从 bundle 自己的 `node_modules`。只在 `package.json` 的
 > `dependencies` 里声明它们**不够**：对应行激活失败，而 DSH 只打一行
@@ -84,8 +91,10 @@ dsh packed
 
 ```powershell
 git -C <repo> fetch --tags origin
-git -C <repo> checkout v0.4.0
-dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.4.0
+git -C <repo> checkout v0.6.1
+dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.6.1
+# 或直接用安装器（它会顺带把 pnpm 前置与校验一起做掉）
+pwsh scripts/install.ps1 -ProfileName web -Source github:Robert-Wang-08/dsh-config-pack#v0.6.1
 ```
 
 回滚使用旧 tag 重跑同一条安装命令。
@@ -115,8 +124,9 @@ dsh plugin --profile <p> add <spec>
                   → 原子写 package.json (:71)
 ```
 
-所以**注册 bundle 不需要手改 `package.json`**。本包因此不含任何"编辑 profile patch"的 PowerShell——
-上一版方案那 200 行脚本是多余复杂度。
+所以**注册 bundle 不需要手改 `package.json`**。本包因此**不编辑 `cordis.patch.yml`**——
+`scripts/install.ps1` 相应只做三件事：建 profile、写 pnpm 前置（`scripts/prepare-profile.mjs`）、
+把**一次** `dsh plugin add` 交给 DSH，然后校验登记结果。它不碰运行时 patch 文件。
 
 ---
 
@@ -124,10 +134,14 @@ dsh plugin --profile <p> add <spec>
 
 ```powershell
 npm run build     # config/*.yml → cordis.patch.yml（生成物，入库）
-npm run verify    # 包校验 + PTC 公开模板隐私/契约校验
+npm run verify    # 包校验 + PTC 公开模板隐私/契约校验 + 组件锁离线交叉校验
 npm test          # PTC 生成器 dry-run/overwrite/rollback 行为测试
 node scripts/verify.mjs --profile web   # 额外检查目标 profile 是否遮蔽本包
+node scripts/verify-components.mjs      # 组件锁 vs 已发布现实（匿名解析每个 tag）
 ```
+
+组合锁、验证器的判定口径、发布列车顺序与带外步骤见
+[`docs/one-command-install.md`](docs/one-command-install.md)。
 
 ### 目录
 
