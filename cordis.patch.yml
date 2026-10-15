@@ -1,4 +1,4 @@
-# dsh-config-pack v0.5.0 — GENERATED FILE, DO NOT EDIT.
+# dsh-config-pack v0.6.1 — GENERATED FILE, DO NOT EDIT.
 #
 # Source of truth: config/*.yml   Rebuild with: npm run build
 # Verify before publishing:       npm run verify
@@ -52,6 +52,9 @@
         recoverySettleMs: 5000
         env:
           OPENCODE_CONFIG_CONTENT: !!js process['env'].DSHPACK_OPENCODE_CONFIG || '{"model":"ais1dsglm/deepseek-v4.1-flash"}'
+          # 默认数据目录在 ~/.local/share/opencode；workspace-write 会拒绝该目录。
+          # 临时状态改落工作区 .ptc/acp-tmp（可用 PTC_ACP_TMP 覆盖根目录）。
+          XDG_DATA_HOME: !!js process['env'].PTC_ACP_TMP || ((process['env'].DSH_WORKSPACE || process.cwd()) + '/.ptc/acp-tmp/opencode')
 
     - id: subagent-acp-kimi
       name: '@local/dsh-subagent-acp-resilient'
@@ -66,6 +69,10 @@
         absoluteTimeoutMs: 1800000
         activityExtensionMs: 60000
         recoverySettleMs: 5000
+        # KIMI_CODE_HOME 同时承载凭据和会话。仅显式设置 PTC_ACP_TMP 时启用重定向；
+        # 启用前需运行 ptc-multi-agent-control/scripts/acp_workspace_tmp.py 预置凭据链接/副本。
+        env:
+          KIMI_CODE_HOME: !!js process['env'].PTC_ACP_TMP && ((process['env'].DSH_WORKSPACE || process.cwd()) + '/.ptc/acp-tmp/kimi-home') || ''
 
     # cursor：默认关闭。cursor-agent 的代理路径把 HTTP/2 ping 超时写死 5s，经代理时传输不稳；
     # 下面把 cursor 域名追加进小写 no_proxy（cursor-agent 只读小写，且按 host 后缀匹配）。
@@ -222,8 +229,8 @@
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_ANTHROPIC_RELAY || 'CLAUDE_RELAY_TOKEN'
         models:
           - id: claude-opus-5
-          - id: claude-sonnet-5
           - id: claude-opus-4-8
+          - id: claude-sonnet-5
       # 官方 Codex：OAuth 凭据，需在该设备 Web Models 页登录一次。
       openai-codex:
         displayName: OpenAI Codex (official)
@@ -256,12 +263,20 @@
     allowedModels:
       - provider: codex-relay
         model: gpt-5.6-sol
+      - provider: codex-relay
+        model: gpt-6-astra
       - provider: openai-codex
         model: gpt-5.6-sol
       - provider: ais-2dsglm
         model: deepseek-v4.1-flash
       - provider: opencode-go
         model: deepseek-v4.1-flash
+      - provider: kimi-coding
+        model: k3-256k
+      - provider: codex-relay
+        model: gpt-5.6
+      # Opus 降级链（5.5 -> 5 -> 4.8 -> 报告 Opus 不可用）。本包只声明 relay 的档位；
+      # 5.5 由设备本地 provider 提供时，请在设备本地白名单补 tokeniss/claude-opus-5-5。
       - provider: anthropic-relay
         model: claude-opus-5
       - provider: anthropic-relay
@@ -320,6 +335,32 @@
     keyResetAt: '06:00'
     policyMode: same
     maxPolicyRetriesPerStep: 2
+    # 按失败类别的重试策略（切换 provider 之前的原地重试）。未列出的错误码一律立即切换，
+    # 保持旧语义，也保证额度类不会因为“默认值”被改成先重试。
+    #   TRANSPORT  连接/流中断（WebSocket error、socket hang up…）：等 5s 重试，5 次或 30s 预算用尽才切换；
+    #              observationWindowMs 内（连接活过 30s 才断）按“意外中断”处理，活过窗口外直接切换。
+    #   RATE_LIMIT 服务端限流：退避 15s 重试，3 次或 60s 预算。
+    #   SERVER     上游 5xx：3s 重试 2 次或 15s 预算。
+    #   QUOTA/AUTH/INVALID_CREDENTIAL/MISSING_CREDENTIAL/NO_ADAPTER：额度与凭据类，attempts 0 = 立即切换。
+    retryPolicies:
+      TRANSPORT:
+        attempts: 5
+        delayMs: 5000
+        budgetMs: 30000
+        observationWindowMs: 30000
+      RATE_LIMIT:
+        attempts: 3
+        delayMs: 15000
+        budgetMs: 60000
+      SERVER:
+        attempts: 2
+        delayMs: 3000
+        budgetMs: 15000
+      QUOTA: { attempts: 0 }
+      AUTH: { attempts: 0 }
+      INVALID_CREDENTIAL: { attempts: 0 }
+      MISSING_CREDENTIAL: { attempts: 0 }
+      NO_ADAPTER: { attempts: 0 }
     # 启动对齐关闭：新会话保持宿主默认/最近一次选择（agent-default-model）。
     startup:
       preferTier: 0
@@ -328,9 +369,15 @@
       mode: declared
       timeoutMs: 20000
       cacheTtlMs: 60000
+      # 同族互备优先：失败路由能在档位表中定位时，先只在它所在档内切换，档内确实
+      # 无可用候选（已尝试/冷却中/能力不兼容/不可解析）才退回「从第 1 档向上扫」。
+      # 打开后：opencode-go 失败先切同档的 ais-2dsglm（同为 deepseek-v4.1-flash），
+      # 不再直接升到第 1 档的 gpt-5.6-sol；整档耗尽才升档。
+      # 关闭（默认 false）时保持 v3.4.0 旧语义。
+      sameTierFirst: true
     # 档位按模型族对齐：同档条目是同 model 的备用路由。
-    # 限制：pickCandidate 每次切换都从第 1 档向上扫，故 tier1 的模型族
-    # 会吸收低档全部失败 —— 同一时刻只有一个族能获得族内互备。
+    # 说明：sameTierFirst=true 时低档失败优先在本档内互备；该档整体耗尽才升到第 1 档
+    # （因此同一时刻仍是“一个族受益”，但受益者是失败方所在的族）。
     tiers:
       - tier: 1
         enabled: true

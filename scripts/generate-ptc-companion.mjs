@@ -10,14 +10,16 @@ import { stdin as input, stdout as output } from 'node:process';
 export const ANSWERS_SCHEMA = 'ptc-public-answers/v1';
 export const COMPANION_SCHEMA = 'ptc-public-companion/v1';
 export const RUNTIME_SCHEMA = 'ptc-public-runtime/v1';
-export const SKILL_VERSION = '1.0.0';
+export const SKILL_VERSION = '1.2.0';
 export const DEFAULTS = {
   provider: {
     controller: 'codex-relay', controllerModel: 'gpt-5.6-sol', controllerEffort: 'high',
     fallbackProvider: 'openai-codex', fallbackModel: 'gpt-5.6-sol',
     executeProvider: 'ais-2dsglm', executeModel: 'deepseek-v4.1-flash',
     docsProvider: 'kimi-coding', docsModel: 'kimi-code/k3-256k',
-    designModel: 'claude-opus-5', designFallbackModel: 'claude-opus-4-8'
+    designAstraProvider: 'codex-relay', designAstraModel: 'gpt-6-astra',
+    designFiveFiveProvider: 'tokeniss', designFiveFiveModel: 'claude-opus-5-5',
+    designModel: 'claude-opus-5', designLegacyModel: 'claude-opus-4-8'
   },
   cli: {
     opencode: { pathEnv: 'PTC_CLI_OPENCODE', defaultCommand: 'opencode' },
@@ -26,7 +28,7 @@ export const DEFAULTS = {
   },
   proxy: { enabled: false, urlEnv: 'HTTPS_PROXY', noProxyEnv: 'NO_PROXY', keepCursorProxy: false },
   features: { opencode: true, kimiDocs: true, cursor: false, claudePlan: true, presentation: true },
-  acpPlugin: 'upstream'
+  acpPlugin: 'resilient'
 };
 /** The two interchangeable ACP subagent provider plugins the three ACP rows may target. */
 export const ACP_PLUGIN_NAMES = {
@@ -188,8 +190,9 @@ function selectAcpRows(source, pluginName) {
         named = true;
         continue;
       }
-      output.push(next);
-      if (named && nextIndent === indent.length + 2 && trimmed === 'config:') output.push(...acpLadderLines(indent + '    '));
+       if (pluginName === ACP_PLUGIN_NAMES.upstream && nextIndent === indent.length + 4 && (Object.hasOwn(ACP_LADDER_DEFAULTS, trimmed.split(':', 1)[0]) || trimmed.startsWith(ACP_GUARD_FIELD + ':'))) continue;
+       output.push(next);
+       if (named && nextIndent === indent.length + 2 && trimmed === 'config:' && pluginName === ACP_PLUGIN_NAMES.resilient && !source.includes('processStartTimeoutMs:')) output.push(...acpLadderLines(indent + '    '));
     }
     if (!named) throw new Error('public DSH bundle ACP row ' + header[2] + ' declares no name field');
     rewritten++;
@@ -236,10 +239,12 @@ export function renderPatch(inputAnswers) {
     '  config:', ...acpLadder, '    providerName: cursor-grok', '    command: ' + shell, '    args:', '      - ' + flag,
     '      - ' + cursor,
     '    permission: allow', '    env:', '      no_proxy: ' + noProxy, ...proxyEnv, '',
+    '- id: subagent-claude-opus55-plan', "  name: '@deepseek-ai/dsh-subagent-claude-code'", '  disabled: ' + featureDisabled('PTC_FEATURE_CLAUDE_PLAN', a.features.claudePlan),
+    '  config:', '    providerName: claude-opus55-plan', '    model: ' + jsEnv('PTC_CLAUDE_OPUS55_MODEL', a.provider.designFiveFiveModel), '    permissionMode: plan',
+    '    env:', '      CLAUDE_CONFIG_DIR: !!js ' + envLookup('PTC_CLAUDE_OPUS55_CONFIG_DIR') + " || (((process['env'].USERPROFILE || process['env'].HOME || '') + '/.claude-profiles/tokeniss'))", '',
     '- id: subagent-claude-opus5-plan', "  name: '@deepseek-ai/dsh-subagent-claude-code'", '  disabled: ' + featureDisabled('PTC_FEATURE_CLAUDE_PLAN', a.features.claudePlan),
-    '  config:', '    providerName: claude-opus5-plan', '    model: ' + jsEnv('PTC_CLAUDE_DESIGN_MODEL', a.provider.designModel), '    permissionMode: plan', '',
-    '- id: subagent-claude-opus48-plan', "  name: '@deepseek-ai/dsh-subagent-claude-code'", '  disabled: ' + featureDisabled('PTC_FEATURE_CLAUDE_PLAN', a.features.claudePlan),
-    '  config:', '    providerName: claude-opus48-plan', '    model: ' + jsEnv('PTC_CLAUDE_FALLBACK_MODEL', a.provider.designFallbackModel), '    permissionMode: plan', ''
+    '  config:', '    providerName: claude-opus5-plan', '    model: ' + jsEnv('PTC_CLAUDE_OPUS5_MODEL', a.provider.designModel), '    permissionMode: plan',
+    '    env:', '      CLAUDE_CONFIG_DIR: !!js ' + envLookup('PTC_CLAUDE_OPUS5_CONFIG_DIR') + " || (((process['env'].USERPROFILE || process['env'].HOME || '') + '/.claude-profiles/relay'))", ''
   ].join('\n');
 }
 export function renderRuntimeConfig(inputAnswers) {
@@ -249,7 +254,22 @@ export function renderRuntimeConfig(inputAnswers) {
     controller: { provider: a.provider.controller, model: a.provider.controllerModel, effort: a.provider.controllerEffort, fallbackProvider: a.provider.fallbackProvider, fallbackModel: a.provider.fallbackModel },
     execute: { provider: a.provider.executeProvider, model: a.provider.executeModel },
     docs: { provider: a.provider.docsProvider, model: a.provider.docsModel },
-    design: { model: a.provider.designModel, fallbackModel: a.provider.designFallbackModel }
+    design: {
+      astraProvider: a.provider.designAstraProvider, astraModel: a.provider.designAstraModel, astraExecutor: 'subagent_codex_astra',
+      opusProvider: 'anthropic-relay', opusModel: a.provider.designModel, opusExecutor: 'subagent_claude_opus55_plan',
+      opusUnavailableAction: 'report_opus_unavailable',
+      opusLadder: [
+        { provider: a.provider.designFiveFiveProvider, model: a.provider.designFiveFiveModel, executor: 'subagent_claude_opus55_plan', note: '5.5 档；由该 provider 的 Claude Code 配置目录提供，使用前须核验该来源在售并回显同一 model id' },
+        { provider: 'anthropic-relay', model: a.provider.designModel, executor: 'subagent_claude_opus5_plan', note: '5 档；由 relay 配置目录提供' },
+        { provider: 'anthropic-relay', model: a.provider.designLegacyModel, executor: 'subagent_claude_opus5_plan', note: '与上一档共用 5 档执行档，需把 PTC_CLAUDE_OPUS5_MODEL 设为该 id 才能执行（设备启动期开关，不能与上一档同时生效）' }
+      ],
+      opusLadderNote: '按首条命中降级：5.5 -> 5 -> 4.8；三档都不可用时如实报告 Opus 不可用，不自动改用 Sonnet。provider 列表是时间点快照，使用前应重新核验。',
+      opusExecutorCoupling: '两个执行档各绑一个独立 Claude Code 配置目录（CLAUDE_CONFIG_DIR）。不能用环境变量分后端：Claude Code 的 settings.json 里 env 优先级高于进程环境，实测无效凭据仍会成功。配置目录含各来源凭据，属设备本地状态，不入库。执行档自身不读路由梯子的 provider/model；切档靠配置目录与 PTC_CLAUDE_OPUS5_MODEL。',
+      opusExecutors: {
+        five_five: { tool: 'subagent_claude_opus55_plan', providerName: 'claude-opus55-plan', defaultModel: a.provider.designFiveFiveModel, configDirEnv: 'PTC_CLAUDE_OPUS55_CONFIG_DIR', defaultConfigDir: '~/.claude-profiles/tokeniss' },
+        five: { tool: 'subagent_claude_opus5_plan', providerName: 'claude-opus5-plan', defaultModel: a.provider.designModel, configDirEnv: 'PTC_CLAUDE_OPUS5_CONFIG_DIR', defaultConfigDir: '~/.claude-profiles/relay' }
+      }
+    }
   };
 }
 export function renderBundleFrom(source, inputAnswers) {
@@ -257,7 +277,6 @@ export function renderBundleFrom(source, inputAnswers) {
   const marker = /provider: codex-relay\r?\n\s+model: gpt-5\.6-sol\r?\n\s+reasoningEffort: high/;
   if (!marker.test(source)) throw new Error('public DSH bundle controller marker is missing');
   const rendered = source.replace(marker, 'provider: ' + a.provider.controller + '\n                    model: ' + a.provider.controllerModel + '\n                    reasoningEffort: ' + a.provider.controllerEffort);
-  if (a.acpPlugin === 'upstream') return rendered;
   return selectAcpRows(rendered, ACP_PLUGIN_NAMES[a.acpPlugin]);
 }
 export function renderBundle(inputAnswers) {
@@ -279,7 +298,7 @@ function renderEnvExample(inputAnswers) {
   const a = normalizeAnswers(inputAnswers);
   const lines = ['# Variable names selected by the public PTC questionnaire. Values stay local.', '# Executable paths are optional; command-name fallbacks are used when blank.'];
   for (const key of CLI_KEYS) lines.push(a.cli[key].pathEnv + '=');
-  lines.push('', '# Proxy source variables. The generator never asks for or writes proxy URL values.', a.proxy.urlEnv + '=', a.proxy.noProxyEnv + '=', '', '# Optional runtime overrides supported by the DSH bundle.', 'PTC_OPENCODE_CONFIG_CONTENT=', 'PTC_OPENCODE_ACP=', 'PTC_CURSOR_ACP=', 'PTC_KIMI_DOCS_MODEL=', 'PTC_CLAUDE_DESIGN_MODEL=', 'PTC_CLAUDE_FALLBACK_MODEL=', 'PTC_FEATURE_OPENCODE=', 'PTC_FEATURE_KIMI_DOCS=', 'PTC_FEATURE_CURSOR=', 'PTC_FEATURE_CLAUDE_PLAN=', 'PTC_FEATURE_PRESENTATION=', '# Optional self-provider switch; set to on only when the target profile lacks a bundle that provides agentPresets.', 'PTC_PROVIDE_PRESET_REGISTRY=', '');
+  lines.push('', '# Proxy source variables. The generator never asks for or writes proxy URL values.', a.proxy.urlEnv + '=', a.proxy.noProxyEnv + '=', '', '# Optional runtime overrides supported by the DSH bundle.', 'PTC_OPENCODE_CONFIG_CONTENT=', 'PTC_OPENCODE_ACP=', 'PTC_CURSOR_ACP=', 'PTC_KIMI_DOCS_MODEL=', 'PTC_CLAUDE_OPUS55_MODEL=', 'PTC_FEATURE_OPENCODE=', 'PTC_FEATURE_KIMI_DOCS=', 'PTC_FEATURE_CURSOR=', 'PTC_FEATURE_CLAUDE_PLAN=', 'PTC_FEATURE_PRESENTATION=', '# Optional self-provider switch; set to on only when the target profile lacks a bundle that provides agentPresets.', 'PTC_PROVIDE_PRESET_REGISTRY=', '');
   lines.push(
     '# Graded ACP timeout ladder. Only the resilient plugin reads these; the upstream plugin has no',
     '# timeout field and ignores them silently. Blank means the emitted default is used.',

@@ -10,8 +10,12 @@
     "executeModel": "deepseek-v4.1-flash",
     "docsProvider": "kimi-coding",
     "docsModel": "kimi-code/k3-256k",
+    "designAstraProvider": "codex-relay",
+    "designAstraModel": "gpt-6-astra",
+    "designFiveFiveProvider": "tokeniss",
+    "designFiveFiveModel": "claude-opus-5-5",
     "designModel": "claude-opus-5",
-    "designFallbackModel": "claude-opus-4-8"
+    "designLegacyModel": "claude-opus-4-8"
   },
   "cli": {
     "opencode": {
@@ -40,5 +44,5 @@
     "claudePlan": true,
     "presentation": true
   },
-  "acpPlugin": "upstream"
+  "acpPlugin": "resilient"
 }

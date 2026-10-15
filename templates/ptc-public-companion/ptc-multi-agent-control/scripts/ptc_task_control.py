@@ -36,8 +36,8 @@ TRANSITIONS = {
 ROUTES = {
     "controller-codex",
     "controller-kimi",
-    "design-opus5",
-    "design-opus48",
+    "design-codex-astra",
+    "design-opus55",
     "execute-dsv41-flash",
     "continuous-cursor-grok",
     "docs-kimi",

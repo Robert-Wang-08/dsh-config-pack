@@ -34,6 +34,9 @@
         recoverySettleMs: 5000
         env:
           OPENCODE_CONFIG_CONTENT: !!js process['env'].DSHPACK_OPENCODE_CONFIG || '{"model":"ais1dsglm/deepseek-v4.1-flash"}'
+          # 默认数据目录在 ~/.local/share/opencode；workspace-write 会拒绝该目录。
+          # 临时状态改落工作区 .ptc/acp-tmp（可用 PTC_ACP_TMP 覆盖根目录）。
+          XDG_DATA_HOME: !!js process['env'].PTC_ACP_TMP || ((process['env'].DSH_WORKSPACE || process.cwd()) + '/.ptc/acp-tmp/opencode')
 
     - id: subagent-acp-kimi
       name: '@local/dsh-subagent-acp-resilient'
@@ -48,6 +51,10 @@
         absoluteTimeoutMs: 1800000
         activityExtensionMs: 60000
         recoverySettleMs: 5000
+        # KIMI_CODE_HOME 同时承载凭据和会话。仅显式设置 PTC_ACP_TMP 时启用重定向；
+        # 启用前需运行 ptc-multi-agent-control/scripts/acp_workspace_tmp.py 预置凭据链接/副本。
+        env:
+          KIMI_CODE_HOME: !!js process['env'].PTC_ACP_TMP && ((process['env'].DSH_WORKSPACE || process.cwd()) + '/.ptc/acp-tmp/kimi-home') || ''
 
     # cursor：默认关闭。cursor-agent 的代理路径把 HTTP/2 ping 超时写死 5s，经代理时传输不稳；
     # 下面把 cursor 域名追加进小写 no_proxy（cursor-agent 只读小写，且按 host 后缀匹配）。

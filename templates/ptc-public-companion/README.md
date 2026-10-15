@@ -14,7 +14,7 @@ The generator intentionally does not collect credential fields, shared-source fi
 
 ## ACP plugin choice and the timeout ladder
 
-The three ACP provider rows target exactly one plugin, selected by the `acpPlugin` answer (default `upstream`):
+The three ACP provider rows target exactly one plugin, selected by the `acpPlugin` answer (default `resilient`):
 
 - `upstream` — `@deepseek-ai/dsh-subagent-acp` (public npm). It declares no timeout field at all: a hung ACP child
   can hold the delegating tool call open, because its `dispose()` waits for child exit without a bound.
@@ -29,11 +29,9 @@ The selection is therefore applied everywhere the rows appear: the generated `ds
 skill's own `assets/dsh-bundle/cordis.patch.yml` copy, and the generated `ptc.local.patch.yml` (a later `- id:`
 layer replaces the row, so it must repeat both the name and the ladder).
 
-The resilient plugin currently lives in a private Git repository
-(`github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1`), and a public template must not hard-depend on a
-private repository, so the public default stays on `upstream`. Selecting `resilient` is a local opt-in; install
-that package into the profile root as well, because DSH resolves every row `name:` from the profile, not from the
-bundle. Coherence rules the resilient plugin enforces at load: `processStartTimeoutMs <= startupTimeoutMs`,
+The resilient plugin is distributed from the public Git repository
+(`github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1`) and is declared by both public bundle package manifests. The public default is therefore `resilient`; `upstream` remains available as a compatibility option. DSH still requires the selected provider package to be resolvable from the profile root, so a Git install must complete dependency installation before startup.
+Coherence rules the resilient plugin enforces at load: `processStartTimeoutMs <= startupTimeoutMs`,
 `softTimeoutMs <= absoluteTimeoutMs <= complexHardTimeoutMs`, `complexSoftTimeoutMs <= complexHardTimeoutMs`, and
 every value a positive finite number; `idleWarnMs > idleTimeoutMs` is clamped with a warning instead of rejected.
 

@@ -1,15 +1,15 @@
 ---
 name: ptc-multi-agent-control
-description: 通用 PTC 多代理主控模式。提供可观测路由、追加式账本、worker receipt 和产出契约；适用于跨工作区的多模型协作。
+description: 通用 PTC 多代理控制面。默认由 codex-relay/gpt-6-astra 承担设计，只在高难度独立复核或全新领域自顶向下设计时使用 Opus 5.5；同时提供确定性路由、追加式账本、worker receipt 和产出契约。
 origin: self
-updated: 2026-10-13
-version: 1.0.0
+updated: 2026-10-14
+version: 1.2.0
 managed-by: git
 source: dsh-config-pack
 asset-type: skill
 asset-id: ptc-multi-agent-control
 status: active
-changelog: "1.0.0: public Git template with complete routing, ledger, validation, and DSH bundle assets."
+changelog: "1.2.0: Opus review becomes an explicit ladder (5.5 -> 5 -> 4.8) with two Claude Code config dirs and PTC_CLAUDE_OPUS5_MODEL tier switch; 1.1.0: default design to codex-relay/gpt-6-astra; keep one Opus 5.5 plan reviewer only for high-risk or explicit top-down greenfield design."
 ---
 
 # PTC 多代理主控
@@ -36,18 +36,18 @@ changelog: "1.0.0: public Git template with complete routing, ledger, validation
 
 | 工作类型 | 首选 | 降级 |
 | --- | --- | --- |
-| 主控、拆分、验收、收口 | `codex-relay/gpt-5.6-sol` + `high` | `openai-codex/gpt-5.6-sol`，再降级 `kimi-coding/k3-256k`；没有可验证的 K3 Max 时不得冒称 Max |
-| 复杂方案、多链路推理、冲突仲裁（高难度设计） | GPT-5.6 Sol 主控设计（`codex-relay` → `openai-codex`） | `subagent_claude_opus5_plan`，必要时 `subagent_claude_opus48_plan` 复核 |
-| 模糊设计、高不确定性但需先发散 | `subagent_claude_opus5_plan` 设计 | GPT 组（`codex-relay` → `openai-codex`）复核 |
-| 一般设计 | GPT 组设计/主控（`codex-relay` → `openai-codex`） | DS 组（`ais-2dsglm/deepseek-v4.1-flash`）复核 |
+| 主控、拆分、验收、收口 | `codex-relay/gpt-5.6-sol` + `high` | `openai-codex/gpt-5.6-sol`，再降级 `kimi-coding/k3-256k`（Max 为 `reasoning_effort=max`，不是模型名） |
+| 一般设计、模糊设计、高不确定性发散 | `subagent_codex_astra` + `codex-relay/gpt-6-astra` | GPT-5.6 Sol 主控或官方 Codex；必要时 DS 独立复核 |
+| 高难度设计、冲突仲裁 | `subagent_codex_astra` + `codex-relay/gpt-6-astra` | `subagent_claude_opus55_plan` 作一次独立只读复核（不可用时按 `opusLadder` 降到 `subagent_claude_opus5_plan`） |
+| 全新领域且明确要求自顶向下设计 | `subagent_codex_astra` + `codex-relay/gpt-6-astra` | `subagent_claude_opus55_plan` 作一次独立只读复核（不可用时按 `opusLadder` 降到 `subagent_claude_opus5_plan`） |
 | 验证 | DS 组（`ais-2dsglm/deepseek-v4.1-flash`） | `opencode-go/deepseek-v4.1-flash`，允许人工指定 |
 | 开发、定点查询、字段核查、单点修改 | `ais-2dsglm/deepseek-v4.1-flash` | `opencode-go/deepseek-v4.1-flash`，允许人工指定并提升优先级 |
 | 同一代码面的长连续修改 | `subagent_cursor_grok` / Grok | Cursor/Grok 不可用时转 `subagent_opencode_dsv41` |
 | 正式说明、总结、大量背景文档汇总 | `subagent_kimi_docs` + `kimi-code/k3-256k` | 主控整合并复核事实 |
 
-术语落地（避免“GPT 组/DS 组”停留在口号）：**GPT 组** = 主控 provider `codex-relay` → `openai-codex`，或子代理 `subagent_codex_relay`（relay，spawn + agentOptions）→ `subagent_codex`（官方 app-server）；**DS 组** = `ais-2dsglm/deepseek-v4.1-flash` → `opencode-go/deepseek-v4.1-flash`（spawn 或 `subagent_opencode_dsv41`）。官方 Codex 与 Relay 是两个独立工具，**不互为自动重派发**：`subagent_codex` 因额度/认证失败时，主控需显式改派 `subagent_codex_relay`（反之亦然）。主控会话自身 provider 失败无法在同会话内热切换，需新建/重启会话后按主控链重选。
+术语落地（避免“GPT 组/DS 组”停留在口号）：**GPT 组** = 主控 provider `codex-relay` → `openai-codex`，或子代理 `subagent_codex_relay`（relay，spawn + agentOptions）→ `subagent_codex`（官方 app-server）；**DS 组** = `ais-2dsglm/deepseek-v4.1-flash` → `opencode-go/deepseek-v4.1-flash`（spawn 或 `subagent_opencode_dsv41`）。官方 Codex 与 Relay 是两个独立工具，**不互为自动重派发**：`subagent_codex` 因额度/认证失败时，主控需显式改派 `subagent_codex_relay`（反之亦然）。主控会话自身 provider 失败无法在同会话内热切换，需新建/重启会话后按主控链重选。设计档另有专用工具 `subagent_codex_astra`（绑定 `codex-relay/gpt-6-astra`）；`subagent_codex_relay` 固定绑定 `gpt-5.6-sol`，两者不可互相冒充。
 
-路由中的“复核”必须是独立的第二遍检查，不是让同一模型复述原方案。默认主控 GPT 组按 `codex-relay → openai-codex` 选择，两个 GPT provider 都不可用时才用 `kimi-code/k3-256k`。高难度设计由 GPT 组设计、Opus 查漏；模糊设计由 Opus 先设计、GPT 组复核；一般设计由 GPT 组设计、DS 组复核。人工指定 provider/model 时，以人工选择覆盖默认首选，但仍须记录真实 provider/model。
+路由中的“复核”必须是独立的第二遍检查，不是让同一模型复述原方案。设计默认由 `codex-relay/gpt-6-astra` 完成；一般设计和模糊设计都不自动调用 Claude。只有高难度冲突仲裁，或任务明确标记为全新领域的 `top_down` 设计时，才加入一次 `subagent_claude_opus55_plan` 独立复核。当前 `anthropic-relay` 广告的实际模型 id 是 `claude-opus-5`，因此“Opus 5.5”是本路由的能力/工具标签，receipt 必须记录 provider 返回的真实模型 id，不得伪造 `claude-opus-5.5`。
 
 运行时命名空间可不同：DSH 主会话可能使用 `kimi-coding/...`，Kimi CLI/ACP 使用 `kimi-code/...`；OpenCode provider id 与 DSH route 也可能不同。应记录实际 provider/model，不靠名字推断成功。
 
@@ -57,7 +57,7 @@ changelog: "1.0.0: public Git template with complete routing, ledger, validation
 
 路由不再只靠“复杂/特别复杂”的语感。先把工作项归一化成 12 个输入：是否写文件、文件数、不确定性、是否仲裁、验证负担、上下文行数、是否跨目录、失败代价、工作种类、是否必须 ACP、是否后台运行、显式设计模式（可选）；再由纯函数按 R1→R9 首条命中原则输出唯一的 tier、route、executor、model、effort、shape、候选链、信封字段和验证要求。
 
-权威实现为 `scripts/ptc_route.py`；固定 8 值 route enum 直接从 `ptc_task_control.ROUTES` 导入，不改 receipt schema。快速调用：
+权威实现为 `scripts/ptc_route.py`；route enum 直接从 `ptc_task_control.ROUTES` 导入，并与 receipt schema 同步。`SKILL.md` 负责解释政策和使用边界，但不会被 Python 在运行时解析：把 R1–R9 只写成自然语言会产生歧义、无法做输入校验，也无法用单测冻结首条命中顺序。模型/provider/executor 等可变值放在 `assets/public-runtime-config.json`，而优先级、条件和输出契约保留为可测试的代码；这就是“配置驱动数据 + 代码执行规则”的边界。快速调用：
 
 ~~~powershell
 $route = Join-Path $SKILL_ROOT 'scripts/ptc_route.py'
@@ -66,7 +66,7 @@ python $route --input-json '{"writes_files":true,"file_count":1,"uncertainty":"l
 
 优先级固定：跨目录 → 高失败代价 → 文档 → 仲裁型设计 → 独立设计 → ≥6 文件 → 2–5 文件连续修改 → 单点/只读定点执行 → 主控兜底。设计档只读；外部 ACP 均 one-shot；只有进程内 spawn 且后台启动才标为 continuable。worker 的实际 provider/model 必须写入 receipt 的 `executor/model`，route 只代表已登记的层级/首选族，且 receipt.route 必须与 subtask.route 一致。
 
-候选链：模糊 design = **Opus 5 设计 → GPT 组（codex-relay → openai-codex）复核 → Opus 4.8**；高难度 design = **GPT 组设计 → Opus 5/4.8 复核**；一般 design = **GPT 组 → DS 组（ais-2dsglm → 人工可提 opencode-go）**；execute = ais-2dsglm spawn → 人工指定时 opencode-go → controller；continuous = Cursor/Grok → OpenCode Go → controller；docs = Kimi K3-256K → controller；controller = codex-relay → openai-codex → kimi-code/k3-256k → local-controller。仅 transport 失败重试一次，其余类型直接跨 provider 或回主控。
+候选链：一般/模糊 design = **codex-relay/gpt-6-astra → GPT-5.6 Sol 主控/官方 Codex → DS 组**；高难度或显式 `top_down` design = **codex-relay/gpt-6-astra → Opus 5.5 独立复核 → GPT 后备**。Opus 不再是模糊设计默认入口，Opus 4.8 已移除。execute = ais-2dsglm spawn → 人工指定时 opencode-go → controller；continuous = Cursor/Grok → OpenCode Go → controller；docs = Kimi K3-256K → controller；controller = codex-relay → openai-codex → kimi-code/k3-256k → local-controller。仅 transport 失败重试一次，其余类型直接跨 provider 或回主控。
 
 **主控 provider 失败不会自动热切换。** 候选链只在主控能继续执行时生效；若主控模型本身报错（例如 WebSocket error / `PI_AI_ERROR`）、会话中断或 provider 不可用，路由 CLI 无法接管当前会话——必须由会话层新建/重启会话并选择后备 provider（`openai-codex/gpt-5.6-sol`，再 `kimi-coding/k3-256k`），并在账本登记 `risk` 事件说明降级原因。不要假设 `ptc_route.py` 会重连、重试或热切换主控。
 
@@ -157,8 +157,10 @@ python $ctl artifact-add --task-id <task-id> --path <workspace-relative-path> --
 - `PTC_CURSOR_ACP`：Cursor 完整 ACP 命令串，**默认 `cursor-agent --model auto acp`——让 Cursor 自选模型**；要指定模型时改成 `cursor-agent --model grok-4.7-high acp` 等（模型名规则见硬约束 3）
 - `PTC_CURSOR_KEEP_PROXY`：设为非空值则让 Cursor 域名继续走代理（默认绕开，理由见硬约束 5）
 - `PTC_KIMI_DOCS_MODEL`：Kimi 模型别名，默认 `kimi-code/k3-256k`
-- `PTC_CLAUDE_DESIGN_MODEL`
-- `PTC_CLAUDE_FALLBACK_MODEL`
+- `PTC_CLAUDE_OPUS55_MODEL`：5.5 档执行工具（`subagent_claude_opus55_plan`）的模型 id，默认 `claude-opus-5-5`
+- `PTC_CLAUDE_OPUS5_MODEL`：5 / 4.8 档执行工具（`subagent_claude_opus5_plan`）的模型 id，默认 `claude-opus-5`；设为 `claude-opus-4-8` 即切到 4.8 档（设备启动期开关，不能与 5 档同时生效）
+- `PTC_CLAUDE_OPUS55_CONFIG_DIR` / `PTC_CLAUDE_OPUS5_CONFIG_DIR`：两个执行档各自的 Claude Code 配置目录（默认 `~/.claude-profiles/tokeniss` / `~/.claude-profiles/relay`）。Claude Code 的 `settings.json` 里 env 优先级高于进程环境，所以隔离必须靠配置目录，不能靠环境变量分后端
+- Opus 复核按 `assets/public-runtime-config.json` 的 `opusLadder` 首条命中降级：5.5 -> 5 -> 4.8；三档都不可用时如实报告 Opus 不可用，不自动改用 Sonnet。档位到 provider/model 的映射属设备本地配置，换档前须核验该来源在售并回显同一 model id
 
 Kimi 的可用别名以 `kimi provider list` 与 `~/.kimi-code/config.toml` 为权威（**别名必须带 provider 前缀**，
 `-m` 收的就是这个名字；`kimi acp` 没有 `--list-models`）：
@@ -249,7 +251,7 @@ python scripts/acp_smoke.py --command "some-agent acp"
 
 **「实际路由」必须是观测值。** 它与 `session-start --controller-model` 必须来自同一次 `check-model.py` 观测。若主控既不是 Codex 族、也不在指定清单内，**据实写它的 provider/model 原文**——不得用文档默认值替代、不得含糊成「Codex」、不得据 tier 表反推。
 
-**需要升档时才升档。** 若第 0 步显示主控非 Codex 族，则复杂方案设计**不得**由当前主控直接拍板：按本 skill 的设计链调用升档 Agent（`subagent_claude_opus5_plan`，必要时 `subagent_claude_opus48_plan`）做 design 分析；两者均为只读档，产出正文由主控落盘。
+**需要升档时才升档。** 设计优先使用 `codex-relay/gpt-6-astra`；一般与模糊设计不调用 Claude。只有高难度复核，或显式标记为全新领域自顶向下设计时，才调用只读档 `subagent_claude_opus55_plan`，产出正文仍由主控落盘。
 
 **账本命令必须按这个顺序**（顺序错了会被状态机挡住，细节见下）：
 

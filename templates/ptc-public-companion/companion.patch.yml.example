@@ -39,18 +39,22 @@
     env:
       no_proxy: !!js (process['env']["NO_PROXY"] || '').split(',').concat('cursor.sh').filter(Boolean).join(',')
 
+- id: subagent-claude-opus55-plan
+  name: '@deepseek-ai/dsh-subagent-claude-code'
+  disabled: !!js process['env'].PTC_FEATURE_CLAUDE_PLAN === 'off'
+  config:
+    providerName: claude-opus55-plan
+    model: !!js process['env']["PTC_CLAUDE_OPUS55_MODEL"] || "claude-opus-5-5"
+    permissionMode: plan
+    env:
+      CLAUDE_CONFIG_DIR: !!js process['env']["PTC_CLAUDE_OPUS55_CONFIG_DIR"] || (((process['env']["USERPROFILE"] || process['env']["HOME"] || "") + "/.claude-profiles/tokeniss"))
+
 - id: subagent-claude-opus5-plan
   name: '@deepseek-ai/dsh-subagent-claude-code'
   disabled: !!js process['env'].PTC_FEATURE_CLAUDE_PLAN === 'off'
   config:
     providerName: claude-opus5-plan
-    model: !!js process['env']["PTC_CLAUDE_DESIGN_MODEL"] || "claude-opus-5"
+    model: !!js process['env']["PTC_CLAUDE_OPUS5_MODEL"] || "claude-opus-5"
     permissionMode: plan
-
-- id: subagent-claude-opus48-plan
-  name: '@deepseek-ai/dsh-subagent-claude-code'
-  disabled: !!js process['env'].PTC_FEATURE_CLAUDE_PLAN === 'off'
-  config:
-    providerName: claude-opus48-plan
-    model: !!js process['env']["PTC_CLAUDE_FALLBACK_MODEL"] || "claude-opus-4-8"
-    permissionMode: plan
+    env:
+      CLAUDE_CONFIG_DIR: !!js process['env']["PTC_CLAUDE_OPUS5_CONFIG_DIR"] || (((process['env']["USERPROFILE"] || process['env']["HOME"] || "") + "/.claude-profiles/relay"))

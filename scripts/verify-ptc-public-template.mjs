@@ -34,12 +34,12 @@ const skillJson = json(join(templateRoot, 'ptc-multi-agent-control', 'skill.json
 const runtime = json(join(templateRoot, 'ptc-multi-agent-control', 'assets', 'public-runtime-config.json'), 'public runtime config');
 const bundlePackage = json(join(templateRoot, 'dsh-bundle', 'package.json'), 'bundle package');
 const skillBundlePackage = json(join(templateRoot, 'ptc-multi-agent-control', 'assets', 'dsh-bundle', 'package.json'), 'skill bundle package');
-const expectedIds = ['preset-ptc-multi-agent', 'subagent-acp-opencode-dsv41', 'subagent-acp-kimi-docs', 'subagent-acp-cursor-grok', 'subagent-claude-opus5-plan', 'subagent-claude-opus48-plan', 'tool-subagent-opencode-dsv41', 'tool-subagent-kimi-docs', 'tool-subagent-cursor-grok', 'tool-subagent-claude-opus5-plan', 'tool-subagent-claude-opus48-plan', 'tool-presentation', 'ptc-agent-preset-registry'];
+const expectedIds = ['preset-ptc-multi-agent', 'subagent-acp-opencode-dsv41', 'subagent-acp-kimi-docs', 'subagent-acp-cursor-grok', 'subagent-claude-opus55-plan', 'subagent-claude-opus5-plan', 'tool-subagent-opencode-dsv41', 'tool-subagent-kimi-docs', 'tool-subagent-cursor-grok', 'tool-subagent-claude-opus55-plan', 'tool-subagent-claude-opus5-plan', 'tool-presentation', 'ptc-agent-preset-registry'];
 if (contract) {
   if (contract.schema_version !== 'ptc-delegated-contract/v1') fail('unexpected delegated contract schema');
   const rows = contract.rows || [];
   const ids = rows.map((row) => row.id);
-  if (rows.length !== expectedIds.length) fail('delegated contract must contain exactly 13 rows');
+  if (rows.length !== expectedIds.length) fail('delegated contract must contain exactly ' + expectedIds.length + ' rows');
   if (new Set(ids).size !== ids.length) fail('delegated contract contains duplicate ids');
   if (JSON.stringify(ids) !== JSON.stringify(expectedIds)) fail('delegated contract ids/order do not match public PTC interface');
   for (const row of rows) for (const key of ['id', 'role', 'provider', 'consumer', 'validation']) if (typeof row[key] !== 'string' || !row[key].trim()) fail('contract row missing ' + key + ': ' + row.id);
@@ -86,7 +86,7 @@ for (const id of expectedIds) {
   const count = bundle.split(/\r?\n/).filter((line) => line.trim() === '- id: ' + id).length;
   if (count !== 1) fail('public DSH bundle must declare delegated id ' + id + ' exactly once');
 }
-for (const id of ['subagent-acp-opencode-dsv41', 'subagent-acp-kimi-docs', 'subagent-acp-cursor-grok', 'subagent-claude-opus5-plan', 'subagent-claude-opus48-plan']) {
+for (const id of ['subagent-acp-opencode-dsv41', 'subagent-acp-kimi-docs', 'subagent-acp-cursor-grok', 'subagent-claude-opus55-plan', 'subagent-claude-opus5-plan']) {
   const count = patch.split(/\r?\n/).filter((line) => line.trim() === '- id: ' + id).length;
   if (count !== 1) fail('example patch must declare local override ' + id + ' exactly once');
 }

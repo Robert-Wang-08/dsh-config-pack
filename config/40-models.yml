@@ -45,8 +45,8 @@
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_ANTHROPIC_RELAY || 'CLAUDE_RELAY_TOKEN'
         models:
           - id: claude-opus-5
-          - id: claude-sonnet-5
           - id: claude-opus-4-8
+          - id: claude-sonnet-5
       # 官方 Codex：OAuth 凭据，需在该设备 Web Models 页登录一次。
       openai-codex:
         displayName: OpenAI Codex (official)
@@ -79,12 +79,20 @@
     allowedModels:
       - provider: codex-relay
         model: gpt-5.6-sol
+      - provider: codex-relay
+        model: gpt-6-astra
       - provider: openai-codex
         model: gpt-5.6-sol
       - provider: ais-2dsglm
         model: deepseek-v4.1-flash
       - provider: opencode-go
         model: deepseek-v4.1-flash
+      - provider: kimi-coding
+        model: k3-256k
+      - provider: codex-relay
+        model: gpt-5.6
+      # Opus 降级链（5.5 -> 5 -> 4.8 -> 报告 Opus 不可用）。本包只声明 relay 的档位；
+      # 5.5 由设备本地 provider 提供时，请在设备本地白名单补 tokeniss/claude-opus-5-5。
       - provider: anthropic-relay
         model: claude-opus-5
       - provider: anthropic-relay

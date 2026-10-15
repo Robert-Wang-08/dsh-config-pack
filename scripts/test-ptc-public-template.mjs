@@ -23,18 +23,18 @@ for (const invalid of [{ credentials: {} }, { sharedSource: {} }, { timeouts: {}
   check('unsupported answer field rejected: ' + Object.keys(invalid)[0], rejected);
 }
 const custom = normalizeAnswers({
-  provider: { controller: 'controller-test', controllerModel: 'controller-model-test', controllerEffort: 'max', fallbackProvider: 'fallback-test', fallbackModel: 'fallback-model-test', executeProvider: 'execute-test', executeModel: 'execute-model-test', docsProvider: 'docs-test', docsModel: 'docs-model-test', designModel: 'design-model-test', designFallbackModel: 'design-fallback-test' },
+  provider: { controller: 'controller-test', controllerModel: 'controller-model-test', controllerEffort: 'max', fallbackProvider: 'fallback-test', fallbackModel: 'fallback-model-test', executeProvider: 'execute-test', executeModel: 'execute-model-test', docsProvider: 'docs-test', docsModel: 'docs-model-test', designAstraProvider: 'astra-provider-test', designAstraModel: 'astra-model-test', designModel: 'design-model-test' },
   cli: { opencode: { pathEnv: 'CUSTOM_OPENCODE', defaultCommand: 'open-code' }, cursor: { pathEnv: 'CUSTOM_CURSOR', defaultCommand: 'cursor-test' }, kimi: { pathEnv: 'CUSTOM_KIMI', defaultCommand: 'kimi-test' } },
   proxy: { enabled: true, urlEnv: 'CUSTOM_PROXY', noProxyEnv: 'CUSTOM_NO_PROXY', keepCursorProxy: true },
   features: { opencode: false, kimiDocs: false, cursor: true, claudePlan: false, presentation: false }
 });
 const patch = renderPatch(custom);
-for (const token of ['CUSTOM_OPENCODE', 'open-code', 'CUSTOM_CURSOR', 'cursor-test', 'CUSTOM_KIMI', 'kimi-test', 'CUSTOM_PROXY', 'CUSTOM_NO_PROXY', 'execute-model-test', 'docs-model-test', 'design-model-test', 'design-fallback-test']) check('custom patch consumes ' + token, patch.includes(token));
+for (const token of ['CUSTOM_OPENCODE', 'open-code', 'CUSTOM_CURSOR', 'cursor-test', 'CUSTOM_KIMI', 'kimi-test', 'CUSTOM_PROXY', 'CUSTOM_NO_PROXY', 'execute-model-test', 'docs-model-test', 'design-model-test']) check('custom patch consumes ' + token, patch.includes(token));
 check('local patch no longer declares a top-level tool-presentation override', !/- id: tool-presentation/.test(patch));
 const bundleTemplate = read(join(root, 'templates', 'ptc-public-companion', 'dsh-bundle', 'cordis.patch.yml'));
 check('presentation toggle lives on the bundle preset inner row', /- id: tool-presentation[\s\S]{0,200}disabled: !!js process\['env'\]\.PTC_FEATURE_PRESENTATION === 'off'/.test(bundleTemplate));
-const upstreamBundle = renderBundle({});
-const resilientBundle = renderBundle({ acpPlugin: 'resilient' });
+const upstreamBundle = renderBundle({ acpPlugin: 'upstream' });
+const resilientBundle = renderBundle({});
 const countLines = (text, line) => text.split(/\r?\n/).filter((entry) => entry.trim() === line).length;
 check('default bundle keeps the upstream ACP plugin on all three rows', (upstreamBundle.match(/name: '@deepseek-ai\/dsh-subagent-acp'/g) || []).length === 3);
 check('default bundle emits no ACP timeout ladder key', Object.keys(ACP_LADDER_DEFAULTS).every((field) => countLines(upstreamBundle, field + ':') === 0 && !new RegExp('^\\s*' + field + ':', 'm').test(upstreamBundle)) && !/^\s*guardWorkspaceReuse:/m.test(upstreamBundle));
@@ -50,13 +50,14 @@ const unsafeJs = resilientBundle.split(/\r?\n/).filter((line) => line.includes('
   return /:\s/.test(expression) || /^["'{[]/.test(expression) || expression.startsWith('!');
 });
 check('resilient bundle !!js scalars stay YAML-safe', unsafeJs.length === 0, unsafeJs.join('\n'));
-check('skill bundle copy follows the same plugin choice', renderSkillBundle({ acpPlugin: 'resilient' }).includes("name: '@local/dsh-subagent-acp-resilient'") && renderSkillBundle({}).includes("name: '@deepseek-ai/dsh-subagent-acp'"));
-check('resilient local patch repeats the plugin name and ladder', (renderPatch({ acpPlugin: 'resilient' }).match(/name: '@local\/dsh-subagent-acp-resilient'/g) || []).length === 3 && (renderPatch({ acpPlugin: 'resilient' }).match(/guardWorkspaceReuse/g) || []).length === 3 && !/guardWorkspaceReuse/.test(renderPatch({})));
+check('skill bundle copy follows the same plugin choice', renderSkillBundle({}).includes("name: '@local/dsh-subagent-acp-resilient'") && renderSkillBundle({ acpPlugin: 'upstream' }).includes("name: '@deepseek-ai/dsh-subagent-acp'"));
+check('resilient local patch repeats the plugin name and ladder', (renderPatch({}).match(/name: '@local\/dsh-subagent-acp-resilient'/g) || []).length === 3 && (renderPatch({}).match(/guardWorkspaceReuse/g) || []).length === 3 && !/guardWorkspaceReuse/.test(renderPatch({ acpPlugin: 'upstream' })));
 let rejectedPlugin = false; try { normalizeAnswers({ acpPlugin: 'unknown-plugin' }); } catch { rejectedPlugin = true; }
 check('unknown acpPlugin is rejected', rejectedPlugin);
 const runtime = renderRuntimeConfig(custom);
 check('runtime consumes controller and fallback', runtime.controller.provider === 'controller-test' && runtime.controller.fallbackModel === 'fallback-model-test');
 check('runtime consumes execute and docs providers', runtime.execute.provider === 'execute-test' && runtime.docs.provider === 'docs-test');
+check('runtime consumes Astra design provider and model', runtime.design.astraProvider === 'astra-provider-test' && runtime.design.astraModel === 'astra-model-test' && runtime.design.opusModel === 'design-model-test');
 const temp = mkdtempSync(join(tmpdir(), 'ptc-public-template-'));
 try {
   const answers = join(temp, 'answers.json');

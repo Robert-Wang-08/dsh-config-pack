@@ -50,6 +50,32 @@
     keyResetAt: '06:00'
     policyMode: same
     maxPolicyRetriesPerStep: 2
+    # 按失败类别的重试策略（切换 provider 之前的原地重试）。未列出的错误码一律立即切换，
+    # 保持旧语义，也保证额度类不会因为“默认值”被改成先重试。
+    #   TRANSPORT  连接/流中断（WebSocket error、socket hang up…）：等 5s 重试，5 次或 30s 预算用尽才切换；
+    #              observationWindowMs 内（连接活过 30s 才断）按“意外中断”处理，活过窗口外直接切换。
+    #   RATE_LIMIT 服务端限流：退避 15s 重试，3 次或 60s 预算。
+    #   SERVER     上游 5xx：3s 重试 2 次或 15s 预算。
+    #   QUOTA/AUTH/INVALID_CREDENTIAL/MISSING_CREDENTIAL/NO_ADAPTER：额度与凭据类，attempts 0 = 立即切换。
+    retryPolicies:
+      TRANSPORT:
+        attempts: 5
+        delayMs: 5000
+        budgetMs: 30000
+        observationWindowMs: 30000
+      RATE_LIMIT:
+        attempts: 3
+        delayMs: 15000
+        budgetMs: 60000
+      SERVER:
+        attempts: 2
+        delayMs: 3000
+        budgetMs: 15000
+      QUOTA: { attempts: 0 }
+      AUTH: { attempts: 0 }
+      INVALID_CREDENTIAL: { attempts: 0 }
+      MISSING_CREDENTIAL: { attempts: 0 }
+      NO_ADAPTER: { attempts: 0 }
     # 启动对齐关闭：新会话保持宿主默认/最近一次选择（agent-default-model）。
     startup:
       preferTier: 0
@@ -58,9 +84,15 @@
       mode: declared
       timeoutMs: 20000
       cacheTtlMs: 60000
+      # 同族互备优先：失败路由能在档位表中定位时，先只在它所在档内切换，档内确实
+      # 无可用候选（已尝试/冷却中/能力不兼容/不可解析）才退回「从第 1 档向上扫」。
+      # 打开后：opencode-go 失败先切同档的 ais-2dsglm（同为 deepseek-v4.1-flash），
+      # 不再直接升到第 1 档的 gpt-5.6-sol；整档耗尽才升档。
+      # 关闭（默认 false）时保持 v3.4.0 旧语义。
+      sameTierFirst: true
     # 档位按模型族对齐：同档条目是同 model 的备用路由。
-    # 限制：pickCandidate 每次切换都从第 1 档向上扫，故 tier1 的模型族
-    # 会吸收低档全部失败 —— 同一时刻只有一个族能获得族内互备。
+    # 说明：sameTierFirst=true 时低档失败优先在本档内互备；该档整体耗尽才升到第 1 档
+    # （因此同一时刻仍是“一个族受益”，但受益者是失败方所在的族）。
     tiers:
       - tier: 1
         enabled: true

@@ -8,9 +8,9 @@
 
 - 首选 `codex-relay/gpt-5.6-sol` + `high`；
 - 备用 `kimi-coding/k3-256k`；
-- 当前没有可验证的“K3 Max”档位，不能把 K3 256K 标成 Max。
+- `kimi-coding/k3-256k` 支持 `reasoning_effort=max`；Max 是推理强度档位，不是模型名，不得写成模型 `k3-max`。
 
-固定路由：Claude Opus 5/4.8 处理复杂方案；OpenCode DS V4.1 Flash 处理原子查询/修改；Cursor/Grok 处理同一代码面的连续修改；Kimi 生成文档草稿。任何降级都要登记实际 provider/model 和原因。
+固定路由：Codex Relay `gpt-6-astra` 默认处理设计；仅高难度复核或显式全新领域自顶向下设计使用一次 Opus 5.5 plan reviewer。OpenCode DS V4.1 Flash 处理原子查询/修改；Cursor/Grok 处理同一代码面的连续修改；Kimi 生成文档草稿。任何降级都要登记实际 provider/model 和原因。
 
 ## 自动工作分层路由
 
@@ -20,7 +20,7 @@
 python scripts/ptc_route.py --input-json '{"writes_files":true,"file_count":3,"uncertainty":"medium","adjudication":false,"validation_burden":"high","context_lines":4000,"cross_directory":false,"failure_cost":"medium","work_kind":"code","prefers_acp":false,"background":false}'
 ~~~
 
-判定顺序：跨目录、高代价、文档、仲裁设计、独立设计、≥6 文件、2–5 文件连续修改、单点或只读定点执行、主控兜底。设计链为 GPT-5.6 Sol high 主控设计 → Opus 5 独立 review → Opus 4.8 review → controller；文档链为 Kimi → controller。
+判定顺序：跨目录、高代价、文档、仲裁设计、独立设计、≥6 文件、2–5 文件连续修改、单点或只读定点执行、主控兜底。一般/模糊设计链为 Astra → GPT/DS 后备；高难度或 `top_down` 设计链为 Astra → Opus 5.5 独立 review → GPT 后备；文档链为 Kimi → controller。
 
 主控 provider 自身失败（WebSocket error、`PI_AI_ERROR`、会话中断）时，路由 CLI 不会热切换主控；需在会话层新建会话并改用后备 provider，并登记 `risk` 事件。
 
@@ -90,28 +90,27 @@ dsh plugin --profile <名字> add <bundle 绝对路径> `
 | `PTC_CLI_OPENCODE` | `opencode`（OpenCode 可执行命令名；仅当 `PTC_OPENCODE_ACP` 未设时追加 `acp`） |
 | `PTC_CURSOR_ACP` | `cursor-agent --model auto acp`（默认让 Cursor 自选；要指定就写 `--model grok-4.7-high`） |
 | `PTC_KIMI_DOCS_MODEL` | `kimi-code/k3-256k`（别名清单见 SKILL.md；长文档可选 `kimi-code/kimi-for-coding` 或 `kimi-code/k3`，均为 1M 上下文） |
-| `PTC_CLAUDE_DESIGN_MODEL` | `claude-opus-5` |
-| `PTC_CLAUDE_FALLBACK_MODEL` | `claude-opus-4-8` |
+| `PTC_CLAUDE_OPUS55_MODEL` | `claude-opus-5-5`（5.5 档执行工具 `subagent_claude_opus55_plan`） |
+| `PTC_CLAUDE_OPUS5_MODEL` | `claude-opus-5`（5 / 4.8 档执行工具 `subagent_claude_opus5_plan`；设 `claude-opus-4-8` 即切 4.8 档） |
+| `PTC_CLAUDE_OPUS55_CONFIG_DIR` / `PTC_CLAUDE_OPUS5_CONFIG_DIR` | `~/.claude-profiles/tokeniss` / `~/.claude-profiles/relay`（两档各自独立的 Claude Code 配置目录） |
 | `PTC_CURSOR_KEEP_PROXY` | 未设（默认让 Cursor 域名绕开代理，见坑 5） |
 
 ### ACP 插件与超时梯子
 
 三条 ACP 行（`subagent-acp-opencode-dsv41` / `subagent-acp-kimi-docs` / `subagent-acp-cursor-grok`）指向哪个插件，
-由生成器答案 `acpPlugin` 决定，默认 `upstream`：
+由生成器答案 `acpPlugin` 决定，默认 `resilient`：
 
 | 取值 | 插件 | 超时能力 |
 | --- | --- | --- |
-| `upstream`（默认） | `@deepseek-ai/dsh-subagent-acp` | **完全没有超时字段**：`dispose()` 无界等待子进程退出，子进程挂住时父级工具调用不会返回 |
-| `resilient` | `@local/dsh-subagent-acp-resilient` | 同 `providerName`/`command`/`args`/`permission`/`env` 语义，另加分级超时梯子（`processStartTimeoutMs` … `disposalTimeoutMs` 与 `guardWorkspaceReuse`），每个值都写成 `PTC_ACP_<字段名 UPPER_SNAKE>` 环境覆盖，未设置时用插件文档默认值 |
+| `resilient`（默认） | `@local/dsh-subagent-acp-resilient` | 同 `providerName`/`command`/`args`/`permission`/`env` 语义，另加分级超时梯子（`processStartTimeoutMs` … `disposalTimeoutMs` 与 `guardWorkspaceReuse`），每个值都写成 `PTC_ACP_<字段名 UPPER_SNAKE>` 环境覆盖，未设置时用插件文档默认值 |
+| `upstream` | `@deepseek-ai/dsh-subagent-acp` | **完全没有超时字段**：`dispose()` 无界等待子进程退出，子进程挂住时父级工具调用不会返回 |
 
 插件名与梯子**成对**发射，不能拆开：DSH 的插件配置 schema 不拒绝未知键，把梯子键写在
 `@deepseek-ai/dsh-subagent-acp` 旁边只会**静默失效**——不报错，也不生效。所以这个选择同时落到生成的
 `dsh-bundle/cordis.patch.yml`、skill 自带的 `assets/dsh-bundle/cordis.patch.yml`，以及生成的
 `ptc.local.patch.yml`（后者的顶层 `- id:` 行会整体替换该行的 config，必须重复插件名和梯子）。
 
-resilient 插件目前只在私有仓库（`github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1`），公开模板不能硬依赖
-私有仓库，所以公开默认保持 `upstream`。要用 resilient，必须把该包也**显式装进 profile 根**——DSH 从 profile 根
-解析 `name:`，bundle 自己的依赖声明不够（与上面「后两个包必须显式列出」同一条加载器规则）。
+resilient 插件通过公开 Git 仓库分发（`github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1`），两个公开 bundle package manifest 都声明了该依赖。安装 bundle 时让包管理器完成依赖解析即可；DSH 仍要求启动前该插件已经存在于 profile 根的 `node_modules` 中。
 
 加载期一致性由 resilient 插件自己校验：`processStartTimeoutMs <= startupTimeoutMs`、
 `softTimeoutMs <= absoluteTimeoutMs <= complexHardTimeoutMs`、`complexSoftTimeoutMs <= complexHardTimeoutMs`，

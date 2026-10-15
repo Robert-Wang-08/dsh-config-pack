@@ -23,7 +23,7 @@ UNCERTAINTY_VALUES = ("low", "medium", "high")
 FAILURE_COST_VALUES = ("low", "medium", "high")
 VALIDATION_BURDEN_VALUES = ("low", "high")
 WORK_KIND_VALUES = ("code", "docs", "other")
-DESIGN_MODE_VALUES = ("fuzzy", "high", "general")
+DESIGN_MODE_VALUES = ("fuzzy", "high", "general", "top_down")
 
 INPUT_FIELDS = (
     "writes_files",
@@ -75,15 +75,17 @@ EXECUTE_MODEL = _RUNTIME["execute"]["model"]
 CURSOR_MODEL = "auto"
 DOCS_PROVIDER = _RUNTIME["docs"]["provider"]
 DOCS_MODEL = _RUNTIME["docs"]["model"]
-OPUS5_MODEL = _RUNTIME["design"]["model"]
-OPUS48_MODEL = _RUNTIME["design"]["fallbackModel"]
+ASTRA_PROVIDER = _RUNTIME["design"]["astraProvider"]
+ASTRA_MODEL = _RUNTIME["design"]["astraModel"]
+EXEC_DESIGN_ASTRA = _RUNTIME["design"]["astraExecutor"]
+OPUS55_PROVIDER = _RUNTIME["design"]["opusProvider"]
+OPUS55_MODEL = _RUNTIME["design"]["opusModel"]
+EXEC_OPUS55 = _RUNTIME["design"]["opusExecutor"]
 
 EXEC_SPAWN = "subagent"
 EXEC_OPENCODE = "subagent_opencode_dsv41"
 EXEC_CURSOR = "subagent_cursor_grok"
 EXEC_KIMI = "subagent_kimi_docs"
-EXEC_OPUS5 = "subagent_claude_opus5_plan"
-EXEC_OPUS48 = "subagent_claude_opus48_plan"
 EXEC_CODEX_RELAY = "subagent_codex_relay"
 EXEC_CODEX_OFFICIAL = "subagent_codex"
 EXEC_NONE = "none"
@@ -239,8 +241,14 @@ def tier_candidate_chain(
             ),
         ]
     if tier == "design":
-        # GPT 组：先试主控会话所在 provider；主控不是 GPT 族时无法同会话热切换，
-        # 因此同一链上补独立子代理回退——relay 优先，官方 Codex app-server 其次。
+        # 设计优先使用 Codex Relay 的 gpt-6-astra。主控 gpt-5.6-sol 和官方 Codex
+        # 只作为 provider 失败后的后备；不再因“模糊”自动启动 Opus。
+        astra = [
+            _candidate(
+                "design-codex-astra", EXEC_DESIGN_ASTRA, ASTRA_MODEL,
+                provider=ASTRA_PROVIDER, effort="high", shape="one-shot",
+            )
+        ]
         gpt = [
             _candidate(
                 "controller-codex", EXEC_NONE, CONTROLLER_MODEL,
@@ -251,17 +259,12 @@ def tier_candidate_chain(
                 provider=FALLBACK_PROVIDER, effort=CONTROLLER_EFFORT, shape="session",
             ),
             _candidate(
-                "controller-codex", EXEC_CODEX_RELAY, CONTROLLER_MODEL,
-                provider=CONTROLLER_PROVIDER, effort=CONTROLLER_EFFORT, shape="one-shot",
-            ),
-            _candidate(
                 "controller-codex", EXEC_CODEX_OFFICIAL, FALLBACK_MODEL,
                 provider=FALLBACK_PROVIDER, effort="provider", shape="one-shot",
             ),
         ]
         opus = [
-            _candidate("design-opus5", EXEC_OPUS5, OPUS5_MODEL, provider="anthropic-relay"),
-            _candidate("design-opus48", EXEC_OPUS48, OPUS48_MODEL, provider="anthropic-relay"),
+            _candidate("design-opus55", EXEC_OPUS55, OPUS55_MODEL, provider=OPUS55_PROVIDER),
         ]
         ds = [
             _candidate(
@@ -273,12 +276,11 @@ def tier_candidate_chain(
                 provider="opencode-go", shape="one-shot",
             ),
         ]
-        if design_mode == "fuzzy":
-            return [opus[0], *gpt, opus[1]]
-        if design_mode == "high":
-            return [*gpt, *opus]
-        if design_mode == "general":
-            return [*gpt, *ds]
+        if design_mode in ("high", "top_down"):
+            # Opus 5.5 仅作为高难度/全新领域自顶向下设计的独立复核候选。
+            return [*astra, *opus, *gpt]
+        if design_mode in ("fuzzy", "general"):
+            return [*astra, *gpt, *ds]
         raise RouteError(f"未知 design_mode: {design_mode}")
     if tier == "continuous":
         return [
@@ -457,27 +459,28 @@ def decide(raw: Mapping[str, Any]) -> dict[str, Any]:
             background=background,
         )
 
-    # R4 高难度设计：GPT 组设计，Opus 独立复核。
+    # R4 高难度设计：Astra 设计，Opus 5.5 独立复核。
     if (not writes) and (
-        design_mode == "high" or (design_mode is None and uncertainty == "high" and adjudication)
+        design_mode in ("high", "top_down")
+        or (design_mode is None and uncertainty == "high" and adjudication)
     ):
         return _decision(
             rule="R4",
             tier="design",
-            rationale="高难度设计由 GPT 组设计，Opus 5/4.8 独立复核",
+            rationale="Astra 设计；仅高难度或全新领域自顶向下设计进入 Opus 5.5 独立复核",
             prefers_acp=prefers_acp,
             background=background,
-            design_mode="high",
+            design_mode=design_mode if design_mode in ("high", "top_down") else "high",
         )
 
-    # R5 模糊设计：Opus 设计，GPT 组复核。
+    # R5 模糊设计：Astra 先设计，不自动调用 Opus。
     if (not writes) and (
         design_mode == "fuzzy" or (design_mode is None and uncertainty == "high" and not adjudication)
     ):
         return _decision(
             rule="R5",
             tier="design",
-            rationale="模糊设计由 Opus 5 先设计，再由 GPT 组复核",
+            rationale="模糊设计由 Codex Relay 的 gpt-6-astra 处理，不自动调用 Opus",
             prefers_acp=prefers_acp,
             background=background,
             design_mode="fuzzy",

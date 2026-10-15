@@ -29,8 +29,12 @@
         "executeModel",
         "docsProvider",
         "docsModel",
+        "designAstraProvider",
+        "designAstraModel",
+        "designFiveFiveProvider",
+        "designFiveFiveModel",
         "designModel",
-        "designFallbackModel"
+        "designLegacyModel"
       ],
       "properties": {
         "controller": {
@@ -72,11 +76,27 @@
           "type": "string",
           "minLength": 1
         },
+        "designAstraProvider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "designAstraModel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "designFiveFiveProvider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "designFiveFiveModel": {
+          "type": "string",
+          "minLength": 1
+        },
         "designModel": {
           "type": "string",
           "minLength": 1
         },
-        "designFallbackModel": {
+        "designLegacyModel": {
           "type": "string",
           "minLength": 1
         }
@@ -202,7 +222,7 @@
       }
     },
     "acpPlugin": {
-      "description": "Which subagent plugin backs the three ACP provider rows. upstream is the public default and the only public-safe choice: the resilient plugin lives in a private Git repository. Selecting resilient also emits the graded timeout ladder as PTC_ACP_* environment overrides, because those keys are silently inert under the upstream plugin.",
+      "description": "Which subagent plugin backs the three ACP provider rows. resilient is the public default and uses the public Git-distributed resilient package; upstream remains available as a compatibility option. Selecting resilient also emits the graded timeout ladder as PTC_ACP_* environment overrides, because those keys are silently inert under the upstream plugin.",
       "enum": [
         "upstream",
         "resilient"

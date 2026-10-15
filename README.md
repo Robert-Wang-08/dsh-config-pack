@@ -262,12 +262,12 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
 
 | provider | model | 用途 |
 |---|---|---|
-| `codex-relay` | `gpt-5.6-sol` | 主控 / 设计 / 复核首选 |
+| `codex-relay` | `gpt-5.6-sol` | 主控 / 收口 |
+| `codex-relay` | `gpt-6-astra` | 一般、模糊与高难度设计首选 |
 | `openai-codex` | `gpt-5.6-sol` | GPT 组降级（官方 OAuth） |
 | `ais-2dsglm` | `deepseek-v4.1-flash` | 执行 / 验证首选 |
 | `opencode-go` | `deepseek-v4.1-flash` | DS 组降级 |
-| `anthropic-relay` | `claude-opus-5` | 模糊设计首选 |
-| `anthropic-relay` | `claude-opus-4-8` | 设计降级 |
+| `anthropic-relay` | `claude-opus-5` | Opus 5.5：仅高难度或 `top_down` 独立复核 |
 
 白名单只列本包自己声明过的 provider/model 精确对，不含路径或凭据，可公开分发；某台设备缺某条路由的凭据时，
 该条只显示为"已保存但当前不可用"，不影响其它路由。**不要用 `DSHPACK_ROUTE_*` 覆盖这份白名单**：

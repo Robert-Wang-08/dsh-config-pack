@@ -73,8 +73,19 @@ class TestRules(unittest.TestCase):
             base(writes_files=False, uncertainty="high", adjudication=True)
         )
         self.assertEqual(d["rule"], "R4")
-        self.assertEqual(d["route"], "controller-codex")
-        self.assertEqual(d["effort"], route.CONTROLLER_EFFORT)
+        self.assertEqual(d["route"], "design-codex-astra")
+        self.assertEqual(d["provider"], route.ASTRA_PROVIDER)
+        self.assertEqual(d["executor"], route.EXEC_DESIGN_ASTRA)
+        self.assertEqual(d["candidate_chain"][1]["route"], "design-opus55")
+
+    def test_explicit_top_down_uses_single_opus55_review(self):
+        d = route.decide(base(writes_files=False, design_mode="top_down"))
+        self.assertEqual(d["rule"], "R4")
+        self.assertEqual(d["candidate_chain"][0]["route"], "design-codex-astra")
+        self.assertEqual(
+            [c["executor"] for c in d["candidate_chain"]].count(route.EXEC_OPUS55),
+            1,
+        )
 
     def test_r5_external_design(self):
         d = route.decide(
@@ -82,13 +93,13 @@ class TestRules(unittest.TestCase):
         )
         self.assertEqual(d["rule"], "R5")
         self.assertEqual(d["tier"], "design")
-        self.assertEqual(d["route"], "design-opus5")
-        self.assertEqual(d["provider"], "anthropic-relay")
-        self.assertEqual(d["executor"], "subagent_claude_opus5_plan")
-        self.assertEqual(d["model"], route.OPUS5_MODEL)
-        self.assertEqual(d["effort"], "provider")
+        self.assertEqual(d["route"], "design-codex-astra")
+        self.assertEqual(d["provider"], route.ASTRA_PROVIDER)
+        self.assertEqual(d["executor"], route.EXEC_DESIGN_ASTRA)
+        self.assertEqual(d["model"], route.ASTRA_MODEL)
+        self.assertEqual(d["effort"], "high")
         self.assertEqual(d["shape"], "one-shot")
-        self.assertEqual(d["fallback_routes"], ["controller-codex", "design-opus48"])
+        self.assertNotIn("design-opus55", d["fallback_routes"])
 
     def test_r6_many_files(self):
         d = route.decide(
@@ -269,55 +280,24 @@ class TestPriority(unittest.TestCase):
 
 class TestCandidateChains(unittest.TestCase):
     def test_design_chain(self):
-        # 模糊设计（默认）：Opus 5 先设计，GPT 组复核（会话内 provider 优先，子代理兜底）。
+        # 模糊设计（默认）：Astra 先设计，不自动进入 Opus。
         chain = route.tier_candidate_chain("design")
-        routes = [c["route"] for c in chain]
         self.assertEqual(
-            routes,
-            [
-                "design-opus5",
-                "controller-codex",
-                "controller-codex",
-                "controller-codex",
-                "controller-codex",
-                "design-opus48",
-            ],
+            [c["route"] for c in chain],
+            ["design-codex-astra", "controller-codex", "controller-codex", "controller-codex", "execute-dsv41-flash", "execute-dsv41-flash"],
         )
-        self.assertEqual(
-            [c["executor"] for c in chain],
-            [
-                "subagent_claude_opus5_plan",
-                "none",
-                "none",
-                "subagent_codex_relay",
-                "subagent_codex",
-                "subagent_claude_opus48_plan",
-            ],
-        )
+        self.assertEqual(chain[0]["executor"], route.EXEC_DESIGN_ASTRA)
+        self.assertNotIn("subagent_claude_opus55_plan", [c["executor"] for c in chain])
 
     def test_high_design_chain(self):
         chain = route.tier_candidate_chain("design", design_mode="high")
         self.assertEqual(
             [c.get("provider") for c in chain],
-            [
-                route.CONTROLLER_PROVIDER,
-                route.FALLBACK_PROVIDER,
-                route.CONTROLLER_PROVIDER,
-                route.FALLBACK_PROVIDER,
-                "anthropic-relay",
-                "anthropic-relay",
-            ],
+            [route.ASTRA_PROVIDER, route.OPUS55_PROVIDER, route.CONTROLLER_PROVIDER, route.FALLBACK_PROVIDER, route.FALLBACK_PROVIDER],
         )
         self.assertEqual(
             [c["executor"] for c in chain],
-            [
-                "none",
-                "none",
-                "subagent_codex_relay",
-                "subagent_codex",
-                "subagent_claude_opus5_plan",
-                "subagent_claude_opus48_plan",
-            ],
+            [route.EXEC_DESIGN_ASTRA, route.EXEC_OPUS55, "none", "none", "subagent_codex"],
         )
 
     def test_general_design_chain(self):
@@ -325,21 +305,22 @@ class TestCandidateChains(unittest.TestCase):
         self.assertEqual(
             [c.get("provider") for c in chain],
             [
+                route.ASTRA_PROVIDER,
                 route.CONTROLLER_PROVIDER,
                 route.FALLBACK_PROVIDER,
-                route.CONTROLLER_PROVIDER,
                 route.FALLBACK_PROVIDER,
                 route.EXECUTE_PROVIDER,
                 "opencode-go",
             ],
         )
-        self.assertIn("subagent_codex_relay", [c["executor"] for c in chain])
+        self.assertEqual(chain[0]["executor"], route.EXEC_DESIGN_ASTRA)
+        self.assertNotIn(route.EXEC_OPUS55, [c["executor"] for c in chain])
 
     def test_explicit_general_design_decision(self):
         d = route.decide(base(design_mode="general", uncertainty="medium"))
         self.assertEqual(d["tier"], "design")
-        self.assertEqual(d["provider"], route.CONTROLLER_PROVIDER)
-        self.assertEqual(d["candidate_chain"][2]["executor"], "subagent_codex_relay")
+        self.assertEqual(d["provider"], route.ASTRA_PROVIDER)
+        self.assertEqual(d["candidate_chain"][0]["executor"], route.EXEC_DESIGN_ASTRA)
         self.assertEqual(d["candidate_chain"][4]["provider"], route.EXECUTE_PROVIDER)
 
     def test_continuous_chain(self):
@@ -373,12 +354,11 @@ class TestCandidateChains(unittest.TestCase):
 
     def test_decide_embeds_fallback_and_chain(self):
         d = route.decide(base(writes_files=False, uncertainty="high"))
-        self.assertEqual(d["fallback_routes"], ["controller-codex", "design-opus48"])
-        self.assertEqual(d["candidate_chain"][0]["route"], "design-opus5")
-        self.assertEqual(d["candidate_chain"][0]["provider"], "anthropic-relay")
+        self.assertEqual(d["candidate_chain"][0]["route"], "design-codex-astra")
+        self.assertEqual(d["candidate_chain"][0]["provider"], route.ASTRA_PROVIDER)
+        self.assertNotIn("design-opus55", d["fallback_routes"])
         self.assertEqual(d["candidate_chain"][1]["provider"], route.CONTROLLER_PROVIDER)
         self.assertEqual(d["candidate_chain"][2]["provider"], route.FALLBACK_PROVIDER)
-        self.assertEqual(d["candidate_chain"][-1]["route"], "design-opus48")
 
     def test_controller_chain(self):
         chain = route.tier_candidate_chain("controller")

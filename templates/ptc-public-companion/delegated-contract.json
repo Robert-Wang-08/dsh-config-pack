@@ -32,18 +32,18 @@
       "validation": "providerName resolves and cursor is opt-in"
     },
     {
-      "id": "subagent-claude-opus5-plan",
-      "role": "design review",
-      "provider": "claude-opus5-plan",
-      "consumer": "subagent_claude_opus5_plan",
+      "id": "subagent-claude-opus55-plan",
+      "role": "high-difficulty design review (5.5 tier)",
+      "provider": "claude-opus55-plan",
+      "consumer": "subagent_claude_opus55_plan",
       "validation": "plan permission mode remains read-only"
     },
     {
-      "id": "subagent-claude-opus48-plan",
-      "role": "fallback design review",
-      "provider": "claude-opus48-plan",
-      "consumer": "subagent_claude_opus48_plan",
-      "validation": "plan permission mode remains read-only"
+      "id": "subagent-claude-opus5-plan",
+      "role": "high-difficulty design review fallback (5 / 4.8 tier)",
+      "provider": "claude-opus5-plan",
+      "consumer": "subagent_claude_opus5_plan",
+      "validation": "plan permission mode remains read-only; tier switched by PTC_CLAUDE_OPUS5_MODEL"
     },
     {
       "id": "tool-subagent-opencode-dsv41",
@@ -67,17 +67,17 @@
       "validation": "tool provider matches ACP row"
     },
     {
+      "id": "tool-subagent-claude-opus55-plan",
+      "role": "tool binding",
+      "provider": "claude-opus55-plan",
+      "consumer": "subagent_claude_opus55_plan tool",
+      "validation": "tool provider matches plan row"
+    },
+    {
       "id": "tool-subagent-claude-opus5-plan",
       "role": "tool binding",
       "provider": "claude-opus5-plan",
       "consumer": "subagent_claude_opus5_plan tool",
-      "validation": "tool provider matches plan row"
-    },
-    {
-      "id": "tool-subagent-claude-opus48-plan",
-      "role": "tool binding",
-      "provider": "claude-opus48-plan",
-      "consumer": "subagent_claude_opus48_plan tool",
       "validation": "tool provider matches plan row"
     },
     {
