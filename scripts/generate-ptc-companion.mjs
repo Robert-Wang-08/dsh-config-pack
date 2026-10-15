@@ -10,7 +10,6 @@ import { stdin as input, stdout as output } from 'node:process';
 export const ANSWERS_SCHEMA = 'ptc-public-answers/v1';
 export const COMPANION_SCHEMA = 'ptc-public-companion/v1';
 export const RUNTIME_SCHEMA = 'ptc-public-runtime/v1';
-export const SKILL_VERSION = '1.2.0';
 export const DEFAULTS = {
   provider: {
     controller: 'codex-relay', controllerModel: 'gpt-5.6-sol', controllerEffort: 'high',
@@ -72,6 +71,25 @@ const GENERATED_ARTIFACTS = [
 ];
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const templateRoot = join(scriptDir, '..', 'templates', 'ptc-public-companion');
+/**
+ * The canonical PTC skill body. templates/ptc-public-companion/ used to carry its own copy of the
+ * skill tree; that copy drifted (its SKILL.md, skill.json and bundle were a release behind), so the
+ * generator now reads the skill body from exactly one place: this package. The generated companion
+ * still ships the tree as ptc-multi-agent-control/, because that is the folder name DSH installs.
+ */
+const skillRoot = join(scriptDir, '..', 'packages', 'dsh-ptc-multi-agent-mode');
+const skillBundleRoot = join(skillRoot, 'assets', 'dsh-bundle');
+/**
+ * The companion's single source of version truth: the canonical body's skill.json. Reading it at call
+ * time (rather than caching a module constant) keeps every generated artifact in lockstep with the body
+ * it was generated from, and gives pack.manifest.yaml exactly one value to be verified against.
+ */
+export function skillVersion() {
+  const manifest = JSON.parse(readFileSync(join(skillRoot, 'skill.json'), 'utf8'));
+  const version = typeof manifest.version === 'string' ? manifest.version.trim() : '';
+  if (!version) throw new Error('canonical skill.json declares no version: packages/dsh-ptc-multi-agent-mode/skill.json');
+  return version;
+}
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function assertKnownKeys(value, allowed, field) {
@@ -280,7 +298,21 @@ export function renderBundleFrom(source, inputAnswers) {
   return selectAcpRows(rendered, ACP_PLUGIN_NAMES[a.acpPlugin]);
 }
 export function renderBundle(inputAnswers) {
-  return renderBundleFrom(readFileSync(join(templateRoot, 'dsh-bundle', 'cordis.patch.yml'), 'utf8'), inputAnswers);
+  return renderBundleFrom(readFileSync(join(skillBundleRoot, 'cordis.patch.yml'), 'utf8'), inputAnswers);
+}
+/**
+ * The generated top-level dsh-bundle/ keeps the public companion's own package identity and name
+ * (@local/dsh-ptc-public-companion), but it must advertise the version of the canonical body it was
+ * generated from: the two bundle manifests are compared dependency-for-dependency by
+ * verify-components.mjs, and a companion that pins 1.2.0 next to a 0.13.0 skill is exactly the drift
+ * this generator now prevents. Only the two version fields are rewritten; everything else is verbatim.
+ */
+export function renderBundlePackage(source) {
+  const version = skillVersion();
+  const manifest = JSON.parse(source);
+  manifest.version = version;
+  if (manifest.metadata) manifest.metadata.version = version;
+  return JSON.stringify(manifest, null, 2) + '\n';
 }
 /**
  * The skill ships its own verbatim copy of the bundle under assets/dsh-bundle/, which the skill
@@ -288,11 +320,11 @@ export function renderBundle(inputAnswers) {
  * reader installs carries the same plugin choice and ladder as dsh-bundle/cordis.patch.yml.
  */
 export function renderSkillBundle(inputAnswers) {
-  return renderBundleFrom(readFileSync(join(templateRoot, 'ptc-multi-agent-control', 'assets', 'dsh-bundle', 'cordis.patch.yml'), 'utf8'), inputAnswers);
+  return renderBundleFrom(readFileSync(join(skillBundleRoot, 'cordis.patch.yml'), 'utf8'), inputAnswers);
 }
 function renderConfig(inputAnswers) {
   const a = normalizeAnswers(inputAnswers);
-  return { schema_version: COMPANION_SCHEMA, generated_by: 'dsh-config-pack/scripts/generate-ptc-companion.mjs', skill_version: SKILL_VERSION, privacy: { credentials: 'not-collected', paths: 'environment-variable-names-only', never_sync: true }, providers: a.provider, cli: a.cli, proxy: a.proxy, features: a.features, acpPlugin: a.acpPlugin };
+  return { schema_version: COMPANION_SCHEMA, generated_by: 'dsh-config-pack/scripts/generate-ptc-companion.mjs', skill_version: skillVersion(), privacy: { credentials: 'not-collected', paths: 'environment-variable-names-only', never_sync: true }, providers: a.provider, cli: a.cli, proxy: a.proxy, features: a.features, acpPlugin: a.acpPlugin };
 }
 function renderEnvExample(inputAnswers) {
   const a = normalizeAnswers(inputAnswers);
@@ -342,7 +374,7 @@ function renderManifest(inputAnswers) {
   const a = normalizeAnswers(inputAnswers);
   const fieldConsumption = JSON.parse(readFileSync(join(templateRoot, 'consumption-map.json'), 'utf8'));
   return {
-    schema_version: 'ptc-public-companion-manifest/v1', skill_version: SKILL_VERSION,
+    schema_version: 'ptc-public-companion-manifest/v1', skill_version: skillVersion(),
     artifacts: [...GENERATED_ARTIFACTS, '.ptc-generation.json'],
     field_consumption: fieldConsumption.fields,
     prerequisites: {
@@ -379,11 +411,12 @@ function writeSet(outDir, answers) {
   for (const name of GENERATED_ARTIFACTS) rmSync(join(outDir, name), { recursive: true, force: true });
   for (const [name, content] of Object.entries(generatedFiles(answers))) writeFileSync(join(outDir, name), content, 'utf8');
   copyArtifact(join(templateRoot, 'dsh-bundle'), join(outDir, 'dsh-bundle'));
+  writeFileSync(join(outDir, 'dsh-bundle', 'package.json'), renderBundlePackage(readFileSync(join(skillBundleRoot, 'package.json'), 'utf8')), 'utf8');
   writeFileSync(join(outDir, 'dsh-bundle', 'cordis.patch.yml'), renderBundle(answers), 'utf8');
-  copyArtifact(join(templateRoot, 'ptc-multi-agent-control'), join(outDir, 'ptc-multi-agent-control'));
+  copyArtifact(skillRoot, join(outDir, 'ptc-multi-agent-control'));
   writeFileSync(join(outDir, 'ptc-multi-agent-control', 'assets', 'dsh-bundle', 'cordis.patch.yml'), renderSkillBundle(answers), 'utf8');
   writeFileSync(join(outDir, 'ptc-multi-agent-control', 'assets', 'public-runtime-config.json'), JSON.stringify(renderRuntimeConfig(answers), null, 2) + '\n', 'utf8');
-  const metadata = { schema_version: COMPANION_SCHEMA, skill_version: SKILL_VERSION, artifacts: [...GENERATED_ARTIFACTS, '.ptc-generation.json'] };
+  const metadata = { schema_version: COMPANION_SCHEMA, skill_version: skillVersion(), artifacts: [...GENERATED_ARTIFACTS, '.ptc-generation.json'] };
   writeFileSync(join(outDir, '.ptc-generation.json'), JSON.stringify(metadata, null, 2) + '\n', 'utf8');
 }
 function existingArtifacts(outDir) {
@@ -464,7 +497,7 @@ export async function main(argv = process.argv.slice(2)) {
   if (args.rollback) { const restored = rollback(outDir); console.log(JSON.stringify({ action: 'rollback', output: outDir, restored }, null, 2)); return 0; }
   const answers = args.interactive ? await promptAnswers() : loadAnswers(args.answers);
   const normalized = normalizeAnswers(answers);
-  const summary = { action: args.dryRun ? 'dry-run' : 'generate', output: outDir, artifacts: [...GENERATED_ARTIFACTS, '.ptc-generation.json'], schema_version: COMPANION_SCHEMA, skill_version: SKILL_VERSION, secrets_written: false, credential_names_collected: false, clean_profile_verified: false };
+  const summary = { action: args.dryRun ? 'dry-run' : 'generate', output: outDir, artifacts: [...GENERATED_ARTIFACTS, '.ptc-generation.json'], schema_version: COMPANION_SCHEMA, skill_version: skillVersion(), secrets_written: false, credential_names_collected: false, clean_profile_verified: false };
   if (args.dryRun) { console.log(JSON.stringify(summary, null, 2)); return 0; }
   if (existingArtifacts(outDir).length && !args.overwrite) throw new Error('output already exists; pass --overwrite or use --rollback');
   summary.backup = args.overwrite ? backupExisting(outDir) : null;

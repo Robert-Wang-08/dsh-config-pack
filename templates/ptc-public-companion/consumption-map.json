@@ -9,84 +9,84 @@
     },
     "provider.controller": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.provider",
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:controller.provider",
         "dsh-bundle/cordis.patch.yml:tool-subagent-codex-relay.agentOptions.provider"
       ]
     },
     "provider.controllerModel": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.model",
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:controller.model",
         "dsh-bundle/cordis.patch.yml:tool-subagent-codex-relay.agentOptions.model"
       ]
     },
     "provider.controllerEffort": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.effort",
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:controller.effort",
         "dsh-bundle/cordis.patch.yml:tool-subagent-codex-relay.agentOptions.reasoningEffort"
       ]
     },
     "provider.fallbackProvider": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.fallbackProvider"
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:controller.fallbackProvider"
       ]
     },
     "provider.fallbackModel": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:controller.fallbackModel"
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:controller.fallbackModel"
       ]
     },
     "provider.executeProvider": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:execute.provider"
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:execute.provider"
       ]
     },
     "provider.executeModel": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:execute.model",
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:execute.model",
         "ptc.local.patch.yml:OPENCODE_CONFIG_CONTENT"
       ]
     },
     "provider.docsProvider": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:docs.provider"
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:docs.provider"
       ]
     },
     "provider.docsModel": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:docs.model",
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:docs.model",
         "ptc.local.patch.yml:PTC_KIMI_DOCS_MODEL"
       ]
     },
     "provider.designAstraProvider": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:design.astraProvider"
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:design.astraProvider"
       ]
     },
     "provider.designAstraModel": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:design.astraModel"
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:design.astraModel"
       ]
     },
     "provider.designFiveFiveProvider": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:design.opusLadder[0].provider"
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:design.opusLadder[0].provider"
       ]
     },
     "provider.designFiveFiveModel": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:design.opusLadder[0].model",
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:design.opusLadder[0].model",
         "ptc.local.patch.yml:PTC_CLAUDE_OPUS55_MODEL"
       ]
     },
     "provider.designModel": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:design.opusModel",
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:design.opusModel",
         "ptc.local.patch.yml:PTC_CLAUDE_OPUS5_MODEL"
       ]
     },
     "provider.designLegacyModel": {
       "consumers": [
-        "ptc-multi-agent-control/assets/public-runtime-config.json:design.opusLadder[2].model"
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:design.opusLadder[2].model"
       ]
     },
     "cli.opencode.pathEnv": {
@@ -174,7 +174,7 @@
         "ptc.local.json:acpPlugin",
         "dsh-bundle/cordis.patch.yml:subagent-acp-opencode-dsv41|subagent-acp-kimi-docs|subagent-acp-cursor-grok.name",
         "dsh-bundle/cordis.patch.yml:same three rows.PTC_ACP_* ladder and guardWorkspaceReuse",
-        "ptc-multi-agent-control/assets/dsh-bundle/cordis.patch.yml:same three rows",
+        "packages/dsh-ptc-multi-agent-mode/assets/dsh-bundle/cordis.patch.yml:same three rows",
         "ptc.local.patch.yml:same three rows (name plus ladder)",
         "ptc.env.example:PTC_ACP_*"
       ]

@@ -11,5 +11,8 @@
 !never-sync.gitignore
 !dsh-bundle/
 !dsh-bundle/*
+
+# The skill body moved to packages/dsh-ptc-multi-agent-mode. Keep only the pointer
+# that says so, so nobody reads an empty directory as a deletion.
 !ptc-multi-agent-control/
-!ptc-multi-agent-control/**
+!ptc-multi-agent-control/README.md

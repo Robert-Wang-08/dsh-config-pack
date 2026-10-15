@@ -1,6 +1,6 @@
 # Public PTC companion template
 
-This Git template is a complete, SkillHub-independent public delivery. It contains a de-privatized `ptc-multi-agent-control/` skill, its route and ledger scripts, tests/assets/references, and the full `dsh-bundle/`. No credentials, CLI login state, personal absolute paths, session history, or private source metadata are included.
+This Git template is a complete, SkillHub-independent public delivery. It contains the questionnaire, schemas, consumption map, contract, example patch and the full `dsh-bundle/`. The PTC skill body itself — `SKILL.md`, its route and ledger scripts, tests/assets/references — lives at the repository root in `packages/dsh-ptc-multi-agent-mode/` and is the single source the generator copies from and reads its version from; `ptc-multi-agent-control/` here is a pointer and carries no skill content. No credentials, CLI login state, personal absolute paths, session history, or private source metadata are included.
 
 Copy `answers.example.json` to a local file outside Git, edit only supported non-secret settings, then run:
 

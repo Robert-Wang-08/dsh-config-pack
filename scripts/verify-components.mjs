@@ -31,6 +31,48 @@ const argv = process.argv.slice(2);
 const offline = argv.includes('--offline');
 const asJson = argv.includes('--json');
 
+// --- the public companion's version is checked against its canonical skill body ---------------
+// The generator no longer hardcodes a skill version: every artifact it writes takes the version of
+// packages/dsh-ptc-multi-agent-mode/skill.json, and pack.manifest.yaml publishes that number to
+// users. Without the check below the published number is a comment that can drift silently, which
+// is exactly what happened (the manifest advertised 1.0.0 while the companion shipped 1.2.0).
+// Scoped to the public_companion: block, so unrelated mentions of these keys cannot satisfy it.
+function manifestBlock(text, key) {
+  const lines = text.split(/\r?\n/);
+  const start = lines.findIndex((line) => new RegExp('^' + key + ':\\s*$').test(line));
+  if (start < 0) return null;
+  return lines.slice(start + 1).filter((line) => !/^\S/.test(line)).join('\n');
+}
+function checkPublicCompanionVersion(manifestText) {
+const publicCompanionBlock = manifestBlock(manifestText, 'public_companion');
+if (!publicCompanionBlock) {
+  fail('pack.manifest.yaml has no public_companion: block, so the published companion version is unverifiable');
+} else {
+  const skillPath = publicCompanionBlock.match(/^[ \t]+skill:\s*(\S+)\s*$/m)?.[1];
+  const published = (publicCompanionBlock.match(/^[ \t]+skill_version:\s*(\S+)\s*$/m)?.[1] || '').replace(/^['"]|['"]$/g, '');
+  const skillJsonPath = skillPath ? join(root, ...skillPath.split('/'), 'skill.json') : null;
+  let bodyVersion = null;
+  if (!skillPath || !skillJsonPath) {
+    fail('pack.manifest.yaml public_companion.skill is missing, so the skill version source is undefined');
+  } else {
+    try {
+      bodyVersion = JSON.parse(readFileSync(skillJsonPath, 'utf8')).version;
+    } catch (e) {
+      fail('pack.manifest.yaml public_companion.skill ("' + skillPath + '") has no readable skill.json: ' + e.message);
+    }
+  }
+  if (bodyVersion !== undefined && bodyVersion !== null) {
+    if (!published) {
+      fail('pack.manifest.yaml public_companion.skill_version is missing, but ' + skillPath + '/skill.json declares ' + bodyVersion);
+    } else if (String(published) !== String(bodyVersion)) {
+      fail('pack.manifest.yaml public_companion.skill_version is "' + published + '" but ' + skillPath + '/skill.json declares "' + bodyVersion + '"');
+    } else {
+      notes.push('public_companion.skill_version "' + published + '" matches ' + skillPath + '/skill.json');
+    }
+  }
+}
+}
+
 const problems = [];
 const notes = [];
 function fail(message) { problems.push(message); }
@@ -70,6 +112,10 @@ if (!components || components.length === 0) {
   process.exit(1);
 }
 
+// The published companion version must equal the canonical skill body's version. Reported through
+// the normal problem list so a mismatch exits non-zero with both values named.
+checkPublicCompanionVersion(manifestText);
+
 // --- shape of each lock entry -------------------------------------------------
 for (const c of components) {
   for (const key of ['id', 'package', 'repo', 'tag', 'commit', 'installable']) {
@@ -99,7 +145,6 @@ const MANIFESTS = [
   { label: 'package.json', path: join(root, 'package.json') },
   { label: 'packages/dsh-ptc-multi-agent-mode/assets/dsh-bundle/package.json', path: join(root, 'packages/dsh-ptc-multi-agent-mode/assets/dsh-bundle/package.json') },
   { label: 'templates/ptc-public-companion/dsh-bundle/package.json', path: join(root, 'templates/ptc-public-companion/dsh-bundle/package.json') },
-  { label: 'templates/ptc-public-companion/ptc-multi-agent-control/assets/dsh-bundle/package.json', path: join(root, 'templates/ptc-public-companion/ptc-multi-agent-control/assets/dsh-bundle/package.json') },
 ];
 
 const lockedByPackage = new Map(components.map((c) => [c.package, c]));

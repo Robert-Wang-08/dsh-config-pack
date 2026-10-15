@@ -81,8 +81,8 @@ public_companion:
   schema: ptc-public-companion/v1
   template: templates/ptc-public-companion
   bundle: templates/ptc-public-companion/dsh-bundle
-  skill: templates/ptc-public-companion/ptc-multi-agent-control
-  skill_version: 1.0.0
+  skill: packages/dsh-ptc-multi-agent-mode
+  skill_version: 0.13.0
   contract_rows: 12
   generated_artifacts: 9
   consumption_map: templates/ptc-public-companion/consumption-map.json

@@ -1,6 +1,6 @@
 {
   "schema_version": "ptc-delegated-contract/v1",
-  "source": "ptc-multi-agent-control/assets/dsh-bundle",
+  "source": "packages/dsh-ptc-multi-agent-mode/assets/dsh-bundle",
   "privacy_note": "Public interfaces only; no credentials, paths, session history, or personal preferences.",
   "rows": [
     {
