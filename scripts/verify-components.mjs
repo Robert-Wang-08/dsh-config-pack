@@ -91,40 +91,79 @@ for (const c of components) {
   seenIds.add(c.id);
 }
 
-// --- cross-check against package.json ----------------------------------------
-const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const deps = pkg.dependencies || {};
-const lockedByPackage = new Map(components.map((c) => [c.package, c]));
+// --- cross-check every manifest on the delivery surface ----------------------
+// Three manifests ship the same components: the umbrella itself and the two copies of the
+// public companion bundle. Nothing else in the repository compares them, so pinned to the
+// same tag twice they agree only by luck. Compare them explicitly.
+const MANIFESTS = [
+  { label: 'package.json', path: join(root, 'package.json') },
+  { label: 'templates/ptc-public-companion/dsh-bundle/package.json', path: join(root, 'templates/ptc-public-companion/dsh-bundle/package.json') },
+  { label: 'templates/ptc-public-companion/ptc-multi-agent-control/assets/dsh-bundle/package.json', path: join(root, 'templates/ptc-public-companion/ptc-multi-agent-control/assets/dsh-bundle/package.json') },
+];
 
-for (const c of components) {
-  if (c.installable !== true) continue;
-  const spec = deps[c.package];
-  if (!spec) {
-    fail('component "' + c.id + '" (' + c.package + ') is locked but not declared in package.json dependencies');
+const lockedByPackage = new Map(components.map((c) => [c.package, c]));
+const loaded = [];
+
+for (const man of MANIFESTS) {
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(man.path, 'utf8'));
+  } catch (e) {
+    fail(man.label + ': not readable as JSON (' + e.message + ')');
     continue;
   }
-  const m = String(spec).match(/#([^#]+)$/);
-  if (!m) {
-    fail('dependency "' + c.package + '" is not pinned to a tag: "' + spec + '"');
-    continue;
+  const d = parsed.dependencies || {};
+  loaded.push({ label: man.label, deps: d });
+
+  for (const c of components) {
+    if (c.installable !== true) continue;
+    const spec = d[c.package];
+    if (!spec) {
+      fail(man.label + ': component "' + c.id + '" (' + c.package + ') is locked but not declared here');
+      continue;
+    }
+    const m = String(spec).match(/#([^#]+)$/);
+    if (!m) {
+      fail(man.label + ': dependency "' + c.package + '" is not pinned to a tag: "' + spec + '"');
+      continue;
+    }
+    if (m[1] !== c.tag) {
+      fail(man.label + ': dependency "' + c.package + '" pins #' + m[1] + ' but the lock says #' + c.tag);
+    }
   }
-  if (m[1] !== c.tag) {
-    fail('dependency "' + c.package + '" pins #' + m[1] + ' but the lock says #' + c.tag);
+
+  for (const [name, spec] of Object.entries(d)) {
+    if (!/^github:/.test(String(spec))) continue;
+    const locked = lockedByPackage.get(name);
+    if (!locked) {
+      fail(man.label + ': git dependency "' + name + '" is not listed in the components lock');
+      continue;
+    }
+    const m = String(spec).match(/^github:([^#]+)(?:#(.+))?$/);
+    const specRepo = m ? 'https://github.com/' + m[1] + '.git' : null;
+    if (specRepo && locked.repo && specRepo.toLowerCase() !== String(locked.repo).toLowerCase()) {
+      fail(man.label + ': dependency "' + name + '" points at ' + specRepo + ' but the lock says ' + locked.repo);
+    }
   }
 }
 
-for (const [name, spec] of Object.entries(deps)) {
-  if (!/^github:/.test(String(spec))) continue;
-  const locked = lockedByPackage.get(name);
-  if (!locked) {
-    fail('git dependency "' + name + '" is not listed in the components lock');
-    continue;
+// The three manifests must declare exactly the same dependency set, with identical specs.
+if (loaded.length > 1) {
+  const base = loaded[0];
+  for (let i = 1; i < loaded.length; i++) {
+    const other = loaded[i];
+    const names = new Set([...Object.keys(base.deps), ...Object.keys(other.deps)]);
+    for (const name of names) {
+      const a = base.deps[name];
+      const b = other.deps[name];
+      if (a === undefined) { fail(other.label + ': declares "' + name + '", which ' + base.label + ' does not'); continue; }
+      if (b === undefined) { fail(other.label + ': is missing "' + name + '", declared by ' + base.label); continue; }
+      if (String(a) !== String(b)) {
+        fail('dependency "' + name + '" differs across manifests: ' + base.label + '="' + a + '" vs ' + other.label + '="' + b + '"');
+      }
+    }
   }
-  const m = String(spec).match(/^github:([^#]+)(?:#(.+))?$/);
-  const specRepo = m ? 'https://github.com/' + m[1] + '.git' : null;
-  if (specRepo && locked.repo && specRepo.toLowerCase() !== String(locked.repo).toLowerCase()) {
-    fail('dependency "' + name + '" points at ' + specRepo + ' but the lock says ' + locked.repo);
-  }
+  notes.push('dependency sets compared across ' + loaded.length + ' manifests');
 }
 
 // --- online: anonymous readability + tag -> commit ----------------------------

@@ -2,6 +2,22 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.6.3
+
+companion bundle 对齐主包（选项 C），并把"一致"从口头承诺变成被强制的检查。
+
+### Changed
+- 两份 companion bundle 的 `dependencies` 由 3 项扩到与主包**逐项一致**（16 项，含全部自写组件、上游 fork 与第三方 npm 包）。
+- `scripts/verify-components.mjs` 扩展为**同时校验三份 manifest**：任一依赖缺失、pin 与锁不符、或三份之间规格不同，即非零退出。
+
+### Added
+- `docs/component-inventory.md`：逐项说明**每个插件的来源**（自写 5 个 / 上游 fork 1 个 / 第三方 npm 3 个 / 官方）、三类来源各自的处理方式，以及 **4 个 MCP 服务器**的传输、端点、默认状态与本机差异点。
+- `pack.manifest.yaml` 的 `verification:` 块新增 `inventory` 指向该清单。
+
+### Notes
+- 选项 C 的两个已知后果已写入清单文档：①四个 MCP 行仍只有主包声明，`@deepseek-ai/dsh-mcp-client` 在 companion 路径上暂无消费者；②`dsh-base`/`dsh-web-app`/`fzstd` 也在 companion 依赖里，是"完全一致"口径的直接结果，不是遗漏。
+- 已实测：只改其中一份 companion 的 pin、或从一份里删掉一个依赖，验证器都会失败并指出具体文件与依赖名。
+
 ## 0.6.2
 
 修掉 README 里与实际行为**相矛盾**的安装说明。

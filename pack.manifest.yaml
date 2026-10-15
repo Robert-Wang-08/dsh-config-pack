@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.6.2
+version: 0.6.3
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
@@ -151,6 +151,7 @@ verification:
   install: scripts/install.ps1
   prepare_profile: scripts/prepare-profile.mjs
   docs: docs/one-command-install.md
+  inventory: docs/component-inventory.md
   release_order: "tag 组件 -> 更新 components 锁与依赖 pin -> verify-components -> tag 本包"
 
 # 本包不覆盖、由别的组件负责的行（仅登记；verify 会拒绝本包再声明这些 id）。
