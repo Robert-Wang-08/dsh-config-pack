@@ -2,6 +2,23 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.7.0
+
+**破坏性（对内）**：公开伴生包的生成器换源，模板副本整目录删除。版本升 minor 而非补丁，因为**输入源与校验面都变了**，不只是修 bug。
+
+### Changed
+- **生成器输入由模板副本改为权威本体** `packages/dsh-ptc-multi-agent-mode/`。`templates/ptc-public-companion/ptc-multi-agent-control/` 整目录删除，替换为一段说明该路径**有意保持为空**的指引（生成器仍按原目录名交付产物，安装路径不变）。
+- **删掉硬编码的 `SKILL_VERSION` 常量**，改为运行时读取权威本体的 `skill.json`。此前版本号有**四个互不校验的副本**（manifest 声明 1.0.0、生成器硬编码 1.2.0、模板 1.2.0、权威本体 0.13.0），硬编码正是漂移的根因。
+- 权威本体的 `SKILL.md` 补上 `version: 0.13.0`（此前**没有**该 frontmatter 行，换源会立即撞上 frontmatter 与 skill.json 的 parity 校验）。
+- `pack.manifest.yaml` 的 `public_companion.skill` 指向权威本体，`skill_version` 由 1.0.0 更正为 0.13.0。
+- 公开伴生包的依赖集合与权威本体、主包**逐项一致**（16 项），并由验证器在三份 manifest 之间强制。
+
+### Added
+- **版本一致性强制**：`public_companion.skill_version` 必须等于 `public_companion.skill` 所指路径下 `skill.json` 的版本，纳入 `npm run verify`；不一致即非零退出。此前该字段**没有任何校验器读取**，因此静默漂移。
+
+### Notes
+- 公开前隐私复核结论：权威本体比模板多出的 6 个文件**全部可公开，未做任何排除**。唯一判断点是 `claude_config_profiles.py` 提及两个 relay 端点，但同类端点已在公开的 `config/40-models.yml` 中，不构成新增暴露。
+
 ## 0.6.3
 
 companion bundle 对齐主包（选项 C），并把"一致"从口头承诺变成被强制的检查。
