@@ -2,6 +2,23 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.6.0
+
+本包成为**唯一公开发布入口**：单条命令即可把插件、DSH 配置、agent 预设与 PTC 路由控制面装进一个全新 profile，且全部依赖都从匿名可读的公开源解析。
+
+### Added
+- `scripts/install.ps1` 重写为真正的单命令安装器：profile 不存在时按发行模板创建，写好在装本包必需的 pnpm 前置，然后**只调一次** `dsh plugin add`，失败时按 pnpm 错误码做有界自愈后重试（最多 3 次），最后校验 bundle 登记并跑只读校验。
+- `scripts/prepare-profile.mjs`：把 `blockExoticSubdeps: false`、`nodeLinker: hoisted` 与 `allowBuilds` 写进目标 profile 的 pnpm 配置；只改 pnpm 配置，不碰 `cordis.patch.yml`。
+- 新增依赖 `dsh-plugin-subagent-monitor`、`@local/dsh-subagent-acp-resilient`（后者的 provider 行此前已在包内，但包没有依赖它，导致全新 profile 启动即报 `failed to import`）。
+
+### Changed
+- 全部 git 宿主依赖从**跟随默认分支**改为**钉不可变 annotated tag**：`dsh-plugin-provider-badge#v0.1.0`、`dsh-plugin-sidebar-visibility#v0.0.3`、`dsh-archived-sessions#v0.4.1`、`dsh-plugin-subagent-monitor#v0.1.0`、`@local/dsh-subagent-acp-resilient#v0.2.1`；`dsh-deepseek-keypool` 保持 `#v3.4.0`。
+- 上述组件此前从匿名不可读的仓库解析，公开用户装不上；现已全部公开并验证可匿名读取。
+
+### Notes
+- 单命令路径的实测结论：**必须先写好 pnpm 前置再执行 add**。若第一次 add 失败后直接重试，依赖已经落盘，DSH 不会为新依赖登记 `dsh.profile.bundles`，表现为"装上了但整包不生效"。
+- 全新 profile 真实启动的激活判据以**实际启动**为准（`--dump-config` 既不求值 `!!js`、也不报告 `did not activate`）。
+
 ## 0.5.0
 
 公开伴生模板新增 acpPlugin 选择（upstream 默认 / resilient 私有加固版），并固化 PTC_ACP_* 超时阶梯环境变量。
