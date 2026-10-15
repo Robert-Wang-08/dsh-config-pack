@@ -97,6 +97,7 @@ for (const c of components) {
 // same tag twice they agree only by luck. Compare them explicitly.
 const MANIFESTS = [
   { label: 'package.json', path: join(root, 'package.json') },
+  { label: 'packages/dsh-ptc-multi-agent-mode/assets/dsh-bundle/package.json', path: join(root, 'packages/dsh-ptc-multi-agent-mode/assets/dsh-bundle/package.json') },
   { label: 'templates/ptc-public-companion/dsh-bundle/package.json', path: join(root, 'templates/ptc-public-companion/dsh-bundle/package.json') },
   { label: 'templates/ptc-public-companion/ptc-multi-agent-control/assets/dsh-bundle/package.json', path: join(root, 'templates/ptc-public-companion/ptc-multi-agent-control/assets/dsh-bundle/package.json') },
 ];
