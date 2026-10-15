@@ -1,0 +1,33 @@
+{
+  "id": "ptc-multi-agent-control",
+  "name": "ptc-multi-agent-control",
+  "version": "0.13.0",
+  "kind": "tool",
+  "description": "编排跨工具、跨模型的 PTC 多代理任务；设计默认使用 codex-relay/gpt-6-astra，仅在高难度复核或全新领域自顶向下设计时使用一次 Opus 独立只读复核（5.5 与 5 两个执行档，各自独立后端与配置目录）。",
+  "origin": "self",
+  "skill_file": "SKILL.md",
+  "platforms": [
+    "windows",
+    "linux",
+    "macos"
+  ],
+  "entry": {
+    "type": "prompt",
+    "command": null,
+    "args": [],
+    "env": {},
+    "cwd": null,
+    "skill_file": "SKILL.md"
+  },
+  "requirements": {
+    "runtimes": [],
+    "commands": [
+      "python"
+    ]
+  },
+  "capabilities": [
+    "local-cli"
+  ],
+  "triggers": [],
+  "mtime": 1791780621.5793476
+}

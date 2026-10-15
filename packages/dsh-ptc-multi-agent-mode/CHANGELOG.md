@@ -1,0 +1,129 @@
+# 版本变更记录
+
+本文件只记录技能与配套资产的版本演进。故障诊断、机器环境修复和验证证据见 [ISSUE_FIX_HISTORY.md](ISSUE_FIX_HISTORY.md)。
+
+## 0.13.0 - 2026-10-15
+
+- **Opus 复核拆成两个执行档，各自独立后端，可同时可用**：`subagent_claude_opus55_plan`（5.5 档，来源 tokeniss）与 `subagent_claude_opus5_plan`（5 档，来源 anthropic-relay）。二者是不同 provider 上的只读 plan reviewer，工具名不互换。
+- **档位隔离点必须是 `CLAUDE_CONFIG_DIR`，不是环境变量**。2026-10-15 实测：Claude Code 的 settings.json 里 env 优先级高于进程环境——给子进程塞一个无效 `ANTHROPIC_AUTH_TOKEN` 仍然调用成功，说明 env 覆盖不了后端。只给两个执行档设 env 会让它们串到同一后端。改用独立配置目录后四向验证通过：relay 目录问 5.5 直接 403，tokeniss 目录问 5.5 成功。
+- 新增 `scripts/claude_config_profiles.py`：预置 `~/.claude-profiles/{relay,tokeniss}` 两个配置目录，从 DSH 凭据库取 key，幂等、不打印凭据值。目录内含凭据，属设备本地状态，不入库。
+- `opusLadder` 每档新增 `executor` 字段，梯子由「同一工具的候选序列」改为「每档绑定自己的执行档」；路由器按档派发。`public-runtime-config.json` 新增 `opusExecutors` 映射，路由器新增 `EXEC_OPUS_EXECUTORS`。
+- 修正 0.12.0 的耦合缺陷：上一版梯子第一档（5.5）虽然排在前面，但执行档只认 `PTC_CLAUDE_OPUS55_MODEL` 与 Claude Code CLI 的全局后端，而该全局后端当时是 anthropic-relay（不提供 5.5），因此那一档实际不可执行。本次把后端绑定下沉到执行档自身，梯子才真正可执行。
+- 实测记录：anthropic-relay 对 `claude-opus-5-5` 返回 403 `该令牌无权访问模型 claude-opus-5-5`，可据此直接判定该档不可用，无需猜测。
+
+## 0.12.0 - 2026-10-15
+
+- Opus 复核改为显式降级梯（`assets/public-runtime-config.json` 的 `opusLadder`，首条命中）：5.5 -> 5 -> 4.8；三档都不可用时如实报告 Opus 不可用，不自动改用 Sonnet。路由器按梯子生成 `design-opus55` 候选链，该路由因此可携带多个 provider/model 组合。
+- 修正上一版文档中过宽的断言。0.11.x 写的“实际模型 id 是 claude-opus-5”只是当时对 `anthropic-relay` 单来源的观测，不等于“5.5 不存在”。2026-10-15 实测：`claude-opus-5-5` 由设备本地 provider 提供且回显自身 id；`anthropic-relay` 广告 `claude-opus-5` 与 `claude-opus-4-8`；同名 `claude-opus-4-8` 在设备本地来源是别名（实测回 `claude-opus-5-5`）。换来源后必须重验回显 id。
+- `skill.json` 版本此前停在 0.11.0，未跟随 0.11.1 条目；本次一并对齐为 0.12.0。
+
+## 0.11.1 - 2026-10-15
+
+- 修复 ptc_task_control.py 路由兼容集：补回 0.6.x 历史路由名 design-opus48（账本中有 2 条该路由的历史 subtask_created 事件）。缺陷表现为重放即炸，导致 event-add 等所有账本写入被整体拒绝；追加式账本不篡改历史，按既有约定把旧名保留在 ROUTES 兼容集以便重放校验。
+
+## 0.11.0 - 2026-10-14
+
+- 设计默认路由改为 `codex-relay/gpt-6-astra`；一般与模糊设计不再自动调用 Claude。
+- 仅高难度独立复核或显式 `top_down` 全新领域设计调用一次 `subagent_claude_opus55_plan`。
+- 删除 Opus 4.8 fallback 与旧 `subagent_claude_opus5_plan` / `subagent_claude_opus48_plan` 工具注册。
+- 将模型、provider 和 executor 可变值移入 `assets/public-runtime-config.json`；R1–R9 条件与顺序继续由可单测代码执行。
+
+## 0.10.0 - 2026-10-14
+
+- 重写 `SKILL.md`，按“适用范围—不变量—标准流程—路由—ACP—DSH—验证”组织，删除重复解释。
+- 将长篇版本流水从 frontmatter 拆到本文件。
+- 将故障现象、根因、修复和实测记录拆到 `ISSUE_FIX_HISTORY.md`。
+- 在 `SKILL.md` 顶部增加两个追踪文件的索引。
+- 将 SkillHub stamp 收入合法的 `metadata` 节点，保留全部来源、版本和维护字段，同时通过当前 skill schema 校验。
+- 合并此前两份 store 副本中并行出现的 0.9.x 记录；未把副本差异误写成单一线性历史。
+
+## 0.9.3 - 2026-10-14
+
+- 清理 frontmatter 历史中的机器本地绝对路径，改为不暴露设备信息的通用表述；行为、bundle 和路由不变。
+
+## 0.9.2 - 2026-10-14
+
+- 收拢开发 store 与坚果云副本中的文档和 bundle 分叉。
+- bundle 升到 0.6.1，`@local/dsh-subagent-acp-resilient` 升到 0.2.1，并改为钉定 Git tag，移除不可移植的本机 workspace link 依赖。
+- resilient 插件补齐六类生命周期问题：首帧结束启动阶段；子进程退出参与 `session/prompt` 赛跑；以 ACP 事件和有界工作区指纹作为双进度证人；`dispose` 有界并返回 quiescence 证明；已确认正常退出时保留结果；超时路径不再用 cancelled 丢弃变更与诊断。
+- bundle 不再强制写入 `no_proxy`，代理策略交回父进程环境和系统策略；保留 HTTP/1.1 修正。
+- 保留 2026-10-13 的调度规则和 Opus 5.5 路由名称。
+
+## 0.9.0–0.9.1 - 2026-10-13 至 2026-10-14
+
+这一阶段在开发 store 与坚果云副本中出现过并行记录，内容分别覆盖“调度规则”和“ACP 超时回传加固”。0.9.2 合并时保留两条事实，不沿用冲突的单行 changelog。
+
+### 调度与运行规则
+
+- ACP 子代理改为顶层调用，长任务使用后台模式。
+- 等待窗口按任务规模估算；运行状态以 ACP 会话日志等可见证据判断。
+- 大文档任务按 5–10 项分批，ACP 降级由主控显式执行。
+- 记录了 Cursor HTTP/1 设置和 Kimi Orca hooks 清理等机器本地修复；这些修复不再作为通用 skill 正文。
+
+### bundle 0.6.0 超时与回传加固
+
+- 三条 ACP 路由由单档超时改为分阶段、分任务规模的超时策略，并支持 `PTC_ACP_*` 覆盖。
+- 开启工作区复用保护，避免超时后取消标记导致已修改文件和诊断结果被丢弃。
+- 配套本地实验插件 `@local/dsh-subagent-acp-resilient`；该依赖含机器路径，跨设备必须重新解析或回落上游实现。
+
+### SkillHub 收敛
+
+- `.cursor`、`.codex`、`.agents` 入口曾统一重指向 SkillHub store。
+- 历史副本仍出现过文档版本与 bundle 版本不一致，现作为单独问题跟踪。
+
+## 0.8.0
+
+- PTC preset 新增独立 `subagent_codex_relay`，使用 spawn 与 `agentOptions` 路由到 `codex-relay/gpt-5.6-sol`、`effort=high`。
+- 修复 Relay GPT 只存在于其他 preset、PTC 会话实际拿不到该工具的问题。
+
+## 0.7.0
+
+- 新增 `fuzzy`、`high`、`general` 三种显式设计模式。
+- 候选链分别为 Opus→GPT、GPT→Opus、GPT→DS，并保持旧输入兼容。
+
+## 0.6.0
+
+- 重排默认路由：主控优先 Relay/官方 Codex，设计按模糊、高难度、一般三档分流，原子执行使用 DS，连续修改使用 Cursor/Grok，文档使用 Kimi。
+- route 输出开始保留真实 provider，避免只记抽象模型组。
+
+## 0.5.0
+
+- 新增 `scripts/ptc_route.py`，以 `ptc_task_control.ROUTES` 为 route enum 单一事实源。
+- 固化 R1–R9、候选链、worker 信封、验证要求和后台可续接条件。
+- 新增 42 例路由单测。
+- `receipt-add` 开始拒绝与已登记 subtask route 不一致的 worker receipt。
+- U2 验证所有非 controller tier 都有降级链；U3 完成三条 ACP 路由的往返测试。
+
+## 0.4.0
+
+- 复杂方案改为 GPT 设计、Claude Opus 复核；高不确定方案允许 Opus 先发散、GPT 复核。
+- GPT 组明确为 `codex-relay`→`openai-codex`，DS 组明确为 `ais-2dsglm`→`opencode-go`。
+
+## 0.3.3
+
+- Cursor 默认模型改为 `auto`，Grok 改为按需显式指定。
+- 自检对 `auto` 不做伪模型锁定；无法观测时记录 `unverified`。
+
+## 0.3.2
+
+- 补齐 Kimi provider 前缀别名。
+- 更正 “K3 Max” 表述：`max` 是 effort，不是模型名。
+
+## 0.3.1
+
+- 固化账本状态时序：先进入 `in_progress`，再进入 `review`/`done`；旧任务终结后才能重绑；`session-end` 必须最后执行。
+
+## 0.3.0
+
+- 新增 `scripts/acp_smoke.py`，区分 `spawn`、`model`、`auth`、`transport` 四类失败。
+- 仅 `transport` 自动重试一次；确定性失败不重试。
+- 新增 18 例离线桩测试。
+
+## 0.2.3
+
+- 针对 Cursor 经代理时的 HTTP/2 keepalive 5 秒超时增加防御性绕行，可通过 `PTC_CURSOR_KEEP_PROXY` 保留代理。
+
+## 0.2.2
+
+- 修正不存在的 Cursor 模型 id。
+- 补充 DeepSeek ACP 与 Claude Code 子代理依赖声明。

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ptc-multi-agent:worker-receipt:1.0",
+  "title": "PTC Worker Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "task_id",
+    "subtask_id",
+    "route",
+    "executor",
+    "model",
+    "outcome",
+    "summary",
+    "files_changed",
+    "validation",
+    "risks"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "receipt_id": {"type": "string", "minLength": 1},
+    "task_id": {"type": "string", "minLength": 1},
+    "subtask_id": {"type": "string", "minLength": 1},
+    "route": {
+      "enum": [
+        "design-opus5",
+        "controller-codex",
+        "controller-kimi",
+        "design-codex-astra",
+        "design-opus55",
+        "execute-dsv41-flash",
+        "continuous-cursor-grok",
+        "docs-kimi",
+        "local-controller"
+      ]
+    },
+    "executor": {"type": "string", "minLength": 1},
+    "model": {"type": "string", "minLength": 1},
+    "outcome": {"enum": ["completed", "partial", "blocked", "failed"]},
+    "summary": {"type": "string", "minLength": 1},
+    "files_changed": {"type": "array", "items": {"type": "string"}},
+    "validation": {"type": "array", "items": {"type": "string"}},
+    "risks": {"type": "array", "items": {"type": "string"}}
+  }
+}

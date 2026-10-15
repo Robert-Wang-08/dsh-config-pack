@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "contract_name": "ptc-multi-agent-mode-release-v0.2",
+  "objective_guard": "交付跨工作区通用的 PTC 多代理控制面；不得绑定单一仓库目录、技术栈或治理体系",
+  "deliverables": [
+    {
+      "id": "portable-skill",
+      "kind": "skill",
+      "path_pattern": "<SKILL_ROOT>/**",
+      "format": "SkillHub skill",
+      "required": true,
+      "acceptance": [
+        "SkillHub 登记并部署",
+        "self-authored stamp 完整",
+        "文档不依赖特定工作区"
+      ]
+    },
+    {
+      "id": "portable-ledger",
+      "kind": "code",
+      "path_pattern": "<SKILL_ROOT>/scripts/ptc_task_control.py",
+      "format": "Python 3 standard-library CLI",
+      "required": true,
+      "acceptance": [
+        "任意工作区默认使用 .ptc/registry.jsonl",
+        "唯一 ID、状态机、事件、receipt 和契约门禁通过测试",
+        "支持 --ledger 与 PTC_LEDGER 覆盖"
+      ]
+    },
+    {
+      "id": "dsh-preset",
+      "kind": "agent-profile",
+      "path_pattern": "<SKILL_ROOT>/assets/dsh-bundle/{package.json,cordis.patch.yml}",
+      "format": "DSH bundle",
+      "required": true,
+      "acceptance": [
+        "DSH Web 可解析 ptc-multi-agent preset",
+        "模型路由可由 PTC_* 环境变量覆盖",
+        "不硬编码工作区路径"
+      ]
+    },
+    {
+      "id": "usage-document",
+      "kind": "document",
+      "path_pattern": "<SKILL_ROOT>/references/USAGE.md",
+      "format": "Markdown UTF-8",
+      "required": true,
+      "acceptance": [
+        "说明跨工作区使用、路由、事件、receipt、契约和降级",
+        "记录当前 Cursor 限制与 Kimi Max effort 语义"
+      ]
+    }
+  ],
+  "worker_output": {
+    "format": "JSON",
+    "schema": "<SKILL_ROOT>/assets/worker-receipt.schema.json"
+  },
+  "final_response_sections": [
+    "根任务与目标",
+    "完成项及作用",
+    "实际模型路由与降级",
+    "产出物",
+    "验证证据",
+    "限制与下一步唯一动作"
+  ],
+  "invariants": [
+    "controller_only_writes_ledger",
+    "one_root_task_per_session",
+    "workers_return_receipts",
+    "review_and_done_require_evidence",
+    "done_requires_progress_100",
+    "no_workspace_specific_assumptions"
+  ]
+}
