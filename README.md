@@ -7,6 +7,15 @@
 dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.4.0
 ```
 
+> **一键安装交付什么、不交付什么**
+>
+> - **交付**：本包的配置层（`cordis.patch.yml`）、`config/*.yml`，以及 `package.json` 里声明的依赖插件
+>   （provider-failover、provider-badge、sidebar-visibility、archived-sessions、subagent-monitor、ACP 抗性版）。
+> - **不交付**：PTC 多代理预设与 bundle（`@local/dsh-ptc-multi-agent-mode`）。它需要额外一步——
+>   用 `scripts/generate-ptc-companion.mjs` 生成 companion，再安装其中的 `dsh-bundle/`（见下文「公开 PTC 伴生配置」）。
+> - SkillHub 侧资产（如 `ptc-multi-agent-control`）只做索引登记，正文在 `packages/dsh-ptc-multi-agent-mode/`。
+> - 完整的 bundle / 依赖 / 设备级补充对照表见 [`docs/device-setup.md`](docs/device-setup.md) 的「目标 bundle 集合」。
+
 ---
 
 ## 它解决什么
@@ -186,6 +195,31 @@ docs/ROW-OWNERSHIP-20261013.md
 | `DSHPACK_ROUTE_KIMI` | `kimi-coding` | failover tier3 路由 id |
 | `DSHPACK_ROUTE_DEEPSEEK_OFFICIAL` | `deepseek-official` | failover tier4（默认禁用） |
 
+### 异构设备：用引导文件让 AI 生成你本机的路由
+
+本机没有仓库默认的那些 provider，或想换一套路由顺序时，**不要改仓库默认值**——
+生成一份本机覆盖层即可。指引与填写模板：
+
+| 文件 | 作用 |
+|---|---|
+| [`docs/AI-DEVICE-SETUP.md`](docs/AI-DEVICE-SETUP.md) | 给 AI 的引导文件：可变项对照表、产出物形状、校验步骤、隐私红线 |
+| [`assets/device-answers.example.json`](assets/device-answers.example.json) | 填写模板（provider 集合 / 档位映射 / 默认模型 / 子代理开关），**不含凭据字段** |
+
+为什么不需要改代码：路由顺序是 `DSHPACK_ROUTE_*`、端点与凭据是 `DSHPACK_BASE_*` / `DSHPACK_KEY_*`、
+provider 与模型清单在 `config/40-models.yml`（纯数据）。设备差异一律走 profile 最后一层覆盖。
+
+### 一键备份
+
+```powershell
+pwsh scripts/backup.ps1 -Profile web           # 目录 + zip + manifest.json + PRIVACY.md
+pwsh scripts/backup.ps1 -Profile web -NoZip    # 只要目录
+```
+
+只备份配置与清单（profile 的 `cordis.patch.yml`/`package.json`/`pnpm-workspace.yaml`、
+本机 `route-config.json`，加登记变量名与 link 依赖的 `manifest.json`）。
+**凭据文件与凭据值永不进入备份**：允许清单之外的文件不复制，复制前逐个做凭据形状与个人路径扫描，
+命中即拒绝并在 `PRIVACY.md` 中列出。恢复时在新设备重新提供凭据即可。
+
 ---
 
 ## 超时模型（2026-10 对 DSH 0.2.0-rc.2 实装的核实）
@@ -276,8 +310,8 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
 
 | provider | model | 用途 |
 |---|---|---|
-| `codex-relay` | `gpt-5.6-sol` | 主控 / 收口 |
-| `codex-relay` | `gpt-6-astra` | 一般、模糊与高难度设计首选 |
+| `codex-relay` | `gpt-5.6-sol` | 主控 / 分析 / 设计 / 验证默认（`reasoning_effort=xhigh`） |
+| `codex-relay` | `gpt-6-astra` | 可选：需要 Astra 时显式指定，不再作设计默认 |
 | `openai-codex` | `gpt-5.6-sol` | GPT 组降级（官方 OAuth） |
 | `ais-2dsglm` | `deepseek-v4.1-flash` | 执行 / 验证首选 |
 | `opencode-go` | `deepseek-v4.1-flash` | DS 组降级 |

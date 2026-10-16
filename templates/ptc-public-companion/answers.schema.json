@@ -31,6 +31,7 @@
         "docsModel",
         "designAstraProvider",
         "designAstraModel",
+        "designEffort",
         "designFiveFiveProvider",
         "designFiveFiveModel",
         "designModel",
@@ -81,6 +82,10 @@
           "minLength": 1
         },
         "designAstraModel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "designEffort": {
           "type": "string",
           "minLength": 1
         },

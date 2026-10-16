@@ -1,9 +1,9 @@
 {
   "id": "ptc-multi-agent-control",
   "name": "ptc-multi-agent-control",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "kind": "tool",
-  "description": "编排跨工具、跨模型的 PTC 多代理任务；设计默认使用 codex-relay/gpt-6-astra，仅在高难度复核或全新领域自顶向下设计时使用一次 Opus 独立只读复核（5.5 与 5 两个执行档，各自独立后端与配置目录）。",
+  "description": "编排跨工具、跨模型的 PTC 多代理任务；支持把 Subagent Director 角色按层级、首选/后备和优先级热插入候选链，同时保留专用 executor、冻结 route enum、worker receipt 和证据化收口。",
   "origin": "self",
   "skill_file": "SKILL.md",
   "platforms": [

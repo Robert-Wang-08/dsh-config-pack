@@ -12,6 +12,8 @@
     "cordis.patch.yml",
     "config",
     "pack.manifest.yaml",
+    "packages",
+    "assets",
     "README.md",
     "CHANGELOG.md",
     "scripts",

@@ -2,6 +2,9 @@ node_modules/
 pnpm-lock.yaml
 *.tgz
 .release-tmp/
+
+# 本地退役归档（如 templates 副本的 zip 快照）：仅供本机留痕，不进公开仓库。
+backups/
 *.log
 __pycache__/
 *.py[cod]

@@ -17,7 +17,8 @@
   },
   "design": {
     "astraProvider": "codex-relay",
-    "astraModel": "gpt-6-astra",
+    "astraModel": "gpt-5.6-sol",
+    "effort": "xhigh",
     "astraExecutor": "subagent_codex_astra",
     "opusProvider": "anthropic-relay",
     "opusModel": "claude-opus-5",

@@ -2,8 +2,17 @@
 
 本文件只记录技能与配套资产的版本演进。故障诊断、机器环境修复和验证证据见 [ISSUE_FIX_HISTORY.md](ISSUE_FIX_HISTORY.md)。
 
+## 0.14.0 - 2026-10-15
+
+- 新增 Subagent Director 协同：Director settings 独占角色 persona/provider/model/toolFilter，PTC 本机路由层只保存角色参与策略，避免双重事实源。
+- `ptc_route.py` 每次判定热读 `subagentRouting.directorRoles`，按 tier、首选/后备位置、priority 稳定合并 `executor=subagent_role` 候选，并输出 role id 与 route revision。
+- 保留冻结 route enum；Director 候选沿用所属 PTC tier 的历史 route 标签，receipt 必须记录实际 executor/provider/model。
+- PTC 控制面可视化配置角色启用、适用层级、首选/后备和优先级；Director 角色本体仍在其官方设置页维护。
+- 统一路由配置路径优先级为 `PTC_ROUTE_CONFIG > DSH_HOME > ~/.dsh`；非法 Director 策略整项跳过，`director_roles` 从最终过滤后的候选链反推，并额外记录 `filtered_director_roles`。
+
 ## 0.13.0 - 2026-10-15
 
+- 用户指定：设计/分析/验证默认改回 `codex-relay/gpt-5.6-sol`（`reasoning_effort=xhigh`），`gpt-6-astra` 不再作默认；冻结的 `design-codex-astra` route 标签保留，真实模型继续以 `receipt.executor/model` 为准。
 - **Opus 复核拆成两个执行档，各自独立后端，可同时可用**：`subagent_claude_opus55_plan`（5.5 档，来源 tokeniss）与 `subagent_claude_opus5_plan`（5 档，来源 anthropic-relay）。二者是不同 provider 上的只读 plan reviewer，工具名不互换。
 - **档位隔离点必须是 `CLAUDE_CONFIG_DIR`，不是环境变量**。2026-10-15 实测：Claude Code 的 settings.json 里 env 优先级高于进程环境——给子进程塞一个无效 `ANTHROPIC_AUTH_TOKEN` 仍然调用成功，说明 env 覆盖不了后端。只给两个执行档设 env 会让它们串到同一后端。改用独立配置目录后四向验证通过：relay 目录问 5.5 直接 403，tokeniss 目录问 5.5 成功。
 - 新增 `scripts/claude_config_profiles.py`：预置 `~/.claude-profiles/{relay,tokeniss}` 两个配置目录，从 DSH 凭据库取 key，幂等、不打印凭据值。目录内含凭据，属设备本地状态，不入库。

@@ -20,6 +20,16 @@ import ptc_route as route  # noqa: E402
 
 SCRIPT = Path(__file__).resolve().parent / "ptc_route.py"
 
+# 路由器会热读机器本地 route-config；单测默认使用独立空配置，只有相关用例显式覆盖。
+_TEST_DSH_HOME = tempfile.TemporaryDirectory(prefix="ptc-route-tests-")
+os.environ["DSH_HOME"] = _TEST_DSH_HOME.name
+_test_config_dir = Path(_TEST_DSH_HOME.name) / "plugins" / "provider-failover"
+_test_config_dir.mkdir(parents=True, exist_ok=True)
+(_test_config_dir / "route-config.json").write_text(
+    json.dumps({"schemaVersion": 1, "subagentRouting": {"switches": {}, "directorRoles": {}, "revision": 0}}),
+    encoding="utf-8",
+)
+
 
 def base(**overrides):
     data = {
@@ -75,6 +85,8 @@ class TestRules(unittest.TestCase):
         self.assertEqual(d["rule"], "R4")
         self.assertEqual(d["route"], "design-codex-astra")
         self.assertEqual(d["provider"], route.ASTRA_PROVIDER)
+        self.assertEqual(d["model"], route.ASTRA_MODEL)
+        self.assertEqual(d["effort"], route.DESIGN_EFFORT)
         self.assertEqual(d["executor"], route.EXEC_DESIGN_ASTRA)
         self.assertEqual(d["candidate_chain"][1]["route"], "design-opus55")
 
@@ -82,6 +94,10 @@ class TestRules(unittest.TestCase):
         d = route.decide(base(writes_files=False, design_mode="top_down"))
         self.assertEqual(d["rule"], "R4")
         self.assertEqual(d["candidate_chain"][0]["route"], "design-codex-astra")
+        self.assertEqual(d["provider"], route.ASTRA_PROVIDER)
+        self.assertEqual(d["model"], route.ASTRA_MODEL)
+        self.assertEqual(d["effort"], route.DESIGN_EFFORT)
+        self.assertEqual(d["candidate_chain"][0]["effort"], route.DESIGN_EFFORT)
         # 梯度每一档绑定自己的只读复核执行档：5.5 走 tokeniss 档，5/4.8 走 relay 档。
         opus = [c for c in d["candidate_chain"] if c["route"] == "design-opus55"]
         self.assertEqual({c["route"] for c in opus}, {"design-opus55"})
@@ -108,7 +124,7 @@ class TestRules(unittest.TestCase):
         self.assertEqual(d["provider"], route.ASTRA_PROVIDER)
         self.assertEqual(d["executor"], route.EXEC_DESIGN_ASTRA)
         self.assertEqual(d["model"], route.ASTRA_MODEL)
-        self.assertEqual(d["effort"], "high")
+        self.assertEqual(d["effort"], route.DESIGN_EFFORT)
         self.assertEqual(d["shape"], "one-shot")
         self.assertNotIn("design-opus55", d["fallback_routes"])
 
@@ -291,19 +307,26 @@ class TestPriority(unittest.TestCase):
 
 class TestCandidateChains(unittest.TestCase):
     def test_design_chain(self):
-        # 模糊设计（默认）：Astra 先设计，不自动进入 Opus。
+        # 模糊设计（默认）：GPT-5.6 Sol xhigh 先设计，不自动进入 Opus。
         chain = route.tier_candidate_chain("design")
         self.assertEqual(
             [c["route"] for c in chain],
             ["design-codex-astra", "controller-codex", "controller-codex", "controller-codex", "execute-dsv41-flash", "execute-dsv41-flash"],
         )
         self.assertEqual(chain[0]["executor"], route.EXEC_DESIGN_ASTRA)
+        self.assertEqual(chain[0]["provider"], route.ASTRA_PROVIDER)
+        self.assertEqual(chain[0]["model"], route.ASTRA_MODEL)
+        self.assertEqual(chain[0]["effort"], route.DESIGN_EFFORT)
         used = {c["executor"] for c in chain}
         self.assertFalse(used & set(route.EXEC_OPUS_EXECUTORS))
 
     def test_high_design_chain(self):
         chain = route.tier_candidate_chain("design", design_mode="high")
         ladder = list(route.OPUS_LADDER)
+        self.assertEqual(
+            (chain[0]["provider"], chain[0]["model"], chain[0]["effort"]),
+            (route.ASTRA_PROVIDER, route.ASTRA_MODEL, route.DESIGN_EFFORT),
+        )
         self.assertEqual(
             [c.get("provider") for c in chain],
             [route.ASTRA_PROVIDER]
@@ -335,13 +358,18 @@ class TestCandidateChains(unittest.TestCase):
             ],
         )
         self.assertEqual(chain[0]["executor"], route.EXEC_DESIGN_ASTRA)
+        self.assertEqual(chain[0]["model"], route.ASTRA_MODEL)
+        self.assertEqual(chain[0]["effort"], route.DESIGN_EFFORT)
         self.assertNotIn(route.EXEC_OPUS55, [c["executor"] for c in chain])
 
     def test_explicit_general_design_decision(self):
         d = route.decide(base(design_mode="general", uncertainty="medium"))
         self.assertEqual(d["tier"], "design")
         self.assertEqual(d["provider"], route.ASTRA_PROVIDER)
+        self.assertEqual(d["model"], route.ASTRA_MODEL)
+        self.assertEqual(d["effort"], route.DESIGN_EFFORT)
         self.assertEqual(d["candidate_chain"][0]["executor"], route.EXEC_DESIGN_ASTRA)
+        self.assertEqual(d["candidate_chain"][0]["effort"], route.DESIGN_EFFORT)
         self.assertEqual(d["candidate_chain"][4]["provider"], route.EXECUTE_PROVIDER)
 
     def test_continuous_chain(self):
@@ -387,6 +415,245 @@ class TestCandidateChains(unittest.TestCase):
             [c["route"] for c in chain],
             ["controller-codex", "controller-codex", "controller-kimi", "local-controller"],
         )
+
+
+class TestSubagentSwitches(unittest.TestCase):
+    """subagentRouting.switches 人工开关：关闭即从候选链剔除，主控席位不受影响。"""
+
+    def _write_config(self, tmp: str, switches: dict) -> None:
+        config_dir = Path(tmp) / "plugins" / "provider-failover"
+        config_dir.mkdir(parents=True)
+        (config_dir / "route-config.json").write_text(
+            json.dumps(
+                {"schemaVersion": 1, "subagentRouting": {"switches": switches}},
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+    def _decide_with(self, switches: dict | None, raw: dict) -> dict:
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            if switches is not None:
+                self._write_config(tmp, switches)
+            with mock.patch.dict(os.environ, {"DSH_HOME": tmp}):
+                return route.decide(raw)
+
+    def test_no_config_file_means_all_enabled(self):
+        d = self._decide_with(None, base(writes_files=False, uncertainty="high", adjudication=True))
+        self.assertEqual(d["disabled_switches"], [])
+        routes = [c["route"] for c in d["candidate_chain"]]
+        self.assertIn("design-opus55", routes)
+
+    def test_enabled_switch_keeps_candidates(self):
+        switches = {
+            "opus-review": {
+                "enabled": True,
+                "routes": ["design-opus55"],
+                "executors": ["subagent_claude_opus55_plan"],
+            }
+        }
+        d = self._decide_with(switches, base(writes_files=False, uncertainty="high", adjudication=True))
+        self.assertEqual(d["disabled_switches"], [])
+        routes = [c["route"] for c in d["candidate_chain"]]
+        self.assertIn("design-opus55", routes)
+
+    def test_opus_review_disabled_removes_ladder(self):
+        switches = {
+            "opus-review": {
+                "enabled": False,
+                "routes": ["design-opus55"],
+                "executors": ["subagent_claude_opus55_plan", "subagent_claude_opus5_plan"],
+            }
+        }
+        d = self._decide_with(switches, base(writes_files=False, uncertainty="high", adjudication=True))
+        self.assertEqual(d["disabled_switches"], ["opus-review"])
+        routes = [c["route"] for c in d["candidate_chain"]]
+        self.assertNotIn("design-opus55", routes)
+        executors = [c["executor"] for c in d["candidate_chain"]]
+        self.assertNotIn("subagent_claude_opus55_plan", executors)
+        self.assertNotIn("subagent_claude_opus5_plan", executors)
+        # Astra 主设计与 GPT 后备仍保留
+        self.assertEqual(d["route"], "design-codex-astra")
+        self.assertIn("人工开关已关闭", d["rationale"])
+        self.assertIn("Opus 独立复核被人工关闭", d["rationale"])
+
+    def test_gpt_official_disabled_removes_subagent_seat_only(self):
+        switches = {
+            "gpt-official": {
+                "enabled": False,
+                "routes": ["openai-codex"],
+                "executors": ["subagent_codex"],
+            }
+        }
+        d = self._decide_with(switches, base(writes_files=False, design_mode="fuzzy"))
+        self.assertEqual(d["disabled_switches"], ["gpt-official"])
+        executors = [c["executor"] for c in d["candidate_chain"]]
+        self.assertNotIn("subagent_codex", executors)
+        # 主控席位（executor=none，含 openai-codex provider 后备位）不受子代理开关影响
+        self.assertTrue(any(c["executor"] == "none" for c in d["candidate_chain"]))
+
+    def test_both_disabled_chain_still_non_empty(self):
+        switches = {
+            "gpt-official": {
+                "enabled": False,
+                "routes": ["openai-codex"],
+                "executors": ["subagent_codex"],
+            },
+            "opus-review": {
+                "enabled": False,
+                "routes": ["design-opus55"],
+                "executors": ["subagent_claude_opus55_plan", "subagent_claude_opus5_plan"],
+            }
+        }
+        d = self._decide_with(switches, base(writes_files=False, uncertainty="high", adjudication=True))
+        self.assertEqual(d["disabled_switches"], ["gpt-official", "opus-review"])
+        self.assertTrue(d["candidate_chain"])
+        self.assertEqual(d["route"], "design-codex-astra")
+
+    def test_disabled_switch_without_matching_candidates_not_reported(self):
+        # 关闭的开关若未命中任何候选（如 execute tier 无 opus），不出现在 disabled_switches。
+        switches = {
+            "opus-review": {
+                "enabled": False,
+                "routes": ["design-opus55"],
+                "executors": ["subagent_claude_opus55_plan"],
+            }
+        }
+        d = self._decide_with(switches, base(writes_files=True, file_count=1, uncertainty="low"))
+        self.assertEqual(d["rule"], "R8")
+        self.assertEqual(d["disabled_switches"], [])
+
+    def test_explicit_route_config_path_wins_over_dsh_home(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            explicit = Path(tmp) / "explicit.json"
+            with mock.patch.dict(os.environ, {"DSH_HOME": str(Path(tmp) / "home"), "PTC_ROUTE_CONFIG": str(explicit)}):
+                self.assertEqual(route.route_config_path(), explicit)
+
+    def test_garbage_config_tolerated(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config_dir = Path(tmp) / "plugins" / "provider-failover"
+            config_dir.mkdir(parents=True)
+            (config_dir / "route-config.json").write_text("not-json{", encoding="utf-8")
+            with mock.patch.dict(os.environ, {"DSH_HOME": tmp}):
+                self.assertEqual(route.load_subagent_switches(), {})
+                d = route.decide(base(cross_directory=True))
+        self.assertEqual(d["disabled_switches"], [])
+
+
+class TestDirectorRoles(unittest.TestCase):
+    """Director 角色只保存 PTC 参与策略，并以 subagent_role 候选加入链。"""
+
+    def test_preferred_and_fallback_order_is_deterministic(self):
+        base_chain = route.tier_candidate_chain("execute")
+        merged, active, disabled = route.apply_director_roles(
+            base_chain,
+            tier="execute",
+            policies={
+                "reviewer": {"enabled": True, "tiers": ["execute"], "priority": 20, "position": "fallback"},
+                "developer-b": {"enabled": True, "tiers": ["execute"], "priority": 20, "position": "preferred"},
+                "developer-a": {"enabled": True, "tiers": ["execute"], "priority": 10, "position": "preferred"},
+                "disabled-role": {"enabled": False, "tiers": ["execute"], "priority": 0},
+            },
+        )
+        self.assertEqual([c.get("role") for c in merged[:2]], ["developer-a", "developer-b"])
+        controller_index = next(i for i, c in enumerate(merged) if c["executor"] == route.EXEC_NONE)
+        self.assertEqual(merged[controller_index - 1].get("role"), "reviewer")
+        self.assertEqual(active, ["developer-a", "developer-b", "reviewer"])
+        self.assertEqual(disabled, ["disabled-role"])
+        for candidate in (c for c in merged if c["executor"] == route.EXEC_DIRECTOR):
+            self.assertEqual(candidate["model"], "role-bound")
+            self.assertNotIn("provider", candidate)
+
+    def test_decision_hot_reads_director_policy_and_revision(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config_dir = Path(tmp) / "plugins" / "provider-failover"
+            config_dir.mkdir(parents=True)
+            (config_dir / "route-config.json").write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "subagentRouting": {
+                            "revision": 9,
+                            "switches": {},
+                            "directorRoles": {
+                                "ptc-developer": {
+                                    "enabled": True,
+                                    "tiers": ["execute"],
+                                    "priority": 10,
+                                    "position": "preferred",
+                                }
+                            },
+                        },
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.dict(os.environ, {"DSH_HOME": tmp}):
+                decision = route.decide(base(writes_files=True, file_count=1, uncertainty="low"))
+        self.assertEqual(decision["executor"], route.EXEC_DIRECTOR)
+        self.assertEqual(decision["role"], "ptc-developer")
+        self.assertEqual(decision["model"], "role-bound")
+        self.assertEqual(decision["route_config_revision"], 9)
+        self.assertEqual(decision["director_roles"], ["ptc-developer"])
+        self.assertEqual(decision["candidate_chain"][0]["role"], "ptc-developer")
+
+    def test_switch_filter_updates_final_director_role_audit(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config_dir = Path(tmp) / "plugins" / "provider-failover"
+            config_dir.mkdir(parents=True)
+            (config_dir / "route-config.json").write_text(
+                json.dumps({
+                    "subagentRouting": {
+                        "revision": 2,
+                        "switches": {
+                            "director-master": {"enabled": False, "executors": ["subagent_role"]}
+                        },
+                        "directorRoles": {
+                            "ptc-developer": {
+                                "enabled": True,
+                                "tiers": ["execute"],
+                                "priority": 10,
+                                "position": "fallback",
+                            }
+                        },
+                    }
+                }),
+                encoding="utf-8",
+            )
+            with mock.patch.dict(os.environ, {"DSH_HOME": tmp}):
+                decision = route.decide(base(writes_files=True, file_count=1, uncertainty="low"))
+        self.assertEqual(decision["director_roles"], [])
+        self.assertEqual(decision["filtered_director_roles"], ["ptc-developer"])
+        self.assertFalse(any(c.get("role") == "ptc-developer" for c in decision["candidate_chain"]))
+
+    def test_missing_or_malformed_policy_is_zero_intrusion(self):
+        chain = route.tier_candidate_chain("docs")
+        merged, active, disabled = route.apply_director_roles(
+            chain,
+            tier="docs",
+            policies={
+                "wrong-tier": {"enabled": True, "tiers": ["design"]},
+                "bad-tiers": {"enabled": True, "tiers": "docs"},
+                "unknown-tier": {"enabled": True, "tiers": ["docs", "other"]},
+                "bad-priority": {"enabled": True, "tiers": ["docs"], "priority": "0"},
+                "bad-position": {"enabled": True, "tiers": ["docs"], "position": "first"},
+                "bad-enabled": {"enabled": "true", "tiers": ["docs"]},
+            },
+        )
+        self.assertEqual(merged, chain)
+        self.assertEqual(active, [])
+        self.assertEqual(disabled, [])
 
 
 class TestInvalidInput(unittest.TestCase):
@@ -435,6 +702,20 @@ class TestOutputContract(unittest.TestCase):
     def test_route_enum_uses_ledger_single_source(self):
         import ptc_task_control as ptc
         self.assertEqual(set(route.ROUTE_ENUM), ptc.ROUTES)
+
+    def test_worker_receipt_schema_route_enum_matches_ledger(self):
+        import ptc_task_control as ptc
+
+        schema_path = Path(__file__).resolve().parent.parent / "assets" / "worker-receipt.schema.json"
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        schema_routes = set(schema["properties"]["route"]["enum"])
+        self.assertEqual(schema_routes, set(ptc.ROUTES))
+
+    def test_design_runtime_values_use_public_config(self):
+        design = route._RUNTIME["design"]
+        self.assertEqual(route.ASTRA_PROVIDER, design["astraProvider"])
+        self.assertEqual(route.ASTRA_MODEL, design["astraModel"])
+        self.assertEqual(route.DESIGN_EFFORT, design["effort"])
 
     def test_output_keys_and_frozen_route_enum(self):
         samples = [

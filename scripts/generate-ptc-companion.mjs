@@ -16,7 +16,7 @@ export const DEFAULTS = {
     fallbackProvider: 'openai-codex', fallbackModel: 'gpt-5.6-sol',
     executeProvider: 'ais-2dsglm', executeModel: 'deepseek-v4.1-flash',
     docsProvider: 'kimi-coding', docsModel: 'kimi-code/k3-256k',
-    designAstraProvider: 'codex-relay', designAstraModel: 'gpt-6-astra',
+    designAstraProvider: 'codex-relay', designAstraModel: 'gpt-5.6-sol', designEffort: 'xhigh',
     designFiveFiveProvider: 'tokeniss', designFiveFiveModel: 'claude-opus-5-5',
     designModel: 'claude-opus-5', designLegacyModel: 'claude-opus-4-8'
   },
@@ -273,7 +273,7 @@ export function renderRuntimeConfig(inputAnswers) {
     execute: { provider: a.provider.executeProvider, model: a.provider.executeModel },
     docs: { provider: a.provider.docsProvider, model: a.provider.docsModel },
     design: {
-      astraProvider: a.provider.designAstraProvider, astraModel: a.provider.designAstraModel, astraExecutor: 'subagent_codex_astra',
+      astraProvider: a.provider.designAstraProvider, astraModel: a.provider.designAstraModel, effort: a.provider.designEffort, astraExecutor: 'subagent_codex_astra',
       opusProvider: 'anthropic-relay', opusModel: a.provider.designModel, opusExecutor: 'subagent_claude_opus55_plan',
       opusUnavailableAction: 'report_opus_unavailable',
       opusLadder: [

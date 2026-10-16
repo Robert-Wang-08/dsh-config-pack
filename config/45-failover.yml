@@ -76,6 +76,13 @@
       INVALID_CREDENTIAL: { attempts: 0 }
       MISSING_CREDENTIAL: { attempts: 0 }
       NO_ADAPTER: { attempts: 0 }
+    # 失败原因细分（可选，只影响提示文案，不改变切换/重试行为）。
+    # 插件内置中英文词条（余额不足 / 无权访问模型 / invalid api key …），这里只能**追加**；
+    # 同一个 AUTH 码下「余额不足」与「该令牌无权访问模型」的处置不同（充值 vs 换来源），
+    # 内置表已覆盖实测文案，通常无需配置。键为原因 id，值为追加的模式串数组：
+    # failureReasons:
+    #   QUOTA_EXHAUSTED: [ 试用额度已耗尽 ]
+    #   MODEL_NOT_AUTHORIZED: [ 未开通该模型 ]
     # 启动对齐关闭：新会话保持宿主默认/最近一次选择（agent-default-model）。
     startup:
       preferTier: 0

@@ -35,7 +35,7 @@ TRANSITIONS = {
 }
 ROUTES = {
     # 兼容历史账本：0.6.x 曾用 design-opus5 / design-opus48 作为 Opus 设计路由名，
-    # 0.7.0 起改名为 design-codex-astra(gpt-6-astra) / design-opus55(Opus 5.5)。
+    # 0.7.0 起改名为 design-codex-astra（实际模型 gpt-5.6-sol + xhigh）/ design-opus55（Opus 5.5）。
     # 追加式账本记录的是当时真实使用的路由名，不得篡改历史，故保留旧名以便重放校验。
     "design-opus5",
     "design-opus48",

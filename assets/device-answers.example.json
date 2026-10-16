@@ -1,0 +1,65 @@
+{
+  "schema_version": "dsh-device-answers/v1",
+  "note": "本文件是填写模板。放本机，不入库。禁止写入任何凭据值。",
+  "providers": [
+    {
+      "id": "anthropic-relay",
+      "api": "anthropic-messages",
+      "baseURL": "https://your-endpoint",
+      "apiKeyEnv": "MY_ANTHROPIC_KEY",
+      "models": [
+        "claude-opus-5"
+      ]
+    },
+    {
+      "id": "kimi-coding",
+      "api": "openai-completions",
+      "baseURL": "https://your-kimi-endpoint/v1",
+      "apiKeyEnv": "MY_KIMI_KEY",
+      "models": [
+        "k3-256k"
+      ]
+    },
+    {
+      "id": "local-openai",
+      "api": "openai-completions",
+      "baseURL": "http://127.0.0.1:11434/v1",
+      "apiKeyEnv": "LOCAL_OPENAI_KEY",
+      "models": [
+        "qwen3-32b"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "tier": "tier1",
+      "primary": "anthropic-relay",
+      "fallback": "kimi-coding"
+    },
+    {
+      "tier": "tier2",
+      "primary": "local-openai",
+      "fallback": "anthropic-relay"
+    },
+    {
+      "tier": "tier3",
+      "primary": "kimi-coding",
+      "fallback": "local-openai"
+    },
+    {
+      "tier": "tier4",
+      "primary": "local-openai",
+      "fallback": "local-openai"
+    }
+  ],
+  "defaults": {
+    "provider": "anthropic-relay",
+    "model": "claude-opus-5"
+  },
+  "subagents": {
+    "opencode": false,
+    "kimiDocs": true,
+    "cursor": false,
+    "claudePlan": true
+  }
+}

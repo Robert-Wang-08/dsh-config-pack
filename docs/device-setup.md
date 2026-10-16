@@ -35,6 +35,10 @@ dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#<RELEASE_T
 
 # 2) git 宿主插件（本机路由层的加载器；构建脚本策略见 §2.1 约束 2）
 dsh plugin --profile packed add github:Robert-Wang-08/dsh-provider-failover#v3.4.0
+#    注意：本包 `package.json` 已把 `dsh-deepseek-keypool`（来源就是
+#    `github:Robert-Wang-08/dsh-provider-failover#v3.4.0`）列为 dependencies，装包时会一并解析。
+#    这里单独再 add 一次的用途是**显式登记它的 bundle**（依赖被解析 ≠ bundle 已登记到 profile），
+#    不是重复安装。两条都做过时用 `node scripts/verify.mjs --profile <p>` 确认没有同 id 遮蔽。
 
 # 3) 只读校验
 node <repo>/scripts/verify.mjs --profile packed
@@ -47,6 +51,56 @@ dsh packed
 > 不是从 bundle 自己的 `node_modules`。只在 `dependencies` 里声明**不够**：对应行激活失败，
 > 而 DSH 只打一行 `dsh: warning: N entry did not activate`，会话照常起来、工具却凭空消失。
 > **判据是「启动输出里没有 `did not activate`」**，不是退出码。
+
+---
+
+## 目标 bundle 集合
+
+一台设备最终启用哪些 bundle，由 **profile 的 `dsh.profile.bundles`** 决定，不是由本包的 dependencies 决定。
+下表把三类分开，避免"声明了依赖"被误读成"bundle 已启用"。
+
+### 1. 本包自身的 bundle
+
+| 项 | 值 | 依据 |
+|---|---|---|
+| bundle 名 | `dsh-config-pack` | `package.json` 的 `dsh.bundle.patch` |
+| patch 层 | `./cordis.patch.yml` | 同上 |
+
+### 2. 本包声明为 dependencies 的包（会被解析安装）
+
+来源：`package.json` 的 `dependencies`（**16 项**，含第三方 npm 包 `fzstd`）。
+
+| 包 | 规格 | 说明 |
+|---|---|---|
+| `@deepseek-ai/dsh-base` | 0.2.0-rc.2 | 宿主基础 |
+| `@deepseek-ai/dsh-web-app` | 0.2.0-rc.2 | Web 界面 |
+| `@deepseek-ai/dsh-mcp-client` | 0.2.0-rc.2 | MCP 客户端 |
+| `@deepseek-ai/dsh-subagent-acp` | 0.2.0-rc.2 | ACP 子代理（上游版） |
+| `@deepseek-ai/dsh-subagent-claude-code` | 0.2.0-rc.2 | Claude Code 子代理 |
+| `@deepseek-ai/dsh-subagent-codex` | 0.2.0-rc.2 | 官方 Codex 子代理 |
+| `dsh-chat-import` | 0.25.2 | 会话导入 |
+| `dsh-mermaid-smooth` | 0.1.0 | 图形渲染 |
+| `dsh-notify-bell` | 0.12.0 | 通知 |
+| `dsh-deepseek-keypool` | github:Robert-Wang-08/dsh-provider-failover#v3.4.0 | 故障转移与档位路由 |
+| `dsh-plugin-provider-badge` | github:Robert-Wang-08/dsh-plugin-provider-badge#v0.1.0 | provider 标识 |
+| `dsh-plugin-sidebar-visibility` | github:Robert-Wang-08/dsh-plugin-sidebar-visibility#v0.0.3 | 侧栏可见性 |
+| `dsh-archived-sessions` | github:Robert-Wang-08/dsh-archived-sessions#v0.4.1 | 归档会话 |
+| `dsh-plugin-subagent-monitor` | github:Robert-Wang-08/dsh-plugin-subagent-monitor#v0.1.0 | 子代理监控 |
+| `@local/dsh-subagent-acp-resilient` | github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1 | ACP 抗性版（超时阶梯 / guardWorkspaceReuse） |
+| `fzstd` | ^0.1.1 | 解压依赖（非插件） |
+
+> 依赖被解析 **不等于** 对应行已激活：DSH 从 **profile 根**解析行的 `name:`，
+> 见上文 §2 的 `did not activate` 警告。
+
+### 3. 属于设备级补充安装、不由本包交付
+
+| 能力 | 交付方式 | 依据 |
+|---|---|---|
+| PTC 多代理预设与 bundle（`@local/dsh-ptc-multi-agent-mode`） | 用 `scripts/generate-ptc-companion.mjs` 生成 companion，再安装其中的 `dsh-bundle/` | `README.md` 的「公开 PTC 伴生配置」一节 |
+| SkillHub 侧资产（如 `ptc-multi-agent-control`） | SkillHub 只做索引登记，正文在 `packages/dsh-ptc-multi-agent-mode/` | `templates/ptc-public-companion/ptc-multi-agent-control/INDEX.md` |
+| 本机 provider 路由顺序 / 端点 / 凭据名 | `DSHPACK_ROUTE_*` / `DSHPACK_BASE_*` / `DSHPACK_KEY_*`，指引见 `docs/AI-DEVICE-SETUP.md` | `config/45-failover.yml`、`config/40-models.yml` |
+
+因此：**本包一键安装 ≠ 完整 PTC 能力安装**；PTC 需要额外一步生成并安装 companion。
 
 ---
 

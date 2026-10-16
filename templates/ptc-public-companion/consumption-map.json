@@ -62,6 +62,11 @@
         "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:design.astraProvider"
       ]
     },
+    "provider.designEffort": {
+      "consumers": [
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:design.effort"
+      ]
+    },
     "provider.designAstraModel": {
       "consumers": [
         "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:design.astraModel"

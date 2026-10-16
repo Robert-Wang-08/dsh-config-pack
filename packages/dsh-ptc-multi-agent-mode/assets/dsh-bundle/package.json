@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-ptc-multi-agent-mode",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "description": "Portable PTC multi-agent preset with configurable Codex/Kimi/Claude/OpenCode/Cursor routing",
   "type": "module",
@@ -32,11 +32,11 @@
     "author": "wang",
     "created": "2026-10-12",
     "updated": "2026-10-15",
-    "version": "0.13.0",
+    "version": "0.14.0",
     "managedBy": "git",
     "source": "dsh-config-pack",
     "assetType": "agent-profile",
     "assetId": "ptc-multi-agent",
-    "changelog": "0.13.0：正文迁至 dsh-config-pack/packages/dsh-ptc-multi-agent-mode，SkillHub 改为仅索引登记（不搬本体、不建 junction、不删正文）；bundle 版本与 skill 对齐。0.7.0：设计默认改为 codex-relay/gpt-6-astra；只保留单一 subagent_claude_opus55_plan 复核工具并移除 Opus 4.8 与旧工具注册。0.6.1：bundle 对 @local/dsh-subagent-acp-resilient 的依赖由机器本地 link 绝对路径改为 github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1，使该 bundle 在另一台设备上可解析；此前该依赖指向本机目录，换设备安装后三条 ACP 行的 name 解析失败并被静默跳过。同时合并工具仓的去隐私代理策略：不再在 bundle 内强制 no_proxy（Cursor 的网络访问交给父进程代理环境与系统策略），保留 HTTP/1.1 修正。0.6.0：三条 ACP 路由改配分级超时阶梯（进程启动 30s / 会话建立 60s / 空闲告警 3min / 普通软硬 10-20min / 复杂软硬 20-45min，全部 PTC_ACP_* 可覆盖），并开启 guardWorkspaceReuse。原 45s/120s/1800s 单档会把 Cursor 的慢响应误判为空闲超时，且超时诊断会被丢弃、已改动文件对模型不可见。配套 @local/dsh-subagent-acp-resilient 0.2.0。0.5.0：新增独立 subagent_codex_relay。"
+    "changelog": "0.14.0：设计档工具 subagent_codex_astra 重绑 codex-relay/gpt-5.6-sol（reasoning_effort=xhigh），与 SKILL.md 和 public-runtime-config 的声明对齐。0.13.0：正文迁至 dsh-config-pack/packages/dsh-ptc-multi-agent-mode，SkillHub 改为仅索引登记（不搬本体、不建 junction、不删正文）；bundle 版本与 skill 对齐。0.7.0：设计默认改为 codex-relay/gpt-6-astra；只保留单一 subagent_claude_opus55_plan 复核工具并移除 Opus 4.8 与旧工具注册。0.6.1：bundle 对 @local/dsh-subagent-acp-resilient 的依赖由机器本地 link 绝对路径改为 github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1，使该 bundle 在另一台设备上可解析；此前该依赖指向本机目录，换设备安装后三条 ACP 行的 name 解析失败并被静默跳过。同时合并工具仓的去隐私代理策略：不再在 bundle 内强制 no_proxy（Cursor 的网络访问交给父进程代理环境与系统策略），保留 HTTP/1.1 修正。0.6.0：三条 ACP 路由改配分级超时阶梯（进程启动 30s / 会话建立 60s / 空闲告警 3min / 普通软硬 10-20min / 复杂软硬 20-45min，全部 PTC_ACP_* 可覆盖），并开启 guardWorkspaceReuse。原 45s/120s/1800s 单档会把 Cursor 的慢响应误判为空闲超时，且超时诊断会被丢弃、已改动文件对模型不可见。配套 @local/dsh-subagent-acp-resilient 0.2.0。0.5.0：新增独立 subagent_codex_relay。"
   }
 }
