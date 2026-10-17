@@ -3,9 +3,9 @@
 本文是 `dsh-config-pack` 的**设备落地说明**，内容为**去隐私版本**，可以随本仓库公开。
 
 > **渠道边界**
-> - **Git（本仓库）**：通用配置——预设、provider 装配、failover 档位表、**个人化模板**。
-> - **SkillHub**：含设备路径、账号指针、个人路由偏好的**完整全流程**，保存在 `dsh-preset-pack` skill。
-> - 凭据永不入库：本仓库只登记 `requires_env` 指针，不写 key 原值、不写凭据文件路径之外的内容。
+> - **Git（本仓库）**：通用配置——预设、provider 装配、failover 档位表、**个人化模板**，以及新设备入口 `scripts/setup.ps1`。
+> - **共享盘（可选）**：已经填好的个人答案，放在 `<共享盘>\dsh-device\`。没有这块盘就用包内模板在本机填。
+> - **凭据永不入库**：答案文件只写环境变量名；密钥值只进用户环境变量。
 
 ---
 
@@ -21,6 +21,14 @@
 ---
 
 ## 2. 安装（新设备推荐路径）
+
+新设备先跑一条命令，再看下面的手工步骤（那是 `scripts/install.ps1` 实际执行的内容）：
+
+```powershell
+pwsh -File scripts/setup.ps1
+```
+
+有共享盘就填目录；没有就按提示用模板，或把 `docs/AI-DEVICE-SETUP.md` 交给 AI。细节见 §8。
 
 ```powershell
 # 0) 查看可用版本（版本契约是 annotated tag，tag 不可移动）
@@ -214,7 +222,7 @@ dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.0
 
 本仓库**只放模板** `templates/device-config.env.example`；真实设备值属于本机状态，不要提交回来。
 
-1. 把模板复制成**你自己的**设备配置文件（放在本机、受忽略或被 SkillHub 管理的个人文件里）。
+1. 运行 `scripts/setup.ps1`。它把模板复制到 `%USERPROFILE%\.dsh\device\device.env`，或改读共享盘 `<共享盘>\dsh-device\device.env`。
 2. 按模板填写本机值，并设置成 User 环境变量：
 
 ```powershell
@@ -283,14 +291,20 @@ $DSH_HOME/plugins/provider-failover/route-config.json
 
 ---
 
-## 8. 完整全流程在哪
+## 8. 新设备一条命令
 
-本文件刻意只保留**去隐私**的通用做法。含以下内容的**完整跨设备全流程**保存在
-**SkillHub 的 `dsh-preset-pack` skill**（私有）：
+```powershell
+pwsh -File scripts/setup.ps1
+pwsh -File scripts/setup.ps1 -SharedRoot D:\path\to\shared
+pwsh -File scripts/setup.ps1 -SkipInstall          # 只写本机答案、路由和用户环境变量
+pwsh -File scripts/setup.ps1 -UpdateRoutes         # 已有 route-config.json 时才重写档位
+```
 
-- 本机与目标设备的实际路径、profile 名与 `DSH_HOME`；
-- 本机路由层的实际候选链与人工确认结果；
-- SkillHub 侧需要同步哪些 skill（含提供 PTC 预设 bundle 的那个）；
-- 逐步验证命令与实测判据、以及本次落地踩过的坑。
+1. **有共享盘**：填写目录。脚本读取 `<共享盘>\dsh-device\device.env`。同目录还可以有 `device-answers.json` 和 `route-config.json`（有路由文件时优先用它）。不建目录联接，也不运行 `skillhub.py`。
+2. **没有共享盘**：从 `templates/device-config.env.example` 生成本机 `%USERPROFILE%\.dsh\device\device.env`。命令行可以沿用模板只补密钥，也可以逐项确认。选「交给 AI」时，把 `docs/AI-DEVICE-SETUP.md` 和 `assets/device-answers.example.json` 给 AI，生成的文件放进该目录后再跑一次。档位和模型的默认值来自 `config/45-failover.yml` 与 `config/40-models.yml`。
 
-新设备首次落地请**先读 SkillHub 那份**，再用本文件做通用核对。
+两条路最后做同样三件事：调用 `scripts/install.ps1` 安装 Git 包，把路由写到 `%USERPROFILE%\.dsh\plugins\provider-failover\route-config.json`，把 `DSHPACK_*` 设为用户环境变量。密钥只在提示时写入用户环境变量，不写进答案文件。然后关掉正在运行的 DSH，重新打开，并新开一个会话。
+
+已有 `route-config.json` 时默认保留，避免盖掉当前机器的档位和子代理路由。备份仍用 `scripts/backup.ps1`。
+
+PTC 正文在本包 `packages/dsh-ptc-multi-agent-mode/`。已经用 SkillHub 同步 skill 的机器可以继续同步；新机器安装 DSH 不依赖它。

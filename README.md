@@ -208,6 +208,14 @@ docs/ROW-OWNERSHIP-20261013.md
 为什么不需要改代码：路由顺序是 `DSHPACK_ROUTE_*`、端点与凭据是 `DSHPACK_BASE_*` / `DSHPACK_KEY_*`、
 provider 与模型清单在 `config/40-models.yml`（纯数据）。设备差异一律走 profile 最后一层覆盖。
 
+### 一键安装
+
+```powershell
+pwsh scripts/setup.ps1
+```
+
+先问有没有共享盘。有，就读 `<共享盘>\dsh-device\` 里已经填好的答案。没有，就从本包模板生成本机文件，用命令行确认，或把 [`docs/AI-DEVICE-SETUP.md`](docs/AI-DEVICE-SETUP.md) 交给 AI。然后安装 Git 包、写入 `route-config.json`、设置 `DSHPACK_*` 用户环境变量。密钥只进用户环境变量。说明见 [`docs/device-setup.md`](docs/device-setup.md) §8。
+
 ### 一键备份
 
 ```powershell

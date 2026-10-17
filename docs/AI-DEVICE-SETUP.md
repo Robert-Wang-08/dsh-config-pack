@@ -3,6 +3,8 @@
 适用：换一台设备，本机**没有**与仓库默认相同的 provider 或模型，或想用**不同的路由顺序**。
 目标：不改仓库默认值，生成一份**本机覆盖**，装完即用。
 
+入口是 `scripts/setup.ps1`。没有共享盘时选「交给 AI」，再按本文生成文件，放到 `%USERPROFILE%\.dsh\device\` 后重新运行该脚本。
+
 ---
 
 ## 0. 为什么不需要改代码
@@ -23,8 +25,8 @@
 
 ## 1. 引导文件（AI 的输入）
 
-复制 `assets/device-answers.example.json` 为 `device-answers.json`（放本机、**不入库**），按下表填写。
-schema：`assets/device-answers.schema.json`——**不含任何凭据字段**，填凭据会被拒绝。
+复制 `assets/device-answers.example.json` 为 `%USERPROFILE%\.dsh\device\device-answers.json`（**不入库**），按下表填写。
+样例本身就是填写契约，仓库里没有单独的 schema 文件。不要加凭据字段；`scripts/setup.ps1` 看到密钥形状会拒绝写入。
 
 | 字段 | 含义 |
 |---|---|
