@@ -225,7 +225,7 @@
 
 ## 9. 内容 diff 结论（2026-10-13，`scripts/compare-profile.mjs`）
 
-同 id 对照 `dsh-config-pack/cordis.patch.yml` ↔ `~/.dsh/profiles/web/cordis.patch.yml`：
+同 id 对照 `D:\src\dsh\dsh-config-pack\cordis.patch.yml` ↔ `~/.dsh/profiles/web/cordis.patch.yml`：
 
 | 类别 | 行 id | 结论 |
 |---|---|---|

@@ -3,13 +3,13 @@ name: ptc-multi-agent-control
 description: 编排跨工具、跨模型的 PTC 多代理任务。分析/设计/验证默认使用 codex-relay/gpt-5.6-sol（reasoning_effort=xhigh）；仅在高难度独立复核或全新领域自顶向下设计时使用一次 Opus 5.5 plan reviewer。提供唯一根任务、追加式项目账本、契约冻结、分层路由、worker receipt 和证据化收口。
 managed-by: git
 source: dsh-config-pack
-version: 0.14.0
+version: 0.15.0
 metadata:
   origin: self
   author: wang
   created: 2026-10-12
-  updated: 2026-10-15
-  version: 0.14.0
+  updated: 2026-10-16
+  version: 0.15.0
   managed-by: skillhub
   source: skillhub
   asset-type: skill
@@ -159,14 +159,14 @@ python $ctl session-end --task-id <task-id> --session-id <session-id> --summary 
 | 高难度设计或冲突仲裁 | `codex-relay/gpt-5.6-sol`（`reasoning_effort=xhigh`）设计 -> `subagent_claude_opus55_plan` 独立只读复核 -> GPT 后备 |
 | 全新领域且明确要求自顶向下设计 | `design_mode=top_down`：GPT-5.6 Sol xhigh 设计 -> 单次 Opus 5.5 独立复核 -> GPT 后备 |
 | 原子开发、查询、字段核查、验证 | `ais-2dsglm/deepseek-v4.1-flash` -> `opencode-go/deepseek-v4.1-flash` -> 主控 |
-| 同一代码面的连续修改 | Cursor/Grok -> OpenCode Go -> 主控 |
+| 同一代码面的连续修改 | `ais-2dsglm/glm-5.3-flash` -> `opencode-go/deepseek-v4.1-flash` -> 主控 |
 | 正式说明、总结、大背景汇总 | Kimi K3-256K -> 主控 |
 
 补充规则：
 
 - GPT 组是 `codex-relay` 与 `openai-codex`；二者是独立工具，不会自动互相重派发。
 - 设计档沿用专用工具历史名 `subagent_codex_astra`，实际绑定 `codex-relay/gpt-5.6-sol`（`reasoning_effort=xhigh`）；`subagent_codex_relay` 是独立执行档，两者不可互相冒充。
-- DS 组是 `ais-2dsglm` 与 `opencode-go`；只有用户明确指定时才提升后者优先级。
+- DS 组是 `ais-2dsglm` 与 `opencode-go`；只有用户明确指定时才提升后者优先级。连续修改档已改为 DS 组的 GLM 首选（`ais-2dsglm/glm-5.3-flash`），不再派发 `subagent_cursor_grok`；`cursor-grok` ACP 工具仍安装在本机，只是 PTC 不再作为连续修改候选。route 标签仍为冻结的 `continuous-cursor-grok`，receipt 必须记录真实 executor/provider/model。
 - 分析/设计/验证默认使用 `codex-relay/gpt-5.6-sol`（`reasoning_effort=xhigh`）；一般与模糊设计不自动使用 Claude。
 - 只有高难度复核，或显式 `top_down` 的全新领域设计，才调用一次 Opus 独立复核。
 - Opus 有两个只读复核执行档，各自绑定独立的 Claude Code 配置目录，可同时可用、互不串档：

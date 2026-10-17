@@ -57,7 +57,7 @@ ignored 记录，避免证据里分不清「没触发」与「触发了但没得
 
 ```powershell
 # 插件自带回归（配置归一化 / 路由 / 端点 / 客户端渲染）
-cd D:\src\ynm3000\dsh-provider-failover
+cd D:\src\dsh\dsh-provider-failover
 node probe/smoke-config.mjs            # 期望 FAILURES: 0
 
 # 本次新增的处理器级验证：分类重试、裸 WebSocket error、额度立即切换、

@@ -11,6 +11,12 @@
     "provider": "ais-2dsglm",
     "model": "deepseek-v4.1-flash"
   },
+  "continuous": {
+    "provider": "ais-2dsglm",
+    "model": "glm-5.3-flash",
+    "executor": "subagent",
+    "note": "同一代码面 2–5 文件连续修改（R7）。2026-10-16 用户指定：不再走 Cursor/Grok ACP，改用 ais-2dsglm 的 GLM；该 provider 上唯一的 GLM 档是 glm-5.3-flash。"
+  },
   "docs": {
     "provider": "kimi-coding",
     "model": "kimi-code/k3-256k"

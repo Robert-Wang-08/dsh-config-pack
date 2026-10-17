@@ -46,6 +46,16 @@
         "ptc.local.patch.yml:OPENCODE_CONFIG_CONTENT"
       ]
     },
+    "provider.continuousProvider": {
+      "consumers": [
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:continuous.provider"
+      ]
+    },
+    "provider.continuousModel": {
+      "consumers": [
+        "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:continuous.model"
+      ]
+    },
     "provider.docsProvider": {
       "consumers": [
         "packages/dsh-ptc-multi-agent-mode/assets/public-runtime-config.json:docs.provider"

@@ -8,6 +8,8 @@
     "fallbackModel": "gpt-5.6-sol",
     "executeProvider": "ais-2dsglm",
     "executeModel": "deepseek-v4.1-flash",
+    "continuousProvider": "ais-2dsglm",
+    "continuousModel": "glm-5.3-flash",
     "docsProvider": "kimi-coding",
     "docsModel": "kimi-code/k3-256k",
     "designAstraProvider": "codex-relay",

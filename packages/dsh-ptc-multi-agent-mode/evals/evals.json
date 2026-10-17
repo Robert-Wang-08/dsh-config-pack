@@ -14,11 +14,12 @@
     },
     {
       "id": "route-continuous-edit",
-      "prompt": "同一模块需要连续多步修改，优先交给 Cursor Grok",
+      "prompt": "同一模块需要连续多步修改，优先交给 GLM",
       "expect": [
-        "选择 continuous-cursor-grok",
-        "Cursor 不可用时明确降级",
-        "不得冒称已使用 Cursor"
+        "选择 continuous 档（冻结 route 标签 continuous-cursor-grok）",
+        "首选 ais-2dsglm/glm-5.3-flash",
+        "不再派发 subagent_cursor_grok",
+        "GLM 不可用时降级到 opencode-go/deepseek-v4.1-flash，仍不可用才回主控"
       ]
     },
     {

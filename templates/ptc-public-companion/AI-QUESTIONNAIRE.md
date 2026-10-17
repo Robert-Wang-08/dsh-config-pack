@@ -8,7 +8,7 @@ Question order:
 
 1. Controller provider/model/effort: `codex-relay`, `gpt-5.6-sol`, `high`.
 2. Fallback provider/model: `openai-codex`, `gpt-5.6-sol`.
-3. Execution provider/model: `ais-2dsglm`, `deepseek-v4.1-flash`.
+3. Execution provider/model: `ais-2dsglm`, `deepseek-v4.1-flash`. Continuous-edit (R7) provider/model: `ais-2dsglm`, `glm-5.3-flash`; this tier runs as an in-process `subagent` route and no longer uses the Cursor/Grok ACP row.
 4. Docs provider/model: `kimi-coding`, `kimi-code/k3-256k`.
 5. Design routes: design provider/model `codex-relay`, `gpt-5.6-sol` (reasoning effort xhigh); Opus review ladder provider/model for the 5.5 tier `tokeniss`, `claude-opus-5-5`; the 5 tier `anthropic-relay`, `claude-opus-5`; the 4.8 tier `anthropic-relay`, `claude-opus-4-8`.
 6. For opencode, cursor-agent, and kimi only, ask for an executable-path environment-variable name plus a safe command-name fallback. Never accept a path as the fallback.

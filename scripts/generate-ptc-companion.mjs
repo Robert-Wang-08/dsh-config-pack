@@ -15,6 +15,7 @@ export const DEFAULTS = {
     controller: 'codex-relay', controllerModel: 'gpt-5.6-sol', controllerEffort: 'high',
     fallbackProvider: 'openai-codex', fallbackModel: 'gpt-5.6-sol',
     executeProvider: 'ais-2dsglm', executeModel: 'deepseek-v4.1-flash',
+    continuousProvider: 'ais-2dsglm', continuousModel: 'glm-5.3-flash',
     docsProvider: 'kimi-coding', docsModel: 'kimi-code/k3-256k',
     designAstraProvider: 'codex-relay', designAstraModel: 'gpt-5.6-sol', designEffort: 'xhigh',
     designFiveFiveProvider: 'tokeniss', designFiveFiveModel: 'claude-opus-5-5',
@@ -271,6 +272,10 @@ export function renderRuntimeConfig(inputAnswers) {
     schema_version: RUNTIME_SCHEMA,
     controller: { provider: a.provider.controller, model: a.provider.controllerModel, effort: a.provider.controllerEffort, fallbackProvider: a.provider.fallbackProvider, fallbackModel: a.provider.fallbackModel },
     execute: { provider: a.provider.executeProvider, model: a.provider.executeModel },
+    continuous: {
+      provider: a.provider.continuousProvider, model: a.provider.continuousModel, executor: 'subagent',
+      note: '同一代码面 2–5 文件连续修改（R7）。首选进程内 subagent 路由；不再走 Cursor/Grok ACP。'
+    },
     docs: { provider: a.provider.docsProvider, model: a.provider.docsModel },
     design: {
       astraProvider: a.provider.designAstraProvider, astraModel: a.provider.designAstraModel, effort: a.provider.designEffort, astraExecutor: 'subagent_codex_astra',

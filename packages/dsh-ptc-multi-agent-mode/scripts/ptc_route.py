@@ -73,7 +73,10 @@ FALLBACK_PROVIDER = _RUNTIME["controller"]["fallbackProvider"]
 FALLBACK_MODEL = _RUNTIME["controller"]["fallbackModel"]
 EXECUTE_PROVIDER = _RUNTIME["execute"]["provider"]
 EXECUTE_MODEL = _RUNTIME["execute"]["model"]
-CURSOR_MODEL = "auto"
+# 连续修改档（R7）：2026-10-16 用户指定改用 ais-2dsglm 的 GLM，不再走 Cursor/Grok ACP。
+# 该 provider 上唯一的 GLM 档是 glm-5.3-flash；值仍从公开运行时配置读取，不写死在代码里。
+CONTINUOUS_PROVIDER = _RUNTIME["continuous"]["provider"]
+CONTINUOUS_MODEL = _RUNTIME["continuous"]["model"]
 DOCS_PROVIDER = _RUNTIME["docs"]["provider"]
 DOCS_MODEL = _RUNTIME["docs"]["model"]
 ASTRA_PROVIDER = _RUNTIME["design"]["astraProvider"]
@@ -100,13 +103,15 @@ OPUS_LADDER = tuple(
 
 EXEC_SPAWN = "subagent"
 EXEC_OPENCODE = "subagent_opencode_dsv41"
-EXEC_CURSOR = "subagent_cursor_grok"
 EXEC_KIMI = "subagent_kimi_docs"
 EXEC_CODEX_RELAY = "subagent_codex_relay"
 EXEC_CODEX_OFFICIAL = "subagent_codex"
 EXEC_DIRECTOR = "subagent_role"
 EXEC_NONE = "none"
 
+# route 枚举标签是冻结的历史标识，不代表实际执行者：continuous 档已改用
+# ais-2dsglm/glm-5.3-flash，但标签仍沿用 continuous-cursor-grok，以免改动
+# receipt schema 与账本可重放性。真实模型一律以 receipt.executor/model 为准。
 DIRECTOR_TIER_ROUTES = {
     "design": "design-codex-astra",
     "execute": "execute-dsv41-flash",
@@ -473,7 +478,13 @@ def tier_candidate_chain(
         raise RouteError(f"未知 design_mode: {design_mode}")
     if tier == "continuous":
         return [
-            _candidate("continuous-cursor-grok", EXEC_CURSOR, CURSOR_MODEL, provider="cursor-grok"),
+            _candidate(
+                "continuous-cursor-grok",
+                EXEC_SPAWN,
+                CONTINUOUS_MODEL,
+                provider=CONTINUOUS_PROVIDER,
+                shape="one-shot",
+            ),
             _candidate(
                 "execute-dsv41-flash",
                 EXEC_OPENCODE,
@@ -741,7 +752,7 @@ def decide(raw: Mapping[str, Any]) -> dict[str, Any]:
         return _decision(
             rule="R7",
             tier="continuous",
-            rationale="同一代码面 2–5 文件连续修改，路由 continuous-cursor-grok",
+            rationale=f"同一代码面 2–5 文件连续修改，首选 {CONTINUOUS_PROVIDER}/{CONTINUOUS_MODEL}（route 标签 continuous-cursor-grok 为冻结历史标识）",
             prefers_acp=prefers_acp,
             background=background,
         )

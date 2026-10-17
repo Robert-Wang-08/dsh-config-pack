@@ -2,6 +2,16 @@
 
 本文件只记录技能与配套资产的版本演进。故障诊断、机器环境修复和验证证据见 [ISSUE_FIX_HISTORY.md](ISSUE_FIX_HISTORY.md)。
 
+## 0.15.0 - 2026-10-16
+
+- 用户指定：同一代码面的连续修改（R7 / continuous 档）改派 `ais-2dsglm/glm-5.3-flash`，不再是 Cursor/Grok；Cursor 也不再作为该档的后备候选。该 provider 上唯一的 GLM 档是 `glm-5.3-flash`。
+- 新增 `assets/public-runtime-config.json` 的 `continuous` 段（provider/model/executor）。模型与 provider 仍从配置读取，代码里不再写死 `auto`。
+- `ptc_route.py`：删除 `CURSOR_MODEL` 与 `EXEC_CURSOR`；continuous 候选链改为 `subagent`（`ais-2dsglm/glm-5.3-flash`）-> `subagent_opencode_dsv41`（`opencode-go/deepseek-v4.1-flash`）-> 主控。
+- **保留冻结 route enum**：continuous 档的 route 标签仍是 `continuous-cursor-grok`，因此 receipt schema、`ROUTES` 兼容集与账本可重放性不变；真实执行者一律以 `receipt.executor/provider/model` 为准。同一档位换模型沿用 0.13.0 的先例（设计档换模型但保留 `design-codex-astra` 标签）。
+- 本机路由层同步：`~/.dsh/plugins/provider-failover/route-config.json` 的 `subagentRouting.continuous` 首选换为 `ais-2dsglm/glm-5.3-flash`；`catalog` 新增只读项 `glm-continuous`，并把 `cursor-grok` 标注为「连续修改档已不派发」。
+- **生效边界（重要）**：`subagent` 工具的显式 provider/model 受顶层 Session 在组合时记录的白名单约束。必须先把 `ais-2dsglm/glm-5.3-flash` 加进 profile patch 的 `subagent-model-selection-settings.allowedModels`，并**重启 DSH 后新建会话**该路由才可派发；已有会话保持记录时的旧白名单。2026-10-16 实测：在改动前建立的会话里直接派发会被拒（`child LLM route "ais-2dsglm/glm-5.3-flash" is not allowed for this Session`），即该约束确实生效。
+- Cursor ACP 工具本身未卸载：`subagent_cursor_grok` 仍可人工调用，`python scripts/acp_smoke.py --route cursor-grok` 仍然有效。
+
 ## 0.14.0 - 2026-10-15
 
 - 新增 Subagent Director 协同：Director settings 独占角色 persona/provider/model/toolFilter，PTC 本机路由层只保存角色参与策略，避免双重事实源。

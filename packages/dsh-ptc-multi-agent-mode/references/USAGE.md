@@ -10,7 +10,7 @@
 - 备用 `kimi-coding/k3-256k`；
 - `kimi-coding/k3-256k` 支持 `reasoning_effort=max`；Max 是推理强度档位，不是模型名，不得写成模型 `k3-max`。
 
-固定路由：Codex Relay `gpt-5.6-sol`（`reasoning_effort=xhigh`）默认处理分析/设计/验证；仅高难度复核或显式全新领域自顶向下设计使用一次 Opus 5.5 plan reviewer。OpenCode DS V4.1 Flash 处理原子查询/修改；Cursor/Grok 处理同一代码面的连续修改；Kimi 生成文档草稿。任何降级都要登记实际 provider/model 和原因。
+固定路由：Codex Relay `gpt-5.6-sol`（`reasoning_effort=xhigh`）默认处理分析/设计/验证；仅高难度复核或显式全新领域自顶向下设计使用一次 Opus 5.5 plan reviewer。OpenCode DS V4.1 Flash 处理原子查询/修改；`ais-2dsglm/glm-5.3-flash` 处理同一代码面的连续修改（2026-10-16 起不再派发 Cursor/Grok，Cursor ACP 工具仍安装但不在 PTC 候选链内）；Kimi 生成文档草稿。任何降级都要登记实际 provider/model 和原因。
 
 ## 自动工作分层路由
 
@@ -24,7 +24,7 @@ python scripts/ptc_route.py --input-json '{"writes_files":true,"file_count":3,"u
 
 主控 provider 自身失败（WebSocket error、`PI_AI_ERROR`、会话中断）时，路由 CLI 不会热切换主控；需在会话层新建会话并改用后备 provider，并登记 `risk` 事件。
 
-外部 ACP 有明显冷启动成本，因此短任务不要为外部 ACP 冷启动；Cursor 只保留给连续多文件修改。
+外部 ACP 有明显冷启动成本，因此短任务不要为外部 ACP 冷启动；连续多文件修改自 2026-10-16 起改由进程内 `subagent`（`ais-2dsglm/glm-5.3-flash`）承担，不再为它冷启动 Cursor ACP。
 
 离线测试：
 
@@ -82,6 +82,9 @@ dsh plugin --profile <名字> add <bundle 绝对路径> `
 装完必须确认这行警告消失。
 
 模型 id 可通过以下环境变量适配不同机器：
+
+> 自 2026-10-16 起，PTC 的连续修改档（R7）改派 `ais-2dsglm/glm-5.3-flash`，`subagent_cursor_grok` 不在候选链内；
+> 下表中的 `PTC_CURSOR_*` 仅在人工直接调用 Cursor ACP 工具时才有意义。
 
 | 变量 | 默认值 |
 | --- | --- |

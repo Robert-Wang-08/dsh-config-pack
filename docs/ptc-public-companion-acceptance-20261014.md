@@ -208,7 +208,7 @@ dsh: [<companion>/ptc.local.patch.yml] patch: entry "tool-presentation" not foun
 ### D5 公开伴生包不提供默认预设选中
 
 `dsh-web-app` 的注册表行默认是 `default: standard`（`cordis.patch.yml:565`）。
-本机 `web` profile 之所以默认走 PTC 预设，来自 `dsh-config-pack/config/60-registry.yml:5-9` 的
+本机 `web` profile 之所以默认走 PTC 预设，来自 `D:\src\dsh\dsh-config-pack\config\60-registry.yml:5-9` 的
 `selectedDefault: !!js ... || 'ptc-multi-agent'`，属**设备/包层**，不是伴生层。
 因此全新 profile 即使解决了 D2，也仍默认使用 `standard` 预设，PTC 路由不会自动生效。
 文档已要求“在模式选择器中选择”，但这一点在 headless/无人值守场景无法完成，应写明。

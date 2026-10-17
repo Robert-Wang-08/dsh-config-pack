@@ -151,9 +151,12 @@ class TestRules(unittest.TestCase):
         )
         self.assertEqual(d["rule"], "R7")
         self.assertEqual(d["tier"], "continuous")
+        # route 标签是冻结的历史标识；实际执行者是 ais-2dsglm 的 GLM 进程内子代理。
         self.assertEqual(d["route"], "continuous-cursor-grok")
-        self.assertEqual(d["executor"], "subagent_cursor_grok")
-        self.assertEqual(d["model"], "auto")
+        self.assertEqual(d["executor"], "subagent")
+        self.assertEqual(d["provider"], route.CONTINUOUS_PROVIDER)
+        self.assertEqual(d["model"], route.CONTINUOUS_MODEL)
+        self.assertEqual(d["model"], "glm-5.3-flash")
         self.assertEqual(d["shape"], "one-shot")
 
     def test_r8_execute_spawn_foreground(self):
@@ -374,10 +377,15 @@ class TestCandidateChains(unittest.TestCase):
 
     def test_continuous_chain(self):
         chain = route.tier_candidate_chain("continuous")
-        self.assertEqual(chain[0]["executor"], "subagent_cursor_grok")
+        self.assertEqual(chain[0]["executor"], "subagent")
+        self.assertEqual(chain[0]["provider"], route.CONTINUOUS_PROVIDER)
+        self.assertEqual(chain[0]["model"], route.CONTINUOUS_MODEL)
         self.assertEqual(chain[1]["executor"], "subagent_opencode_dsv41")
         self.assertEqual(chain[1]["route"], "execute-dsv41-flash")
         self.assertEqual(chain[-1]["route"], "controller-codex")
+        # Cursor/Grok 不再作为连续修改档候选。
+        self.assertNotIn("subagent_cursor_grok", [c["executor"] for c in chain])
+        self.assertNotIn("cursor-grok", [c.get("provider") for c in chain])
 
     def test_docs_chain(self):
         chain = route.tier_candidate_chain("docs")
@@ -818,8 +826,9 @@ class TestCLI(unittest.TestCase):
         data = json.loads(proc.stdout)
         self.assertEqual(data["rule"], "R7")
         self.assertEqual(data["route"], "continuous-cursor-grok")
-        self.assertEqual(data["executor"], "subagent_cursor_grok")
-        self.assertEqual(data["model"], "auto")
+        self.assertEqual(data["executor"], "subagent")
+        self.assertEqual(data["provider"], route.CONTINUOUS_PROVIDER)
+        self.assertEqual(data["model"], route.CONTINUOUS_MODEL)
         self.assertEqual(data["effort"], "provider")
         self.assertEqual(data["shape"], "one-shot")
 
