@@ -1,4 +1,4 @@
-# dsh-config-pack v0.6.1 — GENERATED FILE, DO NOT EDIT.
+# dsh-config-pack v0.7.0 — GENERATED FILE, DO NOT EDIT.
 #
 # Source of truth: config/*.yml   Rebuild with: npm run build
 # Verify before publishing:       npm run verify
@@ -231,9 +231,9 @@
           - id: claude-opus-5
           - id: claude-opus-4-8
           - id: claude-sonnet-5
-      # 官方 Codex：OAuth 凭据，需在该设备 Web Models 页登录一次。
+      # gpt（official）：OAuth 凭据，需在该设备 Web Models 页登录一次。
       openai-codex:
-        displayName: OpenAI Codex (official)
+        displayName: gpt（official）
       kimi-coding:
         displayName: Kimi Coding
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_KIMI || 'LLMKEY_KIMI'
@@ -361,6 +361,13 @@
       INVALID_CREDENTIAL: { attempts: 0 }
       MISSING_CREDENTIAL: { attempts: 0 }
       NO_ADAPTER: { attempts: 0 }
+    # 失败原因细分（可选，只影响提示文案，不改变切换/重试行为）。
+    # 插件内置中英文词条（余额不足 / 无权访问模型 / invalid api key …），这里只能**追加**；
+    # 同一个 AUTH 码下「余额不足」与「该令牌无权访问模型」的处置不同（充值 vs 换来源），
+    # 内置表已覆盖实测文案，通常无需配置。键为原因 id，值为追加的模式串数组：
+    # failureReasons:
+    #   QUOTA_EXHAUSTED: [ 试用额度已耗尽 ]
+    #   MODEL_NOT_AUTHORIZED: [ 未开通该模型 ]
     # 启动对齐关闭：新会话保持宿主默认/最近一次选择（agent-default-model）。
     startup:
       preferTier: 0
@@ -392,7 +399,7 @@
           - id: codex-official
             route: !!js process['env'].DSHPACK_ROUTE_OPENAI_CODEX || 'openai-codex'
             model: gpt-5.6-sol
-            description: 同族备用；官方 Codex，OAuth 凭据，需先在 Web Models 页登录
+            description: 同族备用；gpt（official），OAuth 凭据，需先在 Web Models 页登录
             keywords: [ 官方, codex ]
             compatible: { tools: true, images: true }
             cooldownMs: 120000

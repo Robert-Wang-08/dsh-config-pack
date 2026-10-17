@@ -129,7 +129,7 @@ python $ctl session-end --task-id <task-id> --session-id <session-id> --summary 
 
 | 开关 key | 关闭效果 |
 | --- | --- |
-| `gpt-official` | 剔除 route `openai-codex` / executor `subagent_codex` 的子代理候选（GPT 官网） |
+| `gpt-official` | 剔除 route `openai-codex` / executor `subagent_codex` 的子代理候选（provider 显示名 gpt（official）） |
 | `opus-review` | 剔除 `design-opus55` 整条 Opus 复核梯（executor `subagent_claude_opus55_plan` / `subagent_claude_opus5_plan`） |
 
 规则：

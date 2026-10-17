@@ -47,9 +47,9 @@
           - id: claude-opus-5
           - id: claude-opus-4-8
           - id: claude-sonnet-5
-      # 官方 Codex：OAuth 凭据，需在该设备 Web Models 页登录一次。
+      # gpt（official）：OAuth 凭据，需在该设备 Web Models 页登录一次。
       openai-codex:
-        displayName: OpenAI Codex (official)
+        displayName: gpt（official）
       kimi-coding:
         displayName: Kimi Coding
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_KIMI || 'LLMKEY_KIMI'
