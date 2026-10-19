@@ -37,7 +37,7 @@
 [CmdletBinding()]
 param(
   [string]$ProfileName = 'packed',
-  [string]$Source = 'github:Robert-Wang-08/dsh-config-pack#v0.6.0',
+  [string]$Source = 'github:Robert-Wang-08/dsh-config-pack#v0.8.0',
   [string]$FromDefaultProfile = 'web',
   [switch]$Uninstall,
   [switch]$NoVerify

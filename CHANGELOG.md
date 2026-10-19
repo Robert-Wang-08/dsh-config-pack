@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.8.0
+
+纳入 dsh-recent-sessions v0.1.2 组件锁（修复新设备漏装 Recent Sessions：此前它只在源设备 web profile 手工登记，config-pack 依赖/组件锁/setup 均未覆盖）；同时收录已在线但未发版的提交：一条命令 setup（共享盘或模板）、continuous 档改 ais-2dsglm/glm-5.3-flash、openai-codex 显示名 gpt（official）；install.ps1 默认 Source 升至本 tag。
+
 ## 0.7.0
 
 **破坏性（对内）**：公开伴生包的生成器换源，模板副本整目录删除。版本升 minor 而非补丁，因为**输入源与校验面都变了**，不只是修 bug。
