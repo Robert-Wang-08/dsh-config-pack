@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.9.2
+
+默认档切 gpt-6.1-sol：config/10-subagents、40-models、45-failover、50-presets 与 PTC 资产（SKILL/CHANGELOG/bundle/runtime-config/ptc_route.py）、setup.ps1、docs 联动更新；install.ps1 默认 Source 追平本 tag。
+
 ## 0.9.1
 
 新增安装后偏差比较验收 verify-install.mjs：期望集（核心依赖+可选三方组）对照实装（版本/bundle/入口），聚合 shadowing/composed/patch 对照，支持 --baseline 对拍观察基线（采样 SHA256）；install.ps1 第 4.6 步自动执行，默认 Source 追平本 tag。
