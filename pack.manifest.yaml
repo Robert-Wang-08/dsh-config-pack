@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.8.0
+version: 0.8.1
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
@@ -140,6 +140,12 @@ components:
     repo: https://github.com/huangxp12/dsh-recent-sessions.git
     tag: v0.1.2
     commit: bc60683f915ed9d7015223eb22ce00a8593b2b45
+    installable: true
+  - id: dshmarket
+    package: dshmarket
+    repo: https://github.com/dsh-market/dsh-market.git
+    tag: v1.66.21
+    commit: b8948c1aee21a5a10cf78266aadd0b49f8d2515c
     installable: true
   - id: permission-compat
     package: dsh-permission-compat

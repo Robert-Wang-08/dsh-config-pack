@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.8.1
+
+按源设备实装清单补齐三方插件：dshmarket v1.66.21（组件锁）、dsh-plugin-subagent-director 0.5.6、dsh-palette 0.2.1；自写件 ptc-switches 暂无独立仓库，仍走伞仓库 link。
+
 ## 0.8.0
 
 纳入 dsh-recent-sessions v0.1.2 组件锁（修复新设备漏装 Recent Sessions：此前它只在源设备 web profile 手工登记，config-pack 依赖/组件锁/setup 均未覆盖）；同时收录已在线但未发版的提交：一条命令 setup（共享盘或模板）、continuous 档改 ais-2dsglm/glm-5.3-flash、openai-codex 显示名 gpt（official）；install.ps1 默认 Source 升至本 tag。

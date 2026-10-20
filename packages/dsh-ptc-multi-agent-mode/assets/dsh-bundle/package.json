@@ -21,6 +21,9 @@
     "dsh-plugin-subagent-monitor": "github:Robert-Wang-08/dsh-plugin-subagent-monitor#v0.1.0",
     "dsh-recent-sessions": "github:huangxp12/dsh-recent-sessions#v0.1.2",
     "@local/dsh-subagent-acp-resilient": "github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1",
+    "dshmarket": "github:dsh-market/dsh-market#v1.66.21",
+    "dsh-plugin-subagent-director": "0.5.6",
+    "dsh-palette": "0.2.1",
     "fzstd": "^0.1.1"
   },
   "dsh": {
