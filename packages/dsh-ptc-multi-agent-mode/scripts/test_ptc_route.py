@@ -310,7 +310,7 @@ class TestPriority(unittest.TestCase):
 
 class TestCandidateChains(unittest.TestCase):
     def test_design_chain(self):
-        # 模糊设计（默认）：GPT-5.6 Sol xhigh 先设计，不自动进入 Opus。
+        # 模糊设计（默认）：GPT-6.1 Sol xhigh 先设计，不自动进入 Opus。
         chain = route.tier_candidate_chain("design")
         self.assertEqual(
             [c["route"] for c in chain],
