@@ -123,7 +123,7 @@
                   toolName: subagent_codex_relay
                   agentOptions:
                     provider: codex-relay
-                    model: gpt-5.6-sol
+                    model: gpt-6.1-sol
                     reasoningEffort: high
                     maxTokens: 32768
                   backgroundMode: one-shot

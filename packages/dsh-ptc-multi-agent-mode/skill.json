@@ -1,7 +1,7 @@
 {
   "id": "ptc-multi-agent-control",
   "name": "ptc-multi-agent-control",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "kind": "tool",
   "description": "编排跨工具、跨模型的 PTC 多代理任务；支持把 Subagent Director 角色按层级、首选/后备和优先级热插入候选链，同时保留专用 executor、冻结 route enum、worker receipt 和证据化收口。连续修改档自 0.15.0 起改派 ais-2dsglm/glm-5.3-flash。",
   "origin": "self",

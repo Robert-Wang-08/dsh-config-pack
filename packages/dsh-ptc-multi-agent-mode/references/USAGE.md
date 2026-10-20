@@ -6,11 +6,11 @@
 
 在 DSH Web 选择 **PTC 多代理主控（通用）**（preset：`ptc-multi-agent`）。新建会话时选择：
 
-- 首选 `codex-relay/gpt-5.6-sol` + `high`；
+- 首选 `codex-relay/gpt-6.1-sol` + `high`；
 - 备用 `kimi-coding/k3-256k`；
 - `kimi-coding/k3-256k` 支持 `reasoning_effort=max`；Max 是推理强度档位，不是模型名，不得写成模型 `k3-max`。
 
-固定路由：Codex Relay `gpt-5.6-sol`（`reasoning_effort=xhigh`）默认处理分析/设计/验证；仅高难度复核或显式全新领域自顶向下设计使用一次 Opus 5.5 plan reviewer。OpenCode DS V4.1 Flash 处理原子查询/修改；`ais-2dsglm/glm-5.3-flash` 处理同一代码面的连续修改（2026-10-16 起不再派发 Cursor/Grok，Cursor ACP 工具仍安装但不在 PTC 候选链内）；Kimi 生成文档草稿。任何降级都要登记实际 provider/model 和原因。
+固定路由：Codex Relay `gpt-6.1-sol`（`reasoning_effort=xhigh`）默认处理分析/设计/验证；仅高难度复核或显式全新领域自顶向下设计使用一次 Opus 5.5 plan reviewer。OpenCode DS V4.1 Flash 处理原子查询/修改；`ais-2dsglm/glm-5.3-flash` 处理同一代码面的连续修改（2026-10-16 起不再派发 Cursor/Grok，Cursor ACP 工具仍安装但不在 PTC 候选链内）；Kimi 生成文档草稿。任何降级都要登记实际 provider/model 和原因。
 
 ## 自动工作分层路由
 

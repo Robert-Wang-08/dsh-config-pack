@@ -102,7 +102,7 @@ function Build-RouteFromMap($Map, $Existing) {
     }
     $tiers = @(
         (New-Tier 1 $true @(
-            (New-Entry 'codex-relay' (& $pick 'DSHPACK_ROUTE_CODEX_RELAY' 'codex-relay') 'gpt-5.6-sol' 60000)
+            (New-Entry 'codex-relay' (& $pick 'DSHPACK_ROUTE_CODEX_RELAY' 'codex-relay') 'gpt-6.1-sol' 60000)
             (New-Entry 'codex-official' (& $pick 'DSHPACK_ROUTE_OPENAI_CODEX' 'openai-codex') 'gpt-5.6-sol' 120000)
         ))
         (New-Tier 2 $true @(

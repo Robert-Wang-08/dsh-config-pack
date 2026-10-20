@@ -12,12 +12,12 @@ export const COMPANION_SCHEMA = 'ptc-public-companion/v1';
 export const RUNTIME_SCHEMA = 'ptc-public-runtime/v1';
 export const DEFAULTS = {
   provider: {
-    controller: 'codex-relay', controllerModel: 'gpt-5.6-sol', controllerEffort: 'high',
+    controller: 'codex-relay', controllerModel: 'gpt-6.1-sol', controllerEffort: 'high',
     fallbackProvider: 'openai-codex', fallbackModel: 'gpt-5.6-sol',
     executeProvider: 'ais-2dsglm', executeModel: 'deepseek-v4.1-flash',
     continuousProvider: 'ais-2dsglm', continuousModel: 'glm-5.3-flash',
     docsProvider: 'kimi-coding', docsModel: 'kimi-code/k3-256k',
-    designAstraProvider: 'codex-relay', designAstraModel: 'gpt-5.6-sol', designEffort: 'xhigh',
+    designAstraProvider: 'codex-relay', designAstraModel: 'gpt-6.1-sol', designEffort: 'xhigh',
     designFiveFiveProvider: 'tokeniss', designFiveFiveModel: 'claude-opus-5-5',
     designModel: 'claude-opus-5', designLegacyModel: 'claude-opus-4-8'
   },
@@ -297,7 +297,7 @@ export function renderRuntimeConfig(inputAnswers) {
 }
 export function renderBundleFrom(source, inputAnswers) {
   const a = normalizeAnswers(inputAnswers);
-  const marker = /provider: codex-relay\r?\n\s+model: gpt-5\.6-sol\r?\n\s+reasoningEffort: high/;
+  const marker = /provider: codex-relay\r?\n\s+model: gpt-6\.1-sol\r?\n\s+reasoningEffort: high/;
   if (!marker.test(source)) throw new Error('public DSH bundle controller marker is missing');
   const rendered = source.replace(marker, 'provider: ' + a.provider.controller + '\n                    model: ' + a.provider.controllerModel + '\n                    reasoningEffort: ' + a.provider.controllerEffort);
   return selectAcpRows(rendered, ACP_PLUGIN_NAMES[a.acpPlugin]);

@@ -2,6 +2,13 @@
 
 本文件只记录技能与配套资产的版本演进。故障诊断、机器环境修复和验证证据见 [ISSUE_FIX_HISTORY.md](ISSUE_FIX_HISTORY.md)。
 
+## 0.16.0 - 2026-10-20
+
+- 用户指定：主控/分析/设计/验证的默认路由由 `codex-relay/gpt-5.6-sol` 上位为 `codex-relay/gpt-6.1-sol`；`controller.model`、`design.astraModel`、`subagent_codex_relay`、`subagent_codex_astra` 四处同步，`openai-codex/gpt-5.6-sol` 仍是 GPT 组后备，`kimi-coding/k3-256k` 不变。
+- config-pack 侧同步：failover 首选档（`config/45-failover.yml`、`cordis.patch.yml`）、`setup.ps1` 生成的档位表、`subagent-model-selection-settings.allowedModels` 的 codex-relay 条目、`public-runtime-config.json` 的 `controller.model` 与 `design.astraModel`。
+- `codex-relay/gpt-6.1-sol` 未收录于 pi-ai 内置目录，按 gpt-6-sol / gpt-5.6-sol 同族声明档位（reasoningEfforts 全档）；首次真实派发已验证默认档往返成功。
+- `scripts/ptc_route.py` 的 R4/R5 判定理由文案与 `SKILL.md`、`references/USAGE.md`、bundle 内提示词同步改为 GPT-6.1 Sol / gpt-6.1-sol，receipt 依据不再回指 5.6。
+
 ## 0.15.0 - 2026-10-16
 
 - 用户指定：同一代码面的连续修改（R7 / continuous 档）改派 `ais-2dsglm/glm-5.3-flash`，不再是 Cursor/Grok；Cursor 也不再作为该档的后备候选。该 provider 上唯一的 GLM 档是 `glm-5.3-flash`。

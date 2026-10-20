@@ -434,7 +434,7 @@ def tier_candidate_chain(
             ),
         ]
     if tier == "design":
-        # 设计优先使用 Codex Relay 的 gpt-5.6-sol xhigh。主控席位和官方 Codex
+        # 设计优先使用 Codex Relay 的 gpt-6.1-sol xhigh。主控席位和官方 Codex
         # 只作为 provider 失败后的后备；不再因“模糊”自动启动 Opus。
         astra = [
             _candidate(
@@ -691,7 +691,7 @@ def decide(raw: Mapping[str, Any]) -> dict[str, Any]:
             background=background,
         )
 
-    # R4 高难度设计：GPT-5.6 Sol xhigh 设计，Opus 5.5 独立复核。
+    # R4 高难度设计：GPT-6.1 Sol xhigh 设计，Opus 5.5 独立复核。
     if (not writes) and (
         design_mode in ("high", "top_down")
         or (design_mode is None and uncertainty == "high" and adjudication)
@@ -699,20 +699,20 @@ def decide(raw: Mapping[str, Any]) -> dict[str, Any]:
         return _decision(
             rule="R4",
             tier="design",
-            rationale="GPT-5.6 Sol xhigh 设计；仅高难度或全新领域自顶向下设计进入 Opus 5.5 独立复核",
+            rationale="GPT-6.1 Sol xhigh 设计；仅高难度或全新领域自顶向下设计进入 Opus 5.5 独立复核",
             prefers_acp=prefers_acp,
             background=background,
             design_mode=design_mode if design_mode in ("high", "top_down") else "high",
         )
 
-    # R5 模糊设计：GPT-5.6 Sol xhigh 先设计，不自动调用 Opus。
+    # R5 模糊设计：GPT-6.1 Sol xhigh 先设计，不自动调用 Opus。
     if (not writes) and (
         design_mode == "fuzzy" or (design_mode is None and uncertainty == "high" and not adjudication)
     ):
         return _decision(
             rule="R5",
             tier="design",
-            rationale="模糊设计由 Codex Relay 的 gpt-5.6-sol xhigh 处理，不自动调用 Opus",
+            rationale="模糊设计由 Codex Relay 的 gpt-6.1-sol xhigh 处理，不自动调用 Opus",
             prefers_acp=prefers_acp,
             background=background,
             design_mode="fuzzy",

@@ -142,7 +142,7 @@
         # 如需临时放行（或长时间使用后想清除陈旧守卫），重启 DSH 或改 false。
         guardWorkspaceReuse: !!js (process['env'].PTC_ACP_GUARD_WORKSPACE_REUSE ?? '1') !== '0'
 
-    # 设计/分析/验证默认 codex-relay/gpt-5.6-sol（reasoning_effort=xhigh）；仅高难度复核或全新领域自顶向下设计调用一次 Opus 复核。
+    # 设计/分析/验证默认 codex-relay/gpt-6.1-sol（reasoning_effort=xhigh）；仅高难度复核或全新领域自顶向下设计调用一次 Opus 复核。
     # Opus 有两个执行档，各自绑定独立的 Claude Code 配置目录，互不干扰、可同时可用：
     #   subagent_claude_opus55_plan -> 5.5 档（tokeniss）
     #   subagent_claude_opus5_plan  -> 5   档（anthropic-relay）
@@ -187,7 +187,7 @@
 
                 你对全局目标、任务拆分、模型路由、worker 验收、唯一进度账本和最终结论负责，不得把汇总与收口外包。每个会话只绑定一个全局唯一根 task_id；默认唯一账本是当前工作区 .ptc/registry.jsonl，可由 PTC_LEDGER 或 --ledger 覆盖。只有主控写账本。worker 只返回 receipt。任务开始时冻结 objective、contract 和 contract hash；范围实质变化必须新建根任务，禁止静默漂移。决策、风险、里程碑和交接通过 event-add 登记。
 
-                路由先调用 <SKILL_ROOT>/scripts/ptc_route.py 对工作项的可观测特征做 R1-R9 首条命中判定；不得再仅凭‘复杂/特别复杂’语感选择模型。GPT-5.6 Sol 主控首选 codex-relay/gpt-5.6-sol high，失败或不可用时转 openai-codex/gpt-5.6-sol，再降级 kimi-coding/k3-256k；Kimi 的 Max 档写作 reasoning_effort=max，不是模型名，不得写成 k3-max。分析/设计/验证默认使用 subagent_codex_astra（实际绑定 codex-relay/gpt-5.6-sol，reasoning_effort=xhigh）；一般与模糊设计不调用 Claude。只有高难度复核，或显式标记为全新领域自顶向下设计时，才调用 subagent_claude_opus55_plan；它是 plan 只读档，当前 provider 广告的模型 id 为 claude-opus-5，产出正文由主控落盘。主控模型自身失败（WebSocket error / PI_AI_ERROR）时路由不会热切换，必须在会话层重启并改选后备 provider。单点/只读定点任务默认主控或进程内 subagent；只有确需 ACP 文件执行或独立权限系统时才使用 subagent_opencode_dsv41。2–5 文件连续修改（route 标签仍为冻结的 continuous-cursor-grok）优先用 subagent 显式路由 ais-2dsglm/glm-5.3-flash；GLM 不可用时转 subagent_opencode_dsv41（opencode-go/deepseek-v4.1-flash），再回主控；不再派发 subagent_cursor_grok。文档链为 subagent_kimi_docs → 主控。真实 provider/model 写入 receipt.executor/model，receipt.route 必须与 subtask.route 一致。
+                路由先调用 <SKILL_ROOT>/scripts/ptc_route.py 对工作项的可观测特征做 R1-R9 首条命中判定；不得再仅凭‘复杂/特别复杂’语感选择模型。GPT-6.1 Sol 主控首选 codex-relay/gpt-6.1-sol high，失败或不可用时转 openai-codex/gpt-5.6-sol，再降级 kimi-coding/k3-256k；Kimi 的 Max 档写作 reasoning_effort=max，不是模型名，不得写成 k3-max。分析/设计/验证默认使用 subagent_codex_astra（实际绑定 codex-relay/gpt-6.1-sol，reasoning_effort=xhigh）；一般与模糊设计不调用 Claude。只有高难度复核，或显式标记为全新领域自顶向下设计时，才调用 subagent_claude_opus55_plan；它是 plan 只读档，当前 provider 广告的模型 id 为 claude-opus-5，产出正文由主控落盘。主控模型自身失败（WebSocket error / PI_AI_ERROR）时路由不会热切换，必须在会话层重启并改选后备 provider。单点/只读定点任务默认主控或进程内 subagent；只有确需 ACP 文件执行或独立权限系统时才使用 subagent_opencode_dsv41。2–5 文件连续修改（route 标签仍为冻结的 continuous-cursor-grok）优先用 subagent 显式路由 ais-2dsglm/glm-5.3-flash；GLM 不可用时转 subagent_opencode_dsv41（opencode-go/deepseek-v4.1-flash），再回主控；不再派发 subagent_cursor_grok。文档链为 subagent_kimi_docs → 主控。真实 provider/model 写入 receipt.executor/model，receipt.route 必须与 subtask.route 一致。
 
                 子任务必须自包含并携带 task_id、subtask_id、授权路径、禁止项、预期格式和验证证据。进入 review/done 必须有证据；done 必须为 100%。最终回复固定包含根任务与目标、完成项、实际路由与降级、产出物、验证证据、限制和下一步唯一动作。
           - id: agent-instructions
@@ -293,12 +293,12 @@
                   toolName: subagent_codex_relay
                   agentOptions:
                     provider: codex-relay
-                    model: gpt-5.6-sol
+                    model: gpt-6.1-sol
                     reasoningEffort: high
                     maxTokens: 32768
                   backgroundMode: one-shot
                   maxDepth: provider-managed
-              # 设计档专用工具（沿用历史名 astra）：实际绑定 codex-relay/gpt-5.6-sol + xhigh，
+              # 设计档专用工具（沿用历史名 astra）：实际绑定 codex-relay/gpt-6.1-sol + xhigh，
               # 与 SKILL.md、assets/public-runtime-config.json 的 design.astraModel 声明保持一致。
               - id: tool-subagent-codex-astra
                 name: '@deepseek-ai/dsh-tool-subagent'
@@ -307,7 +307,7 @@
                   toolName: subagent_codex_astra
                   agentOptions:
                     provider: codex-relay
-                    model: gpt-5.6-sol
+                    model: gpt-6.1-sol
                     reasoningEffort: xhigh
                     maxTokens: 32768
                   backgroundMode: one-shot

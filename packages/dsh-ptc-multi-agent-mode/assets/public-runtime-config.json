@@ -2,7 +2,7 @@
   "schema_version": "ptc-public-runtime/v1",
   "controller": {
     "provider": "codex-relay",
-    "model": "gpt-5.6-sol",
+    "model": "gpt-6.1-sol",
     "effort": "high",
     "fallbackProvider": "openai-codex",
     "fallbackModel": "gpt-5.6-sol"
@@ -23,7 +23,7 @@
   },
   "design": {
     "astraProvider": "codex-relay",
-    "astraModel": "gpt-5.6-sol",
+    "astraModel": "gpt-6.1-sol",
     "effort": "xhigh",
     "astraExecutor": "subagent_codex_astra",
     "opusProvider": "anthropic-relay",

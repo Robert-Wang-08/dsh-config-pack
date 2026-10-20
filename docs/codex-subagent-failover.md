@@ -5,7 +5,7 @@
 主控 provider failover 和子代理 provider failover 是两套机制。
 
 - subagent_codex 使用 openai-codex 官方 app-server，依赖 OpenAI OAuth/Office 额度。
-- subagent_codex_relay 使用通用 in-process spawn 子代理，固定选择现有 codex-relay/gpt-5.6-sol。
+- subagent_codex_relay 使用通用 in-process spawn 子代理，固定选择现有 codex-relay/gpt-6.1-sol。
 - relay provider 的适配器是 openai-responses；endpoint 和认证由 config/40-models.yml 的 baseURL / apiKeyEnv 解析，密钥变量名为 CRS_OAI_KEY，配置包不保存密钥值。
 - 官方 Codex 子代理不被替换，也不读取 relay 的 endpoint 或凭据。
 
@@ -16,7 +16,7 @@
 | 工具 | 后端 | 实际 provider/model | 凭据 |
 |---|---|---|---|
 | subagent_codex | official Codex provider | openai-codex/gpt-5.6-sol（运行时由官方 provider 解析） | OpenAI OAuth/Office |
-| subagent_codex_relay | spawn + agentOptions | codex-relay/gpt-5.6-sol | CRS_OAI_KEY |
+| subagent_codex_relay | spawn + agentOptions | codex-relay/gpt-6.1-sol | CRS_OAI_KEY |
 
 relay 工具使用 one-shot，保留通用子代理的超时、取消、dispose 和结果收集机制；它不启动 @openai/codex app-server。
 
@@ -42,7 +42,7 @@ relay 工具使用 one-shot，保留通用子代理的超时、取消、dispose 
 
 - 原始 attempt id、原始错误和 openai-codex/gpt-5.6-sol；
 - quota 分类的唯一 failover 事件；
-- 最多一次 codex-relay/gpt-5.6-sol attempt；
+- 最多一次 codex-relay/gpt-6.1-sol attempt；
 - relay 失败后的现有后备链或最终失败；
 - cancel、timeout、user abort 时不重派发；
 - relay 失败绝不回到官方 Codex。
@@ -56,7 +56,7 @@ PTC worker receipt 的 route 是 PTC 层枚举，不是 provider 名称；它仍
     {
       "executor": "codex-relay",
       "provider": "codex-relay",
-      "model": "gpt-5.6-sol",
+      "model": "gpt-6.1-sol",
       "fallback_from": {
         "executor": "openai-codex",
         "provider": "openai-codex",

@@ -300,7 +300,7 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
 本包同时暴露两个不同的 Codex 能力入口：
 
 - `subagent_codex` 仍使用 `openai-codex` 官方 app-server 和 OpenAI OAuth/Office 额度。
-- `subagent_codex_relay` 是独立的通用 spawn 子代理，固定使用现有 `codex-relay/gpt-5.6-sol`，通过 `openai-responses` 从 `config/40-models.yml` 读取 endpoint 和 `CRS_OAI_KEY` 引用；它不会启动官方 Codex app-server。
+- `subagent_codex_relay` 是独立的通用 spawn 子代理，固定使用现有 `codex-relay/gpt-6.1-sol`，通过 `openai-responses` 从 `config/40-models.yml` 读取 endpoint 和 `CRS_OAI_KEY` 引用；它不会启动官方 Codex app-server。
 
 主控 provider failover 和子代理 provider failover 是两套机制。当前配置包提供独立 relay 入口，但 DSH 0.2 的配置层没有稳定的工具结果重派发 hook，因此不能把主控 `agent/request-error` 误称为子代理自动 fallback；quota 自动重派发、attempt 去重和跨 provider receipt 聚合需要运行时调度层支持。完整分类、receipt 约定和排障步骤见 `docs/codex-subagent-failover.md`。
 
@@ -318,7 +318,7 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
 
 | provider | model | 用途 |
 |---|---|---|
-| `codex-relay` | `gpt-5.6-sol` | 主控 / 分析 / 设计 / 验证默认（`reasoning_effort=xhigh`） |
+| `codex-relay` | `gpt-6.1-sol` | 主控 / 分析 / 设计 / 验证默认（`reasoning_effort=xhigh`） |
 | `codex-relay` | `gpt-6-astra` | 可选：需要 Astra 时显式指定，不再作设计默认 |
 | `openai-codex` | `gpt-5.6-sol` | GPT 组降级（官方 OAuth） |
 | `ais-2dsglm` | `deepseek-v4.1-flash` | 执行 / 验证首选 |

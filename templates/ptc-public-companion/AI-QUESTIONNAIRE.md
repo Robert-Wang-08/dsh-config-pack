@@ -6,11 +6,11 @@ Hard rules: never ask for or output credential names or values, tokens, password
 
 Question order:
 
-1. Controller provider/model/effort: `codex-relay`, `gpt-5.6-sol`, `high`.
+1. Controller provider/model/effort: `codex-relay`, `gpt-6.1-sol`, `high`.
 2. Fallback provider/model: `openai-codex`, `gpt-5.6-sol`.
 3. Execution provider/model: `ais-2dsglm`, `deepseek-v4.1-flash`. Continuous-edit (R7) provider/model: `ais-2dsglm`, `glm-5.3-flash`; this tier runs as an in-process `subagent` route and no longer uses the Cursor/Grok ACP row.
 4. Docs provider/model: `kimi-coding`, `kimi-code/k3-256k`.
-5. Design routes: design provider/model `codex-relay`, `gpt-5.6-sol` (reasoning effort xhigh); Opus review ladder provider/model for the 5.5 tier `tokeniss`, `claude-opus-5-5`; the 5 tier `anthropic-relay`, `claude-opus-5`; the 4.8 tier `anthropic-relay`, `claude-opus-4-8`.
+5. Design routes: design provider/model `codex-relay`, `gpt-6.1-sol` (reasoning effort xhigh); Opus review ladder provider/model for the 5.5 tier `tokeniss`, `claude-opus-5-5`; the 5 tier `anthropic-relay`, `claude-opus-5`; the 4.8 tier `anthropic-relay`, `claude-opus-4-8`.
 6. For opencode, cursor-agent, and kimi only, ask for an executable-path environment-variable name plus a safe command-name fallback. Never accept a path as the fallback.
 7. Ask whether ACP child processes use a proxy, then proxy/no-proxy environment-variable names (`HTTPS_PROXY`, `NO_PROXY`) and whether Cursor keeps the proxy. Never ask for a proxy URL.
 8. Ask which subagent plugin backs the three ACP provider rows: `resilient` (default, public Git dependency) or `upstream`. Never ask for timeout values: the resilient plugin's graded ladder is emitted as `PTC_ACP_<UPPER_SNAKE_FIELD>` environment overrides with the documented defaults, and upstream rows carry no ladder keys at all.

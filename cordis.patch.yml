@@ -1,4 +1,4 @@
-# dsh-config-pack v0.9.1 — GENERATED FILE, DO NOT EDIT.
+# dsh-config-pack v0.9.2 — GENERATED FILE, DO NOT EDIT.
 #
 # Source of truth: config/*.yml   Rebuild with: npm run build
 # Verify before publishing:       npm run verify
@@ -100,7 +100,7 @@
 # ── 产品子代理：全权（bypass）覆盖 ───────────────────────────────────────
 # claude-code / codex 的 provider 行由各自 bundle 注册；这里在其后按顶层 id 定向覆盖 config。
 # subagent_codex_relay 复用 dsh-subagent-spawn-in-process 的通用执行器，
-# 通过工具配置的 agentOptions 绑定 llm-pi-ai 的 codex-relay/gpt-5.6-sol；
+# 通过工具配置的 agentOptions 绑定 llm-pi-ai 的 codex-relay/gpt-6.1-sol；
 # 它不加载 @deepseek-ai/dsh-subagent-codex，也不使用 OpenAI OAuth。
 # 必须写成顶层行，不能放进上面的 insert 列表，否则重复 id。
 - id: subagent-claude-code
@@ -207,6 +207,9 @@
         models:
           - id: gpt-5.6-sol
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-6.1-sol
+            # pi-ai 内置目录未收录该 id；按 gpt-6-sol / gpt-5.6-sol 同族声明档位（2026-10-20 起为默认档）
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-5.6
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-5.5
@@ -262,7 +265,7 @@
     enabled: true
     allowedModels:
       - provider: codex-relay
-        model: gpt-5.6-sol
+        model: gpt-6.1-sol
       - provider: codex-relay
         model: gpt-6-astra
       - provider: openai-codex
@@ -379,7 +382,7 @@
       # 同族互备优先：失败路由能在档位表中定位时，先只在它所在档内切换，档内确实
       # 无可用候选（已尝试/冷却中/能力不兼容/不可解析）才退回「从第 1 档向上扫」。
       # 打开后：opencode-go 失败先切同档的 ais-2dsglm（同为 deepseek-v4.1-flash），
-      # 不再直接升到第 1 档的 gpt-5.6-sol；整档耗尽才升档。
+      # 不再直接升到第 1 档的 gpt-6.1-sol；整档耗尽才升档。
       # 关闭（默认 false）时保持 v3.4.0 旧语义。
       sameTierFirst: true
     # 档位按模型族对齐：同档条目是同 model 的备用路由。
@@ -391,7 +394,7 @@
         entries:
           - id: codex-relay
             route: !!js process['env'].DSHPACK_ROUTE_CODEX_RELAY || 'codex-relay'
-            model: gpt-5.6-sol
+            model: gpt-6.1-sol
             description: 主控主力；reasoning 档可调，适合复杂推理
             keywords: [ 推理, 复杂, reasoning ]
             compatible: { tools: true, images: true }
@@ -567,7 +570,7 @@
                   toolName: subagent_codex_relay
                   agentOptions:
                     provider: codex-relay
-                    model: gpt-5.6-sol
+                    model: gpt-6.1-sol
                     reasoningEffort: high
                     maxTokens: 32768
                   backgroundMode: one-shot
