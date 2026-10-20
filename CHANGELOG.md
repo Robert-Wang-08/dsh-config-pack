@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.9.1
+
+新增安装后偏差比较验收 verify-install.mjs：期望集（核心依赖+可选三方组）对照实装（版本/bundle/入口），聚合 shadowing/composed/patch 对照，支持 --baseline 对拍观察基线（采样 SHA256）；install.ps1 第 4.6 步自动执行，默认 Source 追平本 tag。
+
 ## 0.9.0
 
 三方插件改为可选组：recent-sessions/dshmarket/director/palette 移出包依赖，进 assets/optional-components.json，install.ps1 默认补装、-SkipOptional 整组跳过；github 件保留组件锁（optional: true，tag→commit 照常校验）。

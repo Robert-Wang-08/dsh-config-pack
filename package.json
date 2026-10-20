@@ -1,6 +1,6 @@
 {
   "name": "dsh-config-pack",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "private": false,
   "type": "module",
   "description": "A generic, git-distributable DSH configuration pack: plugin selection + profile config layer + agent presets, installable into any DSH profile with one command.",

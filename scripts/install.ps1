@@ -9,7 +9,8 @@
        （blockExoticSubdeps: false、nodeLinker: hoisted、allowBuilds）；
     3) 只调一次 dsh plugin --profile <p> add <spec> —— 装包与注册 bundle 由 DSH 自己完成；
     4) 失败时按 pnpm 的错误码做**有界**自愈后重试（最多 3 次），而不是让你手工改配置再来一遍；
-    5) 校验 bundle 已登记、并跑只读校验。
+    5) 跑 `scripts/verify-install.mjs` —— 插件清单（核心+可选组）与配置的**偏差比较**：
+       bundle 登记、shadowing、composed dangling、patch 对照一次完成；
 
   为什么必须先把前置写好：本包带 git 宿主依赖，pnpm 默认拒绝（ERR_PNPM_EXOTIC_SUBDEP），
   且在被显式允许前不跑其构建脚本（ERR_PNPM_IGNORED_BUILDS）。更关键的是：
@@ -37,7 +38,7 @@
 [CmdletBinding()]
 param(
   [string]$ProfileName = 'packed',
-  [string]$Source = 'github:Robert-Wang-08/dsh-config-pack#v0.8.0',
+  [string]$Source = 'github:Robert-Wang-08/dsh-config-pack#v0.9.1',
   [string]$FromDefaultProfile = 'web',
   [switch]$Uninstall,
   [switch]$NoVerify,
@@ -143,16 +144,6 @@ if ($registered) {
   Warn ('  pwsh scripts/install.ps1 -ProfileName ' + $ProfileName + ' -Source ' + $Source)
 }
 
-if (-not $NoVerify) {
-  Step 'read-only verification (this pack vs the target profile)'
-  & node (Join-Path $root 'scripts/verify.mjs') --profile $ProfileName
-  if ($LASTEXITCODE -ne 0) {
-    Warn 'verify reported problems (see above). The pack is installed but may be shadowed.'
-  } else {
-    Ok 'verify: no shadowing found'
-  }
-}
-
 # ---- 4.5 optional third-party plugins (default: install; -SkipOptional skips) --
 Step 'optional third-party plugins'
 $optPath = Join-Path $root 'assets\optional-components.json'
@@ -168,6 +159,17 @@ if ($SkipOptional) {
     if ($LASTEXITCODE -ne 0) {
       Warn ('optional plugin "' + $o.package + '" add failed - continuing (non-fatal；重跑 install.ps1 可重试)')
     }
+  }
+}
+
+# ---- 4.6 post-install deviation check (plugins + config) ----------------------
+if (-not $NoVerify) {
+  Step 'post-install deviation check (plugins + config)'
+  & node (Join-Path $root 'scripts/verify-install.mjs') --profile $ProfileName
+  if ($LASTEXITCODE -ne 0) {
+    Warn '安装完成但存在插件/配置偏差 —— 见上方报告：missing(核心件) 必须处理；optional missing 若因 -SkipOptional 属预期；shadowing/设备字面量属已知设备差异'
+  } else {
+    Ok 'verify-install: 无偏差'
   }
 }
 

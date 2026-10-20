@@ -19,10 +19,15 @@ pwsh scripts/install.ps1 -ProfileName <profile>
 3. 调**一次** `dsh plugin --profile <p> add <spec>` —— 装包与把 bundle 注册进
    `dsh.profile.bundles` 都由 DSH 自己完成；
 4. 失败时按 pnpm 错误码做**有界**自愈后重试（最多 3 次），而不是让人工改配置重来；
-5. 校验 bundle 已登记，并跑 `scripts/verify.mjs --profile <p>`（只读，不动文件）；
-6. **默认补装可选三方插件组**（`assets/optional-components.json`：`dsh-recent-sessions`、
-   `dshmarket`、`dsh-plugin-subagent-director`、`dsh-palette`，逐个 `dsh plugin add`，失败不阻塞）；
-   加 `-SkipOptional` 整组跳过——注意升级时跳过会让已装件被依赖变更移除。
+5. 跑 `scripts/verify-install.mjs --profile <p>` —— **安装后偏差比较**：期望集（核心依赖 +
+   可选三方组，来自 `package.json` 与 `assets/optional-components.json`）逐项对照实装
+   （版本、bundle 登记、入口文件），并聚合三项只读配置检查：`verify.mjs --profile`
+   （shadowing）、`--dump-config` → `verify.mjs --composed`（dangling）、
+   `compare-profile.mjs`（pack 补丁 vs profile 补丁逐行归类）；
+   可选 `--baseline <观察基线.json>` 对拍另一台设备的观察快照（含采样文件 SHA256）；
+6. **默认补装可选三方插件组**发生在第 4 与第 5 步之间：`assets/optional-components.json`
+   （`dsh-recent-sessions`、`dshmarket`、`dsh-plugin-subagent-director`、`dsh-palette`，逐个
+   `dsh plugin add`，失败不阻塞）；加 `-SkipOptional` 整组跳过——注意升级时跳过会让已装件被依赖变更移除。
 
 ### 为什么必须先写前置再 add（实测结论）
 
@@ -124,4 +129,5 @@ node tools/apply-dsh-permission-compat.mjs --revert    # 回滚
 | 包是否真的激活 | **真实启动一次**。`--dump-config` 既不求值 `!!js`、也不报告 `did not activate` |
 | bundle 是否登记 | `dsh.profile.bundles` 含 `dsh-config-pack` |
 | 版本是否被遮蔽 | `node scripts/verify.mjs --profile <p>` |
+| 装完是否有偏差 | `node scripts/verify-install.mjs --profile <p>`（可加 `--baseline`） |
 | 组件是否一致 | `node scripts/verify-components.mjs` |
