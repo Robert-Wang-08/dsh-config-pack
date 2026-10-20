@@ -12,11 +12,11 @@
     },
     {
       "package": "dsh-plugin-subagent-director",
-      "spec": "0.5.6"
+      "spec": "dsh-plugin-subagent-director@0.5.6"
     },
     {
       "package": "dsh-palette",
-      "spec": "0.2.1"
+      "spec": "dsh-palette@0.2.1"
     }
   ]
 }

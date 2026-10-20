@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.9.3
+
+一键安装修复：prepare-profile 默认放行第一方 git 组件构建（tag 压缩包只有 src，不构建则 lib 入口缺失、插件无法激活）；组件锁升级 sidebar v0.0.4 / archived v0.4.2（新增 prepare 脚本，git 安装自动构建 lib）；install.ps1 改为 pack+可选组一次多 spec add（连续多次 add 的 reconcile 会挤掉先前登记的依赖 bundle）；可选组 spec 补 name@version 形态；自愈升级为提取 pnpm 建议的完整 tarball URL key。
+
 ## 0.9.2
 
 默认档切 gpt-6.1-sol：config/10-subagents、40-models、45-failover、50-presets 与 PTC 资产（SKILL/CHANGELOG/bundle/runtime-config/ptc_route.py）、setup.ps1、docs 联动更新；install.ps1 默认 Source 追平本 tag。

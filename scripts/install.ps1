@@ -1,21 +1,23 @@
 <#
 .SYNOPSIS
-  一条命令把 dsh-config-pack 装进一个 DSH profile。
+  一条命令把 dsh-config-pack 连同可选三方组装进一个 DSH profile。
 
 .DESCRIPTION
   这一步之前需要人工做的事，本脚本全部代做：
     1) profile 不存在时，从发行模板建一个；
     2) 在 profile 的 pnpm-workspace.yaml 里写好装本包必需的前置
-       （blockExoticSubdeps: false、nodeLinker: hoisted、allowBuilds）；
-    3) 只调一次 dsh plugin --profile <p> add <spec> —— 装包与注册 bundle 由 DSH 自己完成；
-    4) 失败时按 pnpm 的错误码做**有界**自愈后重试（最多 3 次），而不是让你手工改配置再来一遍；
+       （blockExoticSubdeps: false、nodeLinker: hoisted、allowBuilds——
+       含全部第一方 git 组件的构建许可，缺了它们 lib/ 不会被构建）；
+    3) 只调**一次** `dsh plugin --profile <p> add <本包> <可选三方件...>` ——
+       装包与 bundle 登记由 DSH 自己完成；多 spec 合并成一次 add 是刻意的：
+       连续多次 add 的 reconcile 会把先前登记的依赖 bundle 挤掉（实测）；
+    4) 失败时按 pnpm 的错误码做**有界**自愈后重试（最多 3 次），而不是让人工改配置再来一遍；
     5) 跑 `scripts/verify-install.mjs` —— 插件清单（核心+可选组）与配置的**偏差比较**：
-       bundle 登记、shadowing、composed dangling、patch 对照一次完成；
+       bundle 登记、shadowing、composed dangling、patch 对照一次完成。
 
-  为什么必须先把前置写好：本包带 git 宿主依赖，pnpm 默认拒绝（ERR_PNPM_EXOTIC_SUBDEP），
-  且在被显式允许前不跑其构建脚本（ERR_PNPM_IGNORED_BUILDS）。更关键的是：
-  一旦第一次 add 失败，依赖其实已经落盘，再重试时 DSH 不会为新依赖登记 bundle，
-  于是"装上了但整包不生效"——本脚本用一次成功的 add 规避这条路径。
+  可选三方组件来自 assets/optional-components.json（recent-sessions / dshmarket /
+  director / palette），默认安装；加 -SkipOptional 整组跳过——注意升级时跳过会让
+  已装件被依赖变更移除。
 
   脚本只改 pnpm 配置，不改写 cordis.patch.yml。
 
@@ -23,7 +25,7 @@
   目标 profile 名，默认 packed。
 
 .PARAMETER Source
-  包的来源 spec，默认本包已发布的不可变 tag。
+  包的来源 spec，默认本包已发布的 tag。
 
 .PARAMETER FromDefaultProfile
   profile 不存在时使用的发行模板，默认 web（PTC 工具面位于 preset 内，需要客户端预设选择能力）。
@@ -31,9 +33,12 @@
 .PARAMETER Uninstall
   走 dsh plugin remove。
 
+.PARAMETER SkipOptional
+  跳过可选三方插件组（升级时跳过会把已装件从 node_modules 移除）。
+
 .EXAMPLE
   pwsh scripts/install.ps1
-  pwsh scripts/install.ps1 -ProfileName mypack -Source github:Robert-Wang-08/dsh-config-pack#v0.6.0
+  pwsh scripts/install.ps1 -ProfileName mypack -Source github:Robert-Wang-08/dsh-config-pack#v0.9.2
 #>
 [CmdletBinding()]
 param(
@@ -61,13 +66,8 @@ $dshHome = $env:DSH_HOME
 if (-not $dshHome) { $dshHome = Join-Path $env:USERPROFILE '.dsh' }
 $profileDir = Join-Path (Join-Path $dshHome 'profiles') $ProfileName
 
-Step 'dsh-config-pack'
-Info ('profile    : ' + $ProfileName)
-Info ('source     : ' + $Source)
-Info ('profile dir: ' + $profileDir)
-Write-Host ''
-
 if ($Uninstall) {
+  Step 'uninstall'
   & dsh plugin --profile $ProfileName remove dsh-config-pack
   if ($LASTEXITCODE -ne 0) { Fail ('dsh plugin remove exited ' + $LASTEXITCODE) }
   Ok 'removed'
@@ -90,24 +90,51 @@ Step 'preparing pnpm settings inside the profile'
 & node (Join-Path $root 'scripts/prepare-profile.mjs') $profileDir
 if ($LASTEXITCODE -ne 0) { Fail 'prepare-profile.mjs failed' }
 
-# ---- 3. one add, with bounded self-repair -----------------------------------
+# ---- 3. ONE add: pack + optional third-party group --------------------------
+# 连续多次 `dsh plugin add` 的 reconcile 会把先前登记的依赖 bundle 挤掉（实测），
+# 所以 pack 与可选三方件必须合并在**同一次** add 里。
+$optionalSpecs = @()
+$optPath = Join-Path $root 'assets\optional-components.json'
+if ($SkipOptional) {
+  Info '可选三方插件组：-SkipOptional 跳过（升级时跳过会把已装件从 node_modules 移除）'
+} elseif (Test-Path $optPath) {
+  try {
+    $optional = Get-Content $optPath -Raw | ConvertFrom-Json
+    $optionalSpecs = @($optional.components | ForEach-Object { $_.spec })
+    Info ('optional group: ' + ($optionalSpecs -join ', '))
+  } catch {
+    Warn ('optional-components.json unreadable - proceeding without optional group: ' + $_.Exception.Message)
+  }
+} else {
+  Warn 'assets/optional-components.json 缺失 - 本包依赖照常安装，可选三方组不装'
+}
+
 $maxAttempts = 3
 $installed = $false
 for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
   Step ('installing (attempt ' + $attempt + ' of ' + $maxAttempts + ')')
-  $out  = & dsh plugin --profile $ProfileName add $Source 2>&1
+  $specArgs = @($Source) + $optionalSpecs
+  $out  = & dsh plugin --profile $ProfileName add @specArgs 2>&1
   $code = $LASTEXITCODE
   $text = ($out | Out-String)
   $out | Select-Object -Last 12 | ForEach-Object { Info $_ }
   if ($code -eq 0) { $installed = $true; break }
   if ($attempt -eq $maxAttempts) { break }
 
-  if ($text -match 'ERR_PNPM_IGNORED_BUILDS') {
+  $flat = ($text -replace '\r?\n', ' ')
+  if ($flat -match 'ERR_PNPM_IGNORED_BUILDS' -or $flat -match 'needs to execute build scripts|allowBuilds"? allowlist') {
+    # pnpm prints the exact allowBuilds key it wants (name@<tarball-url>), wrapped across
+    # lines in its help block. Remove line breaks AND the following indent so wrapped URLs
+    # are captured whole.
+    $joined = ($text -replace '\r?\n\s*', '')
+    $urlKeys = [regex]::Matches($joined, '[A-Za-z0-9_@.-]+@https?://[A-Za-z0-9_@./-]+') |
+      ForEach-Object { $_.Value } | Sort-Object -Unique
     $tokens = [regex]::Matches($text, '[A-Za-z0-9_@./-]+@[0-9][A-Za-z0-9_.-]*') |
       ForEach-Object { $_.Value } | Sort-Object -Unique
-    if ($tokens.Count -eq 0) { Fail 'pnpm blocked build scripts but no package names could be parsed' }
-    Warn ('pnpm blocked build scripts; allowing: ' + ($tokens -join ', '))
-    & node (Join-Path $root 'scripts/prepare-profile.mjs') $profileDir --extra-builds ($tokens -join ',')
+    $allowKeys = @($urlKeys) + @($tokens | Where-Object { $_ -notin $urlKeys })
+    if ($allowKeys.Count -eq 0) { Fail 'pnpm blocked build scripts but no package names could be parsed' }
+    Warn ('pnpm blocked build scripts; allowing: ' + ($allowKeys -join ', '))
+    & node (Join-Path $root 'scripts/prepare-profile.mjs') $profileDir --extra-builds ($allowKeys -join ',')
     if ($LASTEXITCODE -ne 0) { Fail 'prepare-profile.mjs failed while allowing builds' }
     continue
   }
@@ -125,16 +152,34 @@ if (-not $installed) {
 }
 Ok 'dsh plugin add succeeded'
 
-# ---- 4. verify --------------------------------------------------------------
-Step 'checking bundle registration'
-$profilePkg = Join-Path $profileDir 'package.json'
-$registered = $false
-if (Test-Path $profilePkg) {
-  try {
-    $j = Get-Content $profilePkg -Raw | ConvertFrom-Json
-    $registered = @($j.dsh.profile.bundles) -contains 'dsh-config-pack'
-  } catch { Warn ('could not parse ' + $profilePkg) }
+# ---- 3.5 build lib outputs for first-party git components -------------------
+# git tag tarballs ship source only; pnpm may skip their build scripts and a missing
+# main entry (lib/index.js) means the plugin cannot activate. Run the package's own
+# build/bundle script when the entry is still missing. First-party/trusted only.
+Step 'building lib outputs (entries missing after install)'
+$profPack = Get-Content (Join-Path $root 'package.json') -Raw | ConvertFrom-Json
+foreach ($p in $profPack.dependencies.PSObject.Properties) {
+  $dir = Join-Path $profileDir (Join-Path 'node_modules' $p.Name)
+  if (-not (Test-Path $dir)) { continue }
+  $pj = Get-Content (Join-Path $dir 'package.json') -Raw | ConvertFrom-Json
+  $entry = $pj.main
+  if (-not $entry -or (Test-Path (Join-Path $dir $entry))) { continue }
+  foreach ($script in @('build', 'bundle')) {
+    if ($pj.scripts.$script) {
+      Info ('  building ' + $p.Name + ' (pnpm run ' + $script + ')')
+      & pnpm --dir $dir run $script 2>&1 | Select-Object -Last 2 | ForEach-Object { Info $_ }
+      if ($LASTEXITCODE -eq 0 -and (Test-Path (Join-Path $dir $entry))) { break }
+    }
+  }
+  if (-not (Test-Path (Join-Path $dir $entry))) {
+    Warn ('  entry still missing for ' + $p.Name + ' (' + $entry + ')')
+  }
 }
+
+# ---- 4. bundle registration check ------------------------------------------
+Step 'checking bundle registration'
+$profilePkg = Get-Content (Join-Path $profileDir 'package.json') -Raw | ConvertFrom-Json
+$registered = @($profilePkg.dsh.profile.bundles) -contains 'dsh-config-pack'
 if ($registered) {
   Ok 'dsh-config-pack is registered in dsh.profile.bundles'
 } else {
@@ -144,25 +189,7 @@ if ($registered) {
   Warn ('  pwsh scripts/install.ps1 -ProfileName ' + $ProfileName + ' -Source ' + $Source)
 }
 
-# ---- 4.5 optional third-party plugins (default: install; -SkipOptional skips) --
-Step 'optional third-party plugins'
-$optPath = Join-Path $root 'assets\optional-components.json'
-if ($SkipOptional) {
-  Warn '跳过可选三方插件组（-SkipOptional）。注意：若此前已装，本次包依赖变更可能已把它们从 node_modules 移除。'
-} elseif (-not (Test-Path $optPath)) {
-  Warn 'assets/optional-components.json 缺失，跳过可选三方插件组'
-} else {
-  $optional = Get-Content $optPath -Raw | ConvertFrom-Json
-  foreach ($o in $optional.components) {
-    Info ('adding ' + $o.package + ' @ ' + $o.spec)
-    & dsh plugin --profile $ProfileName add $o.spec 2>&1 | Select-Object -Last 3 | ForEach-Object { Info $_ }
-    if ($LASTEXITCODE -ne 0) {
-      Warn ('optional plugin "' + $o.package + '" add failed - continuing (non-fatal；重跑 install.ps1 可重试)')
-    }
-  }
-}
-
-# ---- 4.6 post-install deviation check (plugins + config) ----------------------
+# ---- 4.6 post-install deviation check (plugins + config) --------------------
 if (-not $NoVerify) {
   Step 'post-install deviation check (plugins + config)'
   & node (Join-Path $root 'scripts/verify-install.mjs') --profile $ProfileName
@@ -173,7 +200,7 @@ if (-not $NoVerify) {
   }
 }
 
-# ---- 5. what no pack can ship ----------------------------------------------
+# ---- 5. per-device checklist (cannot be shipped by any pack) ----------------
 Step 'per-device checklist (cannot be shipped by any pack)'
 $manifestPath = Join-Path $root 'pack.manifest.yaml'
 if (Test-Path $manifestPath) {
@@ -197,9 +224,3 @@ if (Test-Path $manifestPath) {
     }
   }
 }
-
-Write-Host ''
-Step 'next'
-Info 'Environment variables only reach a new process - restart DSH before booting this profile:'
-Info ('    dsh ' + $ProfileName)
-Info 'Switch reference: README.md ("switches" table).'

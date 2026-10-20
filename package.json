@@ -1,6 +1,6 @@
 {
   "name": "dsh-config-pack",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "private": false,
   "type": "module",
   "description": "A generic, git-distributable DSH configuration pack: plugin selection + profile config layer + agent presets, installable into any DSH profile with one command.",
@@ -52,8 +52,8 @@
     "dsh-notify-bell": "0.12.0",
     "dsh-deepseek-keypool": "github:Robert-Wang-08/dsh-provider-failover#v3.4.0",
     "dsh-plugin-provider-badge": "github:Robert-Wang-08/dsh-plugin-provider-badge#v0.1.0",
-    "dsh-plugin-sidebar-visibility": "github:Robert-Wang-08/dsh-plugin-sidebar-visibility#v0.0.3",
-    "dsh-archived-sessions": "github:Robert-Wang-08/dsh-archived-sessions#v0.4.1",
+    "dsh-plugin-sidebar-visibility": "github:Robert-Wang-08/dsh-plugin-sidebar-visibility#v0.0.4",
+    "dsh-archived-sessions": "github:Robert-Wang-08/dsh-archived-sessions#v0.4.2",
     "dsh-plugin-subagent-monitor": "github:Robert-Wang-08/dsh-plugin-subagent-monitor#v0.1.0",
     "@local/dsh-subagent-acp-resilient": "github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.1",
     "fzstd": "^0.1.1"

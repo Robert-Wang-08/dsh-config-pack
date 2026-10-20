@@ -3,8 +3,13 @@
 // plugin set (core dependencies + optional third-party group) and against the config
 // layers (pack patch vs profile patch, composed dump). Optionally diff against a
 // captured baseline JSON (schema dsh-cross-device-observed/v1), including sampled-file
-// SHA256 checks. Read-only: nothing is installed, written (except a temp composed file)
-// or modified.
+// SHA256 checks. Read-only: nothing is installed or modified (a temp composed file is
+// written to the OS temp dir and removed afterwards).
+//
+// The installed side is scanned from node_modules top-level (hoisted install): every
+// package.json found there counts as installed, whether it is a direct dependency or a
+// transitive one pulled in by the pack. Declared dependencies only overlay spec/link
+// information.
 //
 // Usage:
 //   node scripts/verify-install.mjs --profile packed
@@ -13,7 +18,7 @@
 //
 // Exit codes: 0 = no blocking deviation; 1 = deviations found; 2 = usage/environment error.
 
-import { readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, rmSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
@@ -45,6 +50,7 @@ function readJson(path, label) {
     return null;
   }
 }
+const isFile = (p) => { try { return statSync(p).isFile(); } catch { return false; } };
 const sha256 = (p) => createHash('sha256').update(readFileSync(p)).digest('hex').toUpperCase();
 
 // ---------------- expected set: core dependencies + optional group ----------------
@@ -65,26 +71,57 @@ try {
   warnings.push('assets/optional-components.json unreadable - optional group not checked: ' + e.message);
 }
 
-// ---------------- installed reality ----------------
+// ---------------- installed reality: node_modules top-level scan ----------------
 const profilePkg = readJson(join(profileDir, 'package.json'), 'profile package.json');
 if (!profilePkg) { console.error('verify-install: FAIL - profile "' + profileName + '" not found under ' + dshHome); process.exit(2); }
-const deps = profilePkg.dependencies || {};
+const declaredDeps = profilePkg.dependencies || {};
 const bundleList = Array.isArray(profilePkg.dsh?.profile?.bundles) ? profilePkg.dsh.profile.bundles : [];
 
 const installed = new Map();
-for (const [key, spec] of Object.entries(deps)) {
-  const nm = join(profileDir, 'node_modules', key);
-  const row = { key, spec, declared: true, version: null, actualName: null, expectsBundle: false, registered: bundleList.includes(key), entry: null };
+{
+  const nmRoot = join(profileDir, 'node_modules');
+  const pkgDirs = [];
   try {
-    const pj = JSON.parse(readFileSync(join(nm, 'package.json'), 'utf8'));
-    row.actualName = pj.name || null;
-    row.version = pj.version || null;
-    row.expectsBundle = Boolean(pj['dsh.bundle'] || (pj.dsh && pj.dsh.bundle));
-    if (pj.main) row.entry = exists(join(nm, pj.main)) ? 'ok' : 'MISSING:' + pj.main;
-  } catch { row.version = null; }
-  installed.set(key, row);
+    for (const ent of readdirSync(nmRoot, { withFileTypes: true })) {
+      if (ent.name.startsWith('.')) continue;
+      if (!ent.isDirectory()) continue;
+      if (ent.name.startsWith('@')) {
+        for (const sub of readdirSync(join(nmRoot, ent.name), { withFileTypes: true })) {
+          if (sub.isDirectory()) pkgDirs.push(join(nmRoot, ent.name, sub.name));
+        }
+      } else {
+        pkgDirs.push(join(nmRoot, ent.name));
+      }
+    }
+  } catch (e) {
+    problems.push('node_modules under "' + nmRoot + '" is not readable: ' + e.message);
+  }
+  for (const dir of pkgDirs) {
+    let pj = null;
+    try { pj = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')); } catch { continue; }
+    if (!pj.name) continue;
+    installed.set(pj.name, {
+      key: pj.name, dir, actualName: pj.name, version: pj.version || null,
+      declared: false, spec: '(transitive)',
+      expectsBundle: Boolean(pj['dsh.bundle'] || (pj.dsh && pj.dsh.bundle)),
+      registered: bundleList.includes(pj.name),
+      entry: pj.main ? (isFile(join(dir, pj.main)) ? 'ok' : 'MISSING:' + pj.main) : null,
+    });
+  }
+  // overlay declared dependencies (spec + junction/link location wins for entry checks)
+  for (const [key, spec] of Object.entries(declaredDeps)) {
+    const nm = join(profileDir, 'node_modules', key);
+    let pj = null;
+    try { pj = JSON.parse(readFileSync(join(nm, 'package.json'), 'utf8')); } catch { continue; }
+    const row = installed.get(pj.name || key) || {
+      key: pj.name || key, dir: nm, actualName: pj.name || key, version: pj.version || null,
+      declared: false, spec: '(transitive)', expectsBundle: false, registered: bundleList.includes(pj.name || key), entry: null,
+    };
+    row.spec = spec; row.declared = true;
+    if (pj.main) row.entry = isFile(join(nm, pj.main)) ? 'ok' : 'MISSING:' + pj.main;
+    installed.set(pj.name || key, row);
+  }
 }
-function exists(p) { try { readFileSync(p); return true; } catch { return false; } }
 
 function findInstalled(name) {
   if (installed.has(name)) return installed.get(name);
@@ -100,7 +137,7 @@ function findInstalled(name) {
   return null;
 }
 
-// ---------------- compare ----------------
+// ---------------- compare expected vs installed ----------------
 const rows = [];
 for (const e of expected) {
   const got = findInstalled(e.name);
@@ -111,7 +148,9 @@ for (const e of expected) {
     );
     continue;
   }
-  const specVer = String(e.spec).match(/#v?([0-9][^]*)$/)?.[1] || String(e.spec).replace(/^[~^<>=\s]+/, '');
+  const specVer = String(e.spec).match(/#v?([0-9][^]*)$/)?.[1]
+    || String(e.spec).match(/^[@\w./-]+@([0-9][^]*)$/)?.[1]
+    || String(e.spec).replace(/^[~^<>=\s]+/, '');
   const drift = got.version && specVer && !String(e.spec).startsWith('github:') && got.version !== specVer
     ? 'version-drift' : null;
   if (drift) problems.push('plugin "' + e.name + '" installed ' + got.version + ' but expected ' + e.spec);
@@ -126,9 +165,11 @@ for (const e of expected) {
   });
 }
 const matchedKeys = new Set(rows.filter((r) => r.declaredAs).map((r) => r.declaredAs));
-const extras = [...installed.entries()]
-  .filter(([key]) => !matchedKeys.has(key))
-  .map(([key, r]) => ({ key, spec: r.spec, version: r.version, registered: r.registered, actualName: r.actualName }));
+// extras = only DIRECTLY DECLARED packages that sit outside the expected set; transitives
+// pulled in by the pack are not extras (they are the pack's own dependency closure).
+const extras = [...installed.values()]
+  .filter((r) => r.declared && !matchedKeys.has(r.key))
+  .map((r) => ({ key: r.key, spec: r.spec, version: r.version, registered: r.registered, actualName: r.actualName }));
 if (extras.length) {
   notes.push(extras.length + ' installed package(s) outside the pack expected set (dev aliases or manual adds): '
     + extras.map((x) => x.key).join(', '));
@@ -164,7 +205,7 @@ if (baselinePath) {
 }
 
 // ---------------- config checks (read-only subprocesses) ----------------
-function run(cmd, args, opts = {}) {
+function run(cmd, args) {
   const r = spawnSync(cmd, args, { encoding: 'utf8', shell: process.platform === 'win32' });
   return { code: r.status, out: String(r.stdout || ''), err: String(r.stderr || '') };
 }
@@ -175,7 +216,7 @@ if (!asJson || argv.includes('--with-config')) {
   if (v.code !== 0) warnings.push('verify.mjs --profile reported problems (shadowing or errors) - see its output');
 
   const composedPath = join(tmpdir(), 'verify-install-composed-' + process.pid + '.yml');
-  const dump = run('dsh', ['--profile', profileName, '--dump-config'], { captureFile: composedPath });
+  const dump = run('dsh', ['--profile', profileName, '--dump-config']);
   config.dump = { exit: dump.code };
   try {
     writeFileSync(composedPath, dump.out, 'utf8');

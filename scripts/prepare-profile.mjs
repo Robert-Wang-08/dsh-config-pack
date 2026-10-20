@@ -12,12 +12,21 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+// First-party git-hosted components build their lib/ output at install time (tsc/tsdown).
+// Without allowBuilds the build is skipped and the package's main entry (lib/index.js)
+// never appears - the plugin cannot activate.
 const REQUIRED_BUILDS = [
   '@deepseek-ai/dsh-subprocess-local',
   '@google/genai',
   'koffi',
   'node-pty',
   'protobufjs',
+  'dsh-archived-sessions',
+  'dsh-plugin-sidebar-visibility',
+  'dsh-plugin-subagent-monitor',
+  'dsh-plugin-provider-badge',
+  'dsh-deepseek-keypool',
+  '@local/dsh-subagent-acp-resilient',
 ];
 
 const argv = process.argv.slice(2);
@@ -25,7 +34,7 @@ const profileDir = argv[0];
 const extraIdx = argv.indexOf('--extra-builds');
 if (extraIdx >= 0 && argv[extraIdx + 1]) {
   for (const raw of argv[extraIdx + 1].split(',')) {
-    const name = raw.trim().replace(/@[^@/]+$/, '');
+    const name = raw.trim().replace(/\s+/g, '').replace(/@[^@/]+$/, '');
     if (name && !REQUIRED_BUILDS.includes(name)) REQUIRED_BUILDS.push(name);
   }
 }
