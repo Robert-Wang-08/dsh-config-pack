@@ -389,7 +389,10 @@ def validate_receipt(receipt: Any, task_id: str | None = None) -> None:
         raise LedgerError(f"receipt 缺少字段: {', '.join(missing)}")
     extras = sorted(set(receipt) - set(required))
     if extras:
-        raise LedgerError(f"receipt 包含 schema 未允许的额外字段: {', '.join(extras)}")
+        raise LedgerError(
+            f"receipt 包含 schema 未允许的额外字段: {', '.join(extras)}；"
+            f"允许的字段只有: {', '.join(required)}"
+        )
     if receipt["schema_version"] != SCHEMA_VERSION:
         raise LedgerError(f"receipt schema_version 应为 {SCHEMA_VERSION}")
     if task_id and receipt["task_id"] != task_id:

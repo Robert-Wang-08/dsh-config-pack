@@ -2,6 +2,10 @@
 
 本文件只记录技能与配套资产的版本演进。故障诊断、机器环境修复和验证证据见 [ISSUE_FIX_HISTORY.md](ISSUE_FIX_HISTORY.md)。
 
+## 未发布
+
+- `ptc_task_control.py`：receipt 出现多余字段时，报错同时列出允许的 12 个字段。此前只报多余字段名，写入方只能靠试错反推 schema（实测一个会话内触发 13 次）。行为不变，仅错误文案。
+
 ## 0.16.0 - 2026-10-20
 
 - 用户指定：主控/分析/设计/验证的默认路由由 `codex-relay/gpt-5.6-sol` 上位为 `codex-relay/gpt-6.1-sol`；`controller.model`、`design.astraModel`、`subagent_codex_relay`、`subagent_codex_astra` 四处同步，`openai-codex/gpt-5.6-sol` 仍是 GPT 组后备，`kimi-coding/k3-256k` 不变。
