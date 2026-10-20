@@ -1,4 +1,4 @@
-# dsh-config-pack v0.9.4 — GENERATED FILE, DO NOT EDIT.
+# dsh-config-pack v0.9.5 — GENERATED FILE, DO NOT EDIT.
 #
 # Source of truth: config/*.yml   Rebuild with: npm run build
 # Verify before publishing:       npm run verify
@@ -188,7 +188,7 @@
   name: "@deepseek-ai/dsh-agent-default-model"
   config:
     provider: !!js process['env'].DSHPACK_DEFAULT_PROVIDER || 'codex-relay'
-    model: !!js process['env'].DSHPACK_DEFAULT_MODEL || 'gpt-5.6-sol'
+    model: !!js process['env'].DSHPACK_DEFAULT_MODEL || 'gpt-6.1-sol'
 
 # ── llm-pi-ai 路由表 ─────────────────────────────────────────────────────
 # 按 id 整体替换该行的 config。baseURL 与 apiKeyEnv 都可用环境变量覆盖，
@@ -205,10 +205,11 @@
         baseURL: !!js process['env'].DSHPACK_BASE_CODEX_RELAY || 'http://47.101.159.7:39187/v1'
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_CODEX_RELAY || 'CRS_OAI_KEY'
         models:
-          - id: gpt-5.6-sol
-            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-6.1-sol
-            # pi-ai 内置目录未收录该 id；按 gpt-6-sol / gpt-5.6-sol 同族声明档位（2026-10-20 起为默认档）
+            # pi-ai 内置目录未收录该 id；按 gpt-6-sol / gpt-5.6-sol 同族声明档位（2026-10-20 起为默认档，目录首位）
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-5.6-sol
+            # 保留为可选档；不再作新会话默认、不再作 failover 目标
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-5.6
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
@@ -268,6 +269,8 @@
         model: gpt-6.1-sol
       - provider: codex-relay
         model: gpt-6-astra
+      - provider: openai-codex
+        model: gpt-6.1-sol
       - provider: openai-codex
         model: gpt-5.6-sol
       - provider: ais-2dsglm
@@ -401,7 +404,7 @@
             cooldownMs: 60000
           - id: codex-official
             route: !!js process['env'].DSHPACK_ROUTE_OPENAI_CODEX || 'openai-codex'
-            model: gpt-5.6-sol
+            model: gpt-6.1-sol
             description: 同族备用；gpt（official），OAuth 凭据，需先在 Web Models 页登录
             keywords: [ 官方, codex ]
             compatible: { tools: true, images: true }

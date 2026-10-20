@@ -1,6 +1,6 @@
 # failover 可见性、按类别重试与同族互备（2026-10-15）
 
-本文记录 `dsh-deepseek-keypool` 在 v3.4.0 之上的三项本地改动，以及它们的验证与回滚方式。
+本文记录 `dsh-deepseek-keypool` 在 v3.4.0 之上的三项本地改动（已随 v3.5.0 发布），以及它们的验证与回滚方式。
 背景事实与证据见工作区 `.ptc-probe/failover-switch-incident.json`。
 
 ## 1. 会话内可见的通知（原因 + 结果）

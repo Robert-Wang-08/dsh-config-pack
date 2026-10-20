@@ -185,7 +185,7 @@ docs/ROW-OWNERSHIP-20261013.md
 | `DSHPACK_MCP_SLIDE` | 关 | 需 `TENCENT_DOCS_TOKEN` |
 | `DSHPACK_TICKTICK_ENTRY` | 空 | 填 ticktick-mcp 的 dist/index.js 绝对路径即自动开启 |
 | `DSHPACK_NODE` | `node` | stdio MCP 用的 node 绝对路径 |
-| `DSHPACK_DEFAULT_PROVIDER` / `DSHPACK_DEFAULT_MODEL` | `codex-relay` / `gpt-5.6-sol` | 新会话默认模型 |
+| `DSHPACK_DEFAULT_PROVIDER` / `DSHPACK_DEFAULT_MODEL` | `codex-relay` / `gpt-6.1-sol` | 新会话默认模型 |
 | `DSHPACK_SELECTED_PRESET` | `ptc-multi-agent` | 预设注册表选中项 |
 | `DSHPACK_BASE_*` / `DSHPACK_KEY_*` | 见 `config/40-models.yml` | 覆盖路由 baseURL / apiKeyEnv |
 | `DSHPACK_ROUTE_CODEX_RELAY` | `codex-relay` | failover tier1 主路由 id |
@@ -313,14 +313,15 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
 才向模型暴露 `provider` / `model` / `reasoning_effort` 三个可选参数并注册 `list_subagent_models`；
 策略为空时工具只暴露 `prompt` / `description` / `run_in_background`——表现就是"派发参数里的显式路由永远是空的"。
 
-本包在 `config/40-models.yml` 里提供这条策略（`enabled: true` + 6 条白名单），
+本包在 `config/40-models.yml` 里提供这条策略（`enabled: true` + 精确白名单），
 覆盖 PTC 路由表的控制 / 执行 / 设计三类及其降级项：
 
 | provider | model | 用途 |
 |---|---|---|
 | `codex-relay` | `gpt-6.1-sol` | 主控 / 分析 / 设计 / 验证默认（`reasoning_effort=xhigh`） |
 | `codex-relay` | `gpt-6-astra` | 可选：需要 Astra 时显式指定，不再作设计默认 |
-| `openai-codex` | `gpt-5.6-sol` | GPT 组降级（官方 OAuth） |
+| `openai-codex` | `gpt-6.1-sol` | GPT 组降级（官方 OAuth） |
+| `openai-codex` | `gpt-5.6-sol` | 可选：5.6 仍可手动选择，不再作降级目标 |
 | `ais-2dsglm` | `deepseek-v4.1-flash` | 执行 / 验证首选 |
 | `opencode-go` | `deepseek-v4.1-flash` | DS 组降级 |
 | `anthropic-relay` | `claude-opus-5` | Opus 5.5：仅高难度或 `top_down` 独立复核 |

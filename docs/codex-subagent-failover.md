@@ -15,7 +15,7 @@
 
 | 工具 | 后端 | 实际 provider/model | 凭据 |
 |---|---|---|---|
-| subagent_codex | official Codex provider | openai-codex/gpt-5.6-sol（运行时由官方 provider 解析） | OpenAI OAuth/Office |
+| subagent_codex | official Codex provider | openai-codex/gpt-6.1-sol（运行时由官方 provider 解析） | OpenAI OAuth/Office |
 | subagent_codex_relay | spawn + agentOptions | codex-relay/gpt-6.1-sol | CRS_OAI_KEY |
 
 relay 工具使用 one-shot，保留通用子代理的超时、取消、dispose 和结果收集机制；它不启动 @openai/codex app-server。
@@ -40,7 +40,7 @@ relay 工具使用 one-shot，保留通用子代理的超时、取消、dispose 
 
 要完成自动 fallback，运行时必须在子代理调度层增加一次性的 attempt 状态机，至少持有：
 
-- 原始 attempt id、原始错误和 openai-codex/gpt-5.6-sol；
+- 原始 attempt id、原始错误和 openai-codex/gpt-6.1-sol；
 - quota 分类的唯一 failover 事件；
 - 最多一次 codex-relay/gpt-6.1-sol attempt；
 - relay 失败后的现有后备链或最终失败；
@@ -60,7 +60,7 @@ PTC worker receipt 的 route 是 PTC 层枚举，不是 provider 名称；它仍
       "fallback_from": {
         "executor": "openai-codex",
         "provider": "openai-codex",
-        "model": "gpt-5.6-sol",
+        "model": "gpt-6.1-sol",
         "reason": "quota"
       }
     }

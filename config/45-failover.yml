@@ -113,7 +113,7 @@
             cooldownMs: 60000
           - id: codex-official
             route: !!js process['env'].DSHPACK_ROUTE_OPENAI_CODEX || 'openai-codex'
-            model: gpt-5.6-sol
+            model: gpt-6.1-sol
             description: 同族备用；gpt（official），OAuth 凭据，需先在 Web Models 页登录
             keywords: [ 官方, codex ]
             compatible: { tools: true, images: true }

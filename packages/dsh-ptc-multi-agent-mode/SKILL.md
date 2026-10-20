@@ -154,7 +154,7 @@ python $ctl session-end --task-id <task-id> --session-id <session-id> --summary 
 
 | 工作类型 | 默认候选链 |
 | --- | --- |
-| 主控、拆分、验收、收口 | `codex-relay/gpt-6.1-sol` -> `openai-codex/gpt-5.6-sol` -> `kimi-coding/k3-256k` |
+| 主控、拆分、验收、收口 | `codex-relay/gpt-6.1-sol` -> `openai-codex/gpt-6.1-sol` -> `kimi-coding/k3-256k` |
 | 一般设计、模糊设计、高不确定性发散 | `subagent_codex_astra` + `codex-relay/gpt-6.1-sol`（`reasoning_effort=xhigh`）-> GPT/DS 后备；不自动调用 Claude |
 | 高难度设计或冲突仲裁 | `codex-relay/gpt-6.1-sol`（`reasoning_effort=xhigh`）设计 -> `subagent_claude_opus55_plan` 独立只读复核 -> GPT 后备 |
 | 全新领域且明确要求自顶向下设计 | `design_mode=top_down`：GPT-6.1 Sol xhigh 设计 -> 单次 Opus 5.5 独立复核 -> GPT 后备 |

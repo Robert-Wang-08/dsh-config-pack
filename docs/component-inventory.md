@@ -20,7 +20,7 @@ companion bundle 现在与主包声明**同一组依赖**（选项 C）。于是
 | `dsh-plugin-provider-badge` | `#v0.1.0` | **自写** | `Robert-Wang-08/dsh-plugin-provider-badge` |
 | `dsh-plugin-sidebar-visibility` | `#v0.0.3` | **自写** | `Robert-Wang-08/dsh-plugin-sidebar-visibility` |
 | `dsh-plugin-subagent-monitor` | `#v0.1.0` | **自写** | `Robert-Wang-08/dsh-plugin-subagent-monitor` |
-| `dsh-deepseek-keypool` | `#v3.4.0` | **自写** | `Robert-Wang-08/dsh-provider-failover` |
+| `dsh-deepseek-keypool` | `#v3.5.0` | **自写** | `Robert-Wang-08/dsh-provider-failover` |
 | `@local/dsh-subagent-acp-resilient` | `#v0.2.1` | **自写**（上游 ACP provider 的替换实现） | `Robert-Wang-08/dsh-subagent-acp-resilient` |
 | `dsh-archived-sessions` | `#v0.4.1` | **上游 fork**（上游 `Jiangdl0220/dsh-archived-sessions`） | `Robert-Wang-08/dsh-archived-sessions` |
 | `dsh-chat-import` | `0.25.2` | **第三方 npm**（Nwflower） | `Nwflower/dsh-chat-import` |

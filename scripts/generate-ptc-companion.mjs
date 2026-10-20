@@ -13,7 +13,7 @@ export const RUNTIME_SCHEMA = 'ptc-public-runtime/v1';
 export const DEFAULTS = {
   provider: {
     controller: 'codex-relay', controllerModel: 'gpt-6.1-sol', controllerEffort: 'high',
-    fallbackProvider: 'openai-codex', fallbackModel: 'gpt-5.6-sol',
+    fallbackProvider: 'openai-codex', fallbackModel: 'gpt-6.1-sol',
     executeProvider: 'ais-2dsglm', executeModel: 'deepseek-v4.1-flash',
     continuousProvider: 'ais-2dsglm', continuousModel: 'glm-5.3-flash',
     docsProvider: 'kimi-coding', docsModel: 'kimi-code/k3-256k',

@@ -42,9 +42,9 @@ dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#<RELEASE_T
   '@deepseek-ai/dsh-web-app@0.2.0-rc.2'
 
 # 2) git 宿主插件（本机路由层的加载器；构建脚本策略见 §2.1 约束 2）
-dsh plugin --profile packed add github:Robert-Wang-08/dsh-provider-failover#v3.4.0
+dsh plugin --profile packed add github:Robert-Wang-08/dsh-provider-failover#v3.5.0
 #    注意：本包 `package.json` 已把 `dsh-deepseek-keypool`（来源就是
-#    `github:Robert-Wang-08/dsh-provider-failover#v3.4.0`）列为 dependencies，装包时会一并解析。
+#    `github:Robert-Wang-08/dsh-provider-failover#v3.5.0`）列为 dependencies，装包时会一并解析。
 #    这里单独再 add 一次的用途是**显式登记它的 bundle**（依赖被解析 ≠ bundle 已登记到 profile），
 #    不是重复安装。两条都做过时用 `node scripts/verify.mjs --profile <p>` 确认没有同 id 遮蔽。
 
@@ -89,7 +89,7 @@ dsh packed
 | `dsh-chat-import` | 0.25.2 | 会话导入 |
 | `dsh-mermaid-smooth` | 0.1.0 | 图形渲染 |
 | `dsh-notify-bell` | 0.12.0 | 通知 |
-| `dsh-deepseek-keypool` | github:Robert-Wang-08/dsh-provider-failover#v3.4.0 | 故障转移与档位路由 |
+| `dsh-deepseek-keypool` | github:Robert-Wang-08/dsh-provider-failover#v3.5.0 | 故障转移与档位路由 |
 | `dsh-plugin-provider-badge` | github:Robert-Wang-08/dsh-plugin-provider-badge#v0.1.0 | provider 标识 |
 | `dsh-plugin-sidebar-visibility` | github:Robert-Wang-08/dsh-plugin-sidebar-visibility#v0.0.3 | 侧栏可见性 |
 | `dsh-archived-sessions` | github:Robert-Wang-08/dsh-archived-sessions#v0.4.1 | 归档会话 |
@@ -174,7 +174,7 @@ profile 目录由第一次 `dsh plugin add` 自动创建；创建后编辑其中
       '@deepseek-ai/dsh-subagent-claude-code@0.2.0-rc.2' `
       '@deepseek-ai/dsh-subagent-codex@0.2.0-rc.2' `
       '@deepseek-ai/dsh-web-app@0.2.0-rc.2' `
-      'github:Robert-Wang-08/dsh-provider-failover#v3.4.0' `
+      'github:Robert-Wang-08/dsh-provider-failover#v3.5.0' `
       'github:Robert-Wang-08/dsh-config-pack#<RELEASE_TAG>'
 
 `dsh.profile.bundles` 的顺序**就是命令行参数的顺序**，所以本包必须写在参数最后，天然满足 §2.1 约束 1。
@@ -247,7 +247,7 @@ $DSH_HOME/plugins/provider-failover/route-config.json
 
 - 该文件**机器本地**、**不含凭据**（只写 route/model 名字），**不得提交进任何仓库**。
 - 插件在**启动时**读取它；存在时覆盖包内联的档位表，因此**改完必须重启 DSH**。
-- 只有能读该文件的插件版本（`dsh-provider-failover` ≥ 3.4.0）才认它；旧版会**静默忽略**。本包依赖已钉到 annotated tag `#v3.4.0`，避免跟随分支漂移。
+- 只有能读该文件的插件版本（`dsh-provider-failover` ≥ 3.4.0）才认它；旧版会**静默忽略**。本包依赖已钉到 annotated tag `#v3.5.0`，避免跟随分支漂移。
 - 没有该文件时，本包 `config/45-failover.yml` 的档位表直接生效——这是新设备的默认行为。
 
 子代理侧的候选链（设计/开发/验证/连续任务）由主控在路由前读取，同样来自该文件，不来自 Git。

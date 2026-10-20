@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.9.5
+
+failover 档位/默认模型统一 gpt-6.1-sol；模型目录 6.1 提前；依赖追平 keypool v3.5.0
+
 ## 0.9.4
 
 修正 v0.9.3 组件锁：sidebar v0.0.4 / archived v0.4.2 重打 tag（补版本号与 prepare 脚本）后，锁内解引用 commit 对齐新 tag；同步 update.ps1（已安装设备一键更新：解析远端最新 tag、版本比较、复用 install 全流程与偏差验收）。

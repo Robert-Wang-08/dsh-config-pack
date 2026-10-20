@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.9.4
+version: 0.9.5
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
@@ -48,7 +48,7 @@ requires_env:
   - { name: DSHPACK_TICKTICK_ENTRY,  scope: User, required: false, why: "ticktick-mcp 的 dist/index.js 绝对路径；未设则 ticktick 行被禁用" }
   - { name: DSHPACK_OPENCODE_CONFIG, scope: User, required: false, why: "覆盖 OPENCODE_CONFIG_CONTENT JSON；默认 ais-2dsglm/deepseek-v4.1-flash" }
   - { name: DSHPACK_DEFAULT_PROVIDER, scope: User, required: false, why: "新会话默认 provider；默认 codex-relay" }
-  - { name: DSHPACK_DEFAULT_MODEL,   scope: User, required: false, why: "新会话默认 model；默认 gpt-5.6-sol" }
+  - { name: DSHPACK_DEFAULT_MODEL,   scope: User, required: false, why: "新会话默认 model；默认 gpt-6.1-sol" }
   - { name: DSHPACK_SELECTED_PRESET, scope: User, required: false, why: "预设注册表 selectedDefault；默认 ptc-multi-agent" }
   - { name: DSHPACK_ROUTE_CODEX_RELAY,        scope: User, required: false, why: "failover tier1 主路由 id；默认 codex-relay" }
   - { name: DSHPACK_ROUTE_OPENAI_CODEX,       scope: User, required: false, why: "failover tier1 备用路由 id；默认 openai-codex" }
@@ -102,8 +102,8 @@ components:
   - id: provider-failover
     package: dsh-deepseek-keypool
     repo: https://github.com/Robert-Wang-08/dsh-provider-failover.git
-    tag: v3.4.0
-    commit: d0c6c2d6c1b0af78a0fbb60e89d86c4571b41f0e
+    tag: v3.5.0
+    commit: f4573a625af466e31505f25a4253268dbc993a72
     installable: true
   - id: archived-sessions
     package: dsh-archived-sessions
