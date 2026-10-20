@@ -10,7 +10,10 @@
 // This script only edits pnpm config. It never touches cordis.patch.yml or package.json.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // First-party git-hosted components build their lib/ output at install time (tsc/tsdown).
 // Without allowBuilds the build is skipped and the package's main entry (lib/index.js)
@@ -46,6 +49,50 @@ if (!profileDir) {
 if (!existsSync(profileDir)) {
   console.error('profile directory does not exist: ' + profileDir);
   process.exit(2);
+}
+
+// --- seed fence keys from the components lock --------------------------------
+// pnpm fences git-hosted deps by their exact tarball id (name@https://codeload.../tar.gz/<commit>).
+// The lock (pack.manifest.yaml) records repo + resolved commit per component, so all
+// fence keys can be pre-seeded offline - a fresh profile then needs no discovery rounds.
+try {
+  const manifest = readFileSync(join(root, 'pack.manifest.yaml'), 'utf8');
+  const comps = [];
+  let cur = null;
+  let inBlock = false;
+  for (const line of manifest.split(/\r?\n/)) {
+    if (/^components:\s*$/.test(line)) { inBlock = true; continue; }
+    if (inBlock && /^\S/.test(line)) break;
+    if (!inBlock) continue;
+    const rec = line.match(/^\s*-\s+id:\s*(.+?)\s*$/);
+    if (rec) { cur = { id: rec[1] }; comps.push(cur); continue; }
+    const kv = line.match(/^\s+([A-Za-z_]+):\s*(.+?)\s*$/);
+    if (kv && cur) cur[kv[1]] = kv[2].replace(/^[\'\"]|[\'\"]$/g, '');
+  }
+  for (const c of comps) {
+    if (c.installable !== 'true' || !c.package || !c.repo || !c.commit) continue;
+    const m = String(c.repo).match(/^https:\/\/github\.com\/(.+)\.git$/);
+    if (!m) continue;
+    const tarballBase = 'https://codeload.github.com/' + m[1] + '/tar.gz/' + c.commit;
+    REQUIRED_BUILDS.push(c.package);
+    REQUIRED_BUILDS.push(c.package + '@' + tarballBase);
+    // The fence id uses the component's INNER package name (e.g. @local/dsh-plugin-sidebar-visibility),
+    // which differs from the declared dependency name. In an umbrella checkout the component's
+    // own checkout sits as a sibling directory with the repo basename - read its real name.
+    try {
+      const base = String(m[1]).split('/').pop();
+      const innerPath = join(root, '..', base, 'package.json');
+      if (existsSync(innerPath)) {
+        const inner = JSON.parse(readFileSync(innerPath, 'utf8'));
+        if (inner.name && inner.name !== c.package) {
+          REQUIRED_BUILDS.push(inner.name);
+          REQUIRED_BUILDS.push(inner.name + '@' + tarballBase);
+        }
+      }
+    } catch {}
+  }
+} catch (e) {
+  console.error('prepare-profile: could not seed lock fence keys (' + e.message + ') - relying on self-heal');
 }
 
 const file = join(profileDir, 'pnpm-workspace.yaml');

@@ -109,7 +109,7 @@ if ($SkipOptional) {
   Warn 'assets/optional-components.json 缺失 - 本包依赖照常安装，可选三方组不装'
 }
 
-$maxAttempts = 3
+$maxAttempts = 10
 $installed = $false
 for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
   Step ('installing (attempt ' + $attempt + ' of ' + $maxAttempts + ')')
@@ -121,6 +121,9 @@ for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
   if ($code -eq 0) { $installed = $true; break }
   if ($attempt -eq $maxAttempts) { break }
 
+  # pnpm stops at the FIRST fenced git dependency per attempt; every retry reveals its
+  # exact allowBuilds key (name@<tarball-url>, possibly wrapped across help lines) and the
+  # next unfenced one. Budget must cover the number of git deps, not just flaky networks.
   $flat = ($text -replace '\r?\n', ' ')
   if ($flat -match 'ERR_PNPM_IGNORED_BUILDS' -or $flat -match 'needs to execute build scripts|allowBuilds"? allowlist') {
     # pnpm prints the exact allowBuilds key it wants (name@<tarball-url>), wrapped across
@@ -151,6 +154,25 @@ if (-not $installed) {
   Fail ('dsh plugin add did not succeed. Logs: ' + (Join-Path $profileDir '.plugin-manager\logs'))
 }
 Ok 'dsh plugin add succeeded'
+
+# ---- 3.4 register component bundles explicitly ------------------------------
+# `dsh plugin add <pack>` does NOT register the pack's dependency bundles (verified fresh
+# install). Each component must be its own direct dependency with a registered bundle.
+# Idempotent: components already in dsh.profile.bundles are skipped.
+Step 'registering component bundles (explicit, idempotent)'
+$profPack = Get-Content (Join-Path $root 'package.json') -Raw | ConvertFrom-Json
+$profPkg = Get-Content (Join-Path $profileDir 'package.json') -Raw | ConvertFrom-Json
+$knownBundles = @($profPkg.dsh.profile.bundles)
+foreach ($p in $profPack.dependencies.PSObject.Properties) {
+  if ($p.Name -eq 'fzstd') { continue }
+  if ($knownBundles -contains $p.Name) { continue }
+  # npm-style specs need name@version (a bare "0.25.2" would be treated as a package name);
+  # git-hosted specs are already complete ("github:owner/repo#tag").
+  $spec = if ($p.Value -like 'github:*') { $p.Value } else { "$($p.Name)@$($p.Value)" }
+  Info ('registering ' + $p.Name)
+  & dsh plugin --profile $ProfileName add $spec 2>&1 | Select-Object -Last 2 | ForEach-Object { Info $_ }
+  if ($LASTEXITCODE -ne 0) { Warn ('failed registering ' + $p.Name) }
+}
 
 # ---- 3.5 build lib outputs for first-party git components -------------------
 # git tag tarballs ship source only; pnpm may skip their build scripts and a missing
