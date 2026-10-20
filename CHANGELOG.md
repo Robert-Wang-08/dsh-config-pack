@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.9.4
+
+修正 v0.9.3 组件锁：sidebar v0.0.4 / archived v0.4.2 重打 tag（补版本号与 prepare 脚本）后，锁内解引用 commit 对齐新 tag；同步 update.ps1（已安装设备一键更新：解析远端最新 tag、版本比较、复用 install 全流程与偏差验收）。
+
 ## 0.9.3
 
 一键安装修复：prepare-profile 默认放行第一方 git 组件构建（tag 压缩包只有 src，不构建则 lib 入口缺失、插件无法激活）；组件锁升级 sidebar v0.0.4 / archived v0.4.2（新增 prepare 脚本，git 安装自动构建 lib）；install.ps1 改为 pack+可选组一次多 spec add（连续多次 add 的 reconcile 会挤掉先前登记的依赖 bundle）；可选组 spec 补 name@version 形态；自愈升级为提取 pnpm 建议的完整 tarball URL key。

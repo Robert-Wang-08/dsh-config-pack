@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.9.3
+version: 0.9.4
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
@@ -109,7 +109,7 @@ components:
     package: dsh-archived-sessions
     repo: https://github.com/Robert-Wang-08/dsh-archived-sessions.git
     tag: v0.4.2
-    commit: 7ba4864835ae82829b027e57c858abccff7c9040
+    commit: 6f1c5e78a10578c467a0bbb4a3bad723ac51ab0a
     installable: true
   - id: provider-badge
     package: dsh-plugin-provider-badge
@@ -121,7 +121,7 @@ components:
     package: dsh-plugin-sidebar-visibility
     repo: https://github.com/Robert-Wang-08/dsh-plugin-sidebar-visibility.git
     tag: v0.0.4
-    commit: 1cc7d55bf9f06a8b34b9de32a2f730921a19980f
+    commit: 8dfc9c0f0989fa68f2f72a2197a215c35d08ef24
     installable: true
   - id: subagent-monitor
     package: dsh-plugin-subagent-monitor
