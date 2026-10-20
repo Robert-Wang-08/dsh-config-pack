@@ -98,9 +98,9 @@ if (-not $Force -and $currentVer -eq $latestVer) {
 
 # ---- 3. reuse install.ps1 (prereqs + one multi-spec add + deviation check) ---
 Step ('updating to ' + $Source)
-$installArgs = @('-ProfileName', $ProfileName, '-Source', $Source)
-if ($SkipOptional) { $installArgs += '-SkipOptional' }
-if ($NoVerify)     { $installArgs += '-NoVerify' }
+$installArgs = @{ ProfileName = $ProfileName; Source = $Source }
+if ($SkipOptional) { $installArgs.SkipOptional = $true }
+if ($NoVerify)     { $installArgs.NoVerify = $true }
 & (Join-Path $PSScriptRoot 'install.ps1') @installArgs
 $code = $LASTEXITCODE
 if ($code -ne 0) { Fail ('install.ps1 exited ' + $code) }
