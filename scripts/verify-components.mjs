@@ -165,6 +165,9 @@ for (const man of MANIFESTS) {
     if (c.installable !== true) continue;
     const spec = d[c.package];
     if (!spec) {
+      // Optional third-party group: installed by install.ps1 (skippable), not a pack dependency.
+      // The lock entry stays and its tag->commit invariant is still verified online.
+      if (c.optional === true) continue;
       fail(man.label + ': component "' + c.id + '" (' + c.package + ') is locked but not declared here');
       continue;
     }
@@ -210,6 +213,55 @@ if (loaded.length > 1) {
     }
   }
   notes.push('dependency sets compared across ' + loaded.length + ' manifests');
+}
+
+// --- optional third-party group (assets/optional-components.json) --------------
+// install.ps1 installs these by default and -SkipOptional skips the whole group, so none of them
+// may double as a required dependency of the pack. github members must agree with their
+// components lock entry (marked optional: true); npm members must be pinned exactly.
+const declaredPackages = new Set(Object.keys(loaded[0]?.deps || {}));
+let optionalList = null;
+try {
+  optionalList = JSON.parse(readFileSync(join(root, 'assets', 'optional-components.json'), 'utf8'));
+} catch (e) {
+  fail('assets/optional-components.json is not readable as JSON: ' + e.message);
+}
+if (optionalList && Array.isArray(optionalList.components)) {
+  for (const o of optionalList.components) {
+    if (!o || !o.package || !o.spec) {
+      fail('optional-components.json: entry without package/spec: ' + JSON.stringify(o));
+      continue;
+    }
+    if (declaredPackages.has(o.package)) {
+      fail('optional component "' + o.package + '" is also a required dependency of ' + (loaded[0]?.label || 'package.json') +
+        ' - it could never be skipped; remove it from dependencies');
+    }
+    if (String(o.spec).startsWith('github:')) {
+      const locked = lockedByPackage.get(o.package);
+      if (!locked) {
+        fail('optional component "' + o.package + '" has no components lock entry');
+        continue;
+      }
+      if (locked.optional !== true) {
+        fail('optional component "' + o.package + '" must be marked optional: true in the components lock');
+      }
+      const m = String(o.spec).match(/#([^#]+)$/);
+      if (!m) {
+        fail('optional component "' + o.package + '" spec is not pinned to a tag: "' + o.spec + '"');
+        continue;
+      }
+      if (m[1] !== locked.tag) {
+        fail('optional component "' + o.package + '" pins #' + m[1] + ' but the lock says #' + locked.tag);
+      }
+      const repoPart = String(o.spec).match(/^github:([^#]+)/)[1];
+      if (('https://github.com/' + repoPart + '.git').toLowerCase() !== String(locked.repo).toLowerCase()) {
+        fail('optional component "' + o.package + '" points at a different repo than the lock');
+      }
+    } else if (/^[~^*]/.test(String(o.spec))) {
+      fail('optional npm component "' + o.package + '" must be pinned exactly, got "' + o.spec + '"');
+    }
+  }
+  notes.push('optional group: ' + optionalList.components.length + ' component(s) checked against the lock');
 }
 
 // --- online: anonymous readability + tag -> commit ----------------------------

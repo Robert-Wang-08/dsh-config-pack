@@ -15,6 +15,7 @@ param(
     [string] $Source = '',
     [switch] $SkipInstall,
     [switch] $UpdateRoutes,
+    [switch] $SkipOptional,
     [switch] $NonInteractive
 )
 
@@ -303,9 +304,9 @@ if ((Test-Path -LiteralPath $routeDest) -and -not $UpdateRoutes -and -not $share
 if (-not $SkipInstall) {
     $install = Join-Path $PSScriptRoot 'install.ps1'
     if ($Source) {
-        & $install -ProfileName $ProfileName -Source $Source
+        & $install -ProfileName $ProfileName -Source $Source -SkipOptional:$SkipOptional
     } else {
-        & $install -ProfileName $ProfileName
+        & $install -ProfileName $ProfileName -SkipOptional:$SkipOptional
     }
 } else {
     Write-Host '已跳过 install.ps1'

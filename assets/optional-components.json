@@ -1,0 +1,22 @@
+{
+  "schema": "dsh-optional-components/v1",
+  "description": "恢复/安装时默认补装的三方插件组。install.ps1 逐个 dsh plugin add（默认装）；-SkipOptional 整组跳过。github 件的 spec 必须与 pack.manifest.yaml components 锁一致（锁里标 optional: true），由 scripts/verify-components.mjs 强制；npm 件不入组件锁，但必须精确钉版（不允许 ^ ~ 前缀）。",
+  "components": [
+    {
+      "package": "dsh-recent-sessions",
+      "spec": "github:huangxp12/dsh-recent-sessions#v0.1.2"
+    },
+    {
+      "package": "dshmarket",
+      "spec": "github:dsh-market/dsh-market#v1.66.21"
+    },
+    {
+      "package": "dsh-plugin-subagent-director",
+      "spec": "0.5.6"
+    },
+    {
+      "package": "dsh-palette",
+      "spec": "0.2.1"
+    }
+  ]
+}

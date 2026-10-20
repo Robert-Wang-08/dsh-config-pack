@@ -7,7 +7,7 @@
 
 ```powershell
 pwsh scripts/install.ps1 -ProfileName <profile>
-# 默认 Source = github:Robert-Wang-08/dsh-config-pack#v0.6.0
+# 默认 Source = github:Robert-Wang-08/dsh-config-pack#v0.9.0
 ```
 
 `install.ps1` 会依次：
@@ -19,7 +19,10 @@ pwsh scripts/install.ps1 -ProfileName <profile>
 3. 调**一次** `dsh plugin --profile <p> add <spec>` —— 装包与把 bundle 注册进
    `dsh.profile.bundles` 都由 DSH 自己完成；
 4. 失败时按 pnpm 错误码做**有界**自愈后重试（最多 3 次），而不是让人工改配置重来；
-5. 校验 bundle 已登记，并跑 `scripts/verify.mjs --profile <p>`（只读，不动文件）。
+5. 校验 bundle 已登记，并跑 `scripts/verify.mjs --profile <p>`（只读，不动文件）；
+6. **默认补装可选三方插件组**（`assets/optional-components.json`：`dsh-recent-sessions`、
+   `dshmarket`、`dsh-plugin-subagent-director`、`dsh-palette`，逐个 `dsh plugin add`，失败不阻塞）；
+   加 `-SkipOptional` 整组跳过——注意升级时跳过会让已装件被依赖变更移除。
 
 ### 为什么必须先写前置再 add（实测结论）
 
@@ -40,6 +43,7 @@ pwsh scripts/install.ps1 -ProfileName <profile>
 | `tag` | 不可变 annotated tag |
 | `commit` | **该 tag 解引用后的 commit SHA** |
 | `installable` | 能否作为 `dsh plugin` 依赖安装；为 `false` 必须写 `why` |
+| `optional` | 可选三方组标记；为 `true` 时允许不出现在 `package.json` 依赖里（由 `install.ps1` 默认补装、`-SkipOptional` 跳过），锁的 tag→commit 校验照常执行 |
 
 **只钉 tag 名不算强制一致。** tag 是可以被移动、删除后重建的，而 pnpm 在**安装时**才解析 git
 spec —— 一个被移动的 tag 会把不同的代码静默发给所有使用者。记录并复核解引用后的 commit，

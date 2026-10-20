@@ -7,8 +7,8 @@
 companion bundle 现在与主包声明**同一组依赖**（选项 C）。于是仓库里有**三份** manifest 会装出运行时：
 
 1. `package.json`（主包）
-2. `templates/ptc-public-companion/dsh-bundle/package.json`
-3. `templates/ptc-public-companion/ptc-multi-agent-control/assets/dsh-bundle/package.json`
+2. `packages/dsh-ptc-multi-agent-mode/assets/dsh-bundle/package.json`（权威本体随包交付的 companion）
+3. `templates/ptc-public-companion/dsh-bundle/package.json`（公开伴生包模板）
 
 **它们必须逐项一致**，否则用户从不同入口会装出不同环境。这件事由
 `scripts/verify-components.mjs` 强制：任一依赖缺失、pin 与锁不符、或三份之间规格不同，即非零退出。
@@ -26,6 +26,10 @@ companion bundle 现在与主包声明**同一组依赖**（选项 C）。于是
 | `dsh-chat-import` | `0.25.2` | **第三方 npm**（Nwflower） | `Nwflower/dsh-chat-import` |
 | `dsh-mermaid-smooth` | `0.1.0` | **第三方 npm**（gitByteFree） | `gitByteFree/dsh-mermaid-smooth` |
 | `dsh-notify-bell` | `0.12.0` | **第三方 npm**（zyar-er） | 无 `repository` 字段 |
+| `dsh-recent-sessions` | `#v0.1.2` | **第三方**（huangxp12），**可选组** | `huangxp12/dsh-recent-sessions` |
+| `dshmarket` | `#v1.66.21` | **第三方**，**可选组** | `dsh-market/dsh-market` |
+| `dsh-plugin-subagent-director` | `0.5.6` | **第三方 npm**，**可选组** | 无（按 npm 包名+版本定位） |
+| `dsh-palette` | `0.2.1` | **第三方 npm**，**可选组** | 无 |
 | `@deepseek-ai/dsh-*` | `0.2.0-rc.2` | 官方 | — |
 
 ### 三类来源的处理方式不同
@@ -34,7 +38,11 @@ companion bundle 现在与主包声明**同一组依赖**（选项 C）。于是
   或拿到会漂移的代码。五个都已建仓、已打 tag、已登记进 `pack.manifest.yaml` 的 `components:` 锁。
 - **上游 fork（1 个）**：`dsh-archived-sessions` 本地已改到 `0.4.1`，**领先** npm 上的公开版 `0.4.0`。
   因此它**必须走本仓库 tag**，不能改回 npm —— 改回会静默丢掉本地改动。
-- **第三方 npm（3 个）**：不建仓、不 fork，按版本号钉。它们由上游维护，本包只消费。
+- **第三方 npm（3 个核心）**：不建仓、不 fork，按版本号钉。它们由上游维护，本包只消费。
+- **可选三方组（4 个）**：`dsh-recent-sessions` / `dshmarket` / `dsh-plugin-subagent-director` / `dsh-palette`。
+  清单在 `assets/optional-components.json`，**恢复时默认补装**（`install.ps1` 逐个 `dsh plugin add`），
+  `-SkipOptional` 整组跳过。github 件（前两个）仍进 `components:` 锁并标 `optional: true`，
+  tag→commit 校验照常；npm 件不入组件锁但必须精确钉版。可选件不得同时是包的必需依赖（验证器强制）。
 
 ### 两点需要留意的版本状态
 

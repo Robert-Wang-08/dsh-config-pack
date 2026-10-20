@@ -40,7 +40,8 @@ param(
   [string]$Source = 'github:Robert-Wang-08/dsh-config-pack#v0.8.0',
   [string]$FromDefaultProfile = 'web',
   [switch]$Uninstall,
-  [switch]$NoVerify
+  [switch]$NoVerify,
+  [switch]$SkipOptional
 )
 
 $ErrorActionPreference = 'Stop'
@@ -149,6 +150,24 @@ if (-not $NoVerify) {
     Warn 'verify reported problems (see above). The pack is installed but may be shadowed.'
   } else {
     Ok 'verify: no shadowing found'
+  }
+}
+
+# ---- 4.5 optional third-party plugins (default: install; -SkipOptional skips) --
+Step 'optional third-party plugins'
+$optPath = Join-Path $root 'assets\optional-components.json'
+if ($SkipOptional) {
+  Warn '跳过可选三方插件组（-SkipOptional）。注意：若此前已装，本次包依赖变更可能已把它们从 node_modules 移除。'
+} elseif (-not (Test-Path $optPath)) {
+  Warn 'assets/optional-components.json 缺失，跳过可选三方插件组'
+} else {
+  $optional = Get-Content $optPath -Raw | ConvertFrom-Json
+  foreach ($o in $optional.components) {
+    Info ('adding ' + $o.package + ' @ ' + $o.spec)
+    & dsh plugin --profile $ProfileName add $o.spec 2>&1 | Select-Object -Last 3 | ForEach-Object { Info $_ }
+    if ($LASTEXITCODE -ne 0) {
+      Warn ('optional plugin "' + $o.package + '" add failed - continuing (non-fatal；重跑 install.ps1 可重试)')
+    }
   }
 }
 

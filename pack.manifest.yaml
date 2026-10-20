@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.8.1
+version: 0.9.0
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
@@ -141,12 +141,16 @@ components:
     tag: v0.1.2
     commit: bc60683f915ed9d7015223eb22ce00a8593b2b45
     installable: true
+    optional: true
+    why: "三方插件：不在包依赖里（保证可跳过），由 install.ps1 默认补装、-SkipOptional 跳过；锁照常验证 tag→commit"
   - id: dshmarket
     package: dshmarket
     repo: https://github.com/dsh-market/dsh-market.git
     tag: v1.66.21
     commit: b8948c1aee21a5a10cf78266aadd0b49f8d2515c
     installable: true
+    optional: true
+    why: "三方插件：同 recent-sessions 的可选组语义"
   - id: permission-compat
     package: dsh-permission-compat
     repo: https://github.com/Robert-Wang-08/dsh-permission-compat.git
@@ -154,6 +158,11 @@ components:
     commit: ea50f0d608a8e5266eb7cde76ebb0cd531ad1506
     installable: false
     why: "宿主补丁工具：直接改写已安装的 dsh 模块，不能作为 dsh plugin 依赖安装，因此不在单命令路径内"
+
+# 恢复/安装时默认补装的可选三方插件组：install.ps1 逐个 dsh plugin add（默认装），-SkipOptional 整组跳过。
+# github 件的 spec 必须与 components 锁一致（锁里标 optional: true），由 scripts/verify-components.mjs 强制；
+# npm 件不入组件锁，但必须精确钉版（不允许 ^ ~ 前缀）。可选件不得同时是包的必需依赖。
+optional_components: assets/optional-components.json
 
 # 发布与一致性强制点：本块是这套机制的自我描述，供人与工具定位入口。
 verification:

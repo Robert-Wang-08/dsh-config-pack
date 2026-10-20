@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.9.0
+
+三方插件改为可选组：recent-sessions/dshmarket/director/palette 移出包依赖，进 assets/optional-components.json，install.ps1 默认补装、-SkipOptional 整组跳过；github 件保留组件锁（optional: true，tag→commit 照常校验）。
+
 ## 0.8.1
 
 按源设备实装清单补齐三方插件：dshmarket v1.66.21（组件锁）、dsh-plugin-subagent-director 0.5.6、dsh-palette 0.2.1；自写件 ptc-switches 暂无独立仓库，仍走伞仓库 link。
