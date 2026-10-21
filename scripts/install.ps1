@@ -38,12 +38,12 @@
 
 .EXAMPLE
   pwsh scripts/install.ps1
-  pwsh scripts/install.ps1 -ProfileName mypack -Source github:Robert-Wang-08/dsh-config-pack#v0.9.2
+  pwsh scripts/install.ps1 -ProfileName mypack -Source github:Robert-Wang-08/dsh-config-pack#v0.9.6
 #>
 [CmdletBinding()]
 param(
   [string]$ProfileName = 'packed',
-  [string]$Source = 'github:Robert-Wang-08/dsh-config-pack#v0.9.2',
+  [string]$Source = 'github:Robert-Wang-08/dsh-config-pack#v0.9.6',
   [string]$FromDefaultProfile = 'web',
   [switch]$Uninstall,
   [switch]$NoVerify,
