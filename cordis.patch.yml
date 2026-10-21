@@ -205,17 +205,29 @@
         baseURL: !!js process['env'].DSHPACK_BASE_CODEX_RELAY || 'http://47.101.159.7:39187/v1'
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_CODEX_RELAY || 'CRS_OAI_KEY'
         models:
+          # 2026-10-21 上下文窗口声明规则（勿删）：pi-ai 内置目录未收录 codex-relay 的 id，
+          # 未声明 contextWindow 时 DSH 回落 DEFAULT_CONTEXT_WINDOW=262144；当上游实际受理更大
+          # prompt 时，pi-ai 的 usage 型静默溢出判定（stop 且 input+cacheRead > 声明窗口）会把
+          # **成功**回答改判 CONTEXT_WINDOW_EXCEEDED，而 compaction 摘要要重放同一前缀、必撞同一
+          # 判定 → 整轮失败（2026-10-21 实测：353,728 tokens 的会话收口被误杀）。
+          # 新增 codex-relay 模型必须显式声明 contextWindow（取官方同 id 目录值；无依据的先实测）。
+          # 取值来源：pi-ai dist/providers/data/openai-codex.json。
           - id: gpt-6.1-sol
+            contextWindow: 500000
             # pi-ai 内置目录未收录该 id；按 gpt-6-sol / gpt-5.6-sol 同族声明档位（2026-10-20 起为默认档，目录首位）
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-5.6-sol
+            contextWindow: 272000
             # 保留为可选档；不再作新会话默认、不再作 failover 目标
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-5.6
+            contextWindow: 272000
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-5.5
+            contextWindow: 272000
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-6-astra
+            contextWindow: 272000
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
       ais-2dsglm:
         displayName: AIS 2DSGLM
