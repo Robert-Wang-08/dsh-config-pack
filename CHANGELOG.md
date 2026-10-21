@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.9.6
+
+codex-relay 模型补 contextWindow：gpt-6.1-sol=500000，gpt-5.6-sol/gpt-5.6/gpt-5.5/gpt-6-astra=272000；修复上游已受理的会话被 pi-ai 误判上下文超限、compaction 恢复无效而整轮失败；新增模型必须在 config/40-models.yml 显式声明窗口
+
 ## 0.9.5
 
 failover 档位/默认模型统一 gpt-6.1-sol；模型目录 6.1 提前；依赖追平 keypool v3.5.0
