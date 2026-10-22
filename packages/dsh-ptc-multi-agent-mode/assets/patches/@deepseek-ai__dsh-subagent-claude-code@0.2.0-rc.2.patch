@@ -1,0 +1,124 @@
+diff --git a/lib/index.js b/lib/index.js
+index 9efd305a475c8ae4d1dd8411664f84d221a0f9fe..2a40ab6e77690a824d83c29ef3aa531d782c09fa 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -137,23 +137,63 @@ const CLAUDE_CODE_PERMISSION_MODES = [
+ /** Safe default for unattended Claude Code runs. */
+ const DEFAULT_CLAUDE_CODE_PERMISSION_MODE = "dontAsk";
+ const SUPPORTED_UNATTENDED_DIALOG_KINDS = ["refusal_fallback_prompt"];
++/** Upper bound on cause text carried into the diagnostic; the service layer truncates again at 4096 bytes. */
++const MAX_CAUSE_DETAIL_CHARS = 2000;
++/**
++ * Render the upstream failure detail retained on the Error cause chain.
++ * The user needs actionable reasons (HTTP status, quota, auth, limit); token
++ * material does not appear in provider error text, and the service layer
++ * applies its own 4096-byte cap.
++ * @param cause - original failure, possibly an AggregateError or carrying a cause chain.
++ * @returns de-duplicated single-line detail, or undefined when nothing is available.
++ */
++function causeDetail(cause) {
++	if (cause === void 0 || cause === null) return void 0;
++	const parts = [];
++	const visit = (value, depth) => {
++		if (value === void 0 || value === null || depth > 3) return;
++		if (value instanceof AggregateError && Array.isArray(value.errors)) {
++			for (const inner of value.errors) visit(inner, depth + 1);
++			return;
++		}
++		const text = value instanceof Error ? value.message : String(value);
++		const trimmed = typeof text === "string" ? text.trim() : "";
++		if (trimmed.length > 0) parts.push(trimmed.replace(/\s+/g, " "));
++		if (value instanceof Error && value.cause !== void 0) visit(value.cause, depth + 1);
++	};
++	visit(cause, 0);
++	if (parts.length === 0) return void 0;
++	const joined = [...new Set(parts)].join(" | ");
++	return joined.length > MAX_CAUSE_DETAIL_CHARS ? joined.slice(0, MAX_CAUSE_DETAIL_CHARS) + "…" : joined;
++}
++/** Attach the upstream detail to the fixed facts so every diagnostics path can render it. */
++function withCauseDetail(facts, cause) {
++	const detail = causeDetail(cause);
++	return detail === void 0 ? facts : {
++		...facts,
++		detail
++	};
++}
+ function failureDiagnostic(facts) {
+ 	const fields = [
+ 		"product: Claude Code",
+ 		`stage: ${facts.stage}`,
+ 		`category: ${facts.category}`
+ 	];
++	if (facts.resultKind !== void 0) fields.push(`result kind: ${facts.resultKind}`);
+ 	const exitCode = facts.outcome?.exitCode;
+ 	if (exitCode !== null && exitCode !== void 0) fields.push(`exit code: ${exitCode}`);
+ 	const signal = facts.outcome?.signal;
+ 	if (signal !== null && signal !== void 0) fields.push(`signal: ${signal}`);
+-	return `Product subagent failure (${fields.join("; ")})`;
++	const headline = `Product subagent failure (${fields.join("; ")})`;
++	return facts.detail === void 0 ? headline : headline + "\ncause: " + facts.detail;
+ }
+ var ClaudeCodeFailure = class extends Error {
+ 	facts;
+ 	constructor(facts, cause) {
+-		super(`subagent-claude-code: ${failureDiagnostic(facts)}`, cause === void 0 ? void 0 : { cause });
+-		this.facts = facts;
++		const merged = withCauseDetail(facts, cause);
++		super(`subagent-claude-code: ${failureDiagnostic(merged)}`, cause === void 0 ? void 0 : { cause });
++		this.facts = merged;
+ 		this.name = "ClaudeCodeFailure";
+ 	}
+ };
+@@ -211,18 +251,26 @@ function textTask(prompt) {
+ function successfulResult(message) {
+ 	if (message.subtype !== "success") {
+ 		const category = sdkFailureCategory(message.subtype);
+-		const detail = category === "unknown" ? void 0 : message.errors.join("; ");
++		const detail = Array.isArray(message.errors) ? message.errors.join("; ") : void 0;
+ 		throw new ClaudeCodeFailure({
+ 			stage: "query-run",
+ 			category
+ 		}, detail === void 0 || detail.length === 0 ? void 0 : new Error(detail));
+ 	}
+-	if (message.is_error || message.result.trim().length === 0) throw new ClaudeCodeFailure({
++	const resultKind = message.is_error ? "error-result" : typeof message.result !== "string" ? "malformed-result" : message.result.trim().length === 0 ? "empty-result" : void 0;
++	if (resultKind !== void 0) throw new ClaudeCodeFailure({
+ 		stage: "query-run",
+-		category: "invalid-result"
+-	});
++		category: "invalid-result",
++		resultKind
++	}, invalidResultCause(message, resultKind));
+ 	return message.result;
+ }
++/** Keep the upstream result text for an invalid result so the reason reaches the caller. */
++function invalidResultCause(message, resultKind) {
++	if (resultKind === "error-result") return new Error("upstream error result: " + String(message.result));
++	const rendered = typeof message.result === "string" ? message.result : JSON.stringify(message.result);
++	return new Error("upstream " + resultKind + ": " + String(rendered).slice(0, 500));
++}
+ /**
+ * Consume the complete SDK stream and require one strict success plus normal
+ * iterator completion.
+@@ -361,9 +409,9 @@ async function startClaudeCodeRun(request, spec) {
+ 	const capturePermissionDiagnostic = (value) => {
+ 		diagnostic = value;
+ 	};
+-	const prependFailureDiagnostic = (facts) => {
+-		const failure = failureDiagnostic(facts);
+-		diagnostic = diagnostic === void 0 ? failure : `${failure}\n${diagnostic}`;
++	const prependFailureDiagnostic = (facts, cause) => {
++		const failure = failureDiagnostic(withCauseDetail(facts, cause));
++		diagnostic = diagnostic === void 0 ? failure : failure + "\n" + diagnostic;
+ 	};
+ 	const captureChild = (captured, process) => {
+ 		child = captured;
+@@ -452,7 +500,7 @@ async function startClaudeCodeRun(request, spec) {
+ 					category: "unknown",
+ 					outcome: processOutcome
+ 				};
+-				prependFailureDiagnostic(facts);
++				prependFailureDiagnostic(facts, error instanceof ClaudeCodeFailure ? void 0 : error);
+ 				throw error instanceof ClaudeCodeFailure ? error : new ClaudeCodeFailure(facts, thrown(error));
+ 			}
+ 		},

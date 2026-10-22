@@ -36,6 +36,15 @@ PROFILES = {
         "opus_model": "claude-opus-5-5",
         "haiku_model": "claude-haiku-4-5",
     },
+    # 2026-10-21 新增：tokeniss 账户余额不足时（上游 403 预扣费失败）的可用替代源。
+    # 与 tokeniss 同服务商不同入口（n.tokeness.dev），模型 id 相同、haiku 为 5 代命名。
+    "tokeniss25": {
+        "source": "claudetokeniss25",
+        "base_url": "https://n.tokeness.dev",
+        "key_name": "CLAUDETOKENISS25_API_KEY",
+        "opus_model": "claude-opus-5-5",
+        "haiku_model": "claude-haiku-5-5",
+    },
 }
 
 

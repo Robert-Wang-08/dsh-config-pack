@@ -94,7 +94,7 @@ dsh plugin --profile <名字> add <bundle 绝对路径> `
 | `PTC_CURSOR_ACP` | `cursor-agent --model auto acp`（默认让 Cursor 自选；要指定就写 `--model grok-4.7-high`） |
 | `PTC_KIMI_DOCS_MODEL` | `kimi-code/k3-256k`（别名清单见 SKILL.md；长文档可选 `kimi-code/kimi-for-coding` 或 `kimi-code/k3`，均为 1M 上下文） |
 | `PTC_CLAUDE_OPUS5_MODEL` | `claude-opus-5`（5 档执行档 `subagent_claude_opus5_plan` 的模型 id，后端为 anthropic-relay；要跑 4.8 档就把它设为 `claude-opus-4-8`，属设备启动期开关，不能与 5 档同时生效） |
-| `PTC_CLAUDE_OPUS55_CONFIG_DIR` / `PTC_CLAUDE_OPUS5_CONFIG_DIR` | 未设（分别默认 `~/.claude-profiles/tokeniss` 与 `~/.claude-profiles/relay`；这两个目录是**档位隔离点**，由 `scripts/claude_config_profiles.py` 预置。不要用 ANTHROPIC_* 环境变量分档，settings.json 的 env 会覆盖进程环境） |
+| `PTC_CLAUDE_OPUS55_CONFIG_DIR` / `PTC_CLAUDE_OPUS5_CONFIG_DIR` | 未设（分别默认 `~/.claude-profiles/tokeniss25` 与 `~/.claude-profiles/relay`；这两个目录是**档位隔离点**，由 `scripts/claude_config_profiles.py` 预置，`install.ps1` 第 2.5 步会自动调用。预设三档：`relay`(claude-opus-5)、`tokeniss`、`tokeniss25`(均为 claude-opus-5-5)；5.5 档默认走 tokeniss25。不要用 ANTHROPIC_* 环境变量分档，settings.json 的 env 会覆盖进程环境） |
 | `PTC_CLAUDE_OPUS55_MODEL` | `claude-opus-5-5`（Opus 复核执行档的模型 id；降级梯见 `assets/public-runtime-config.json` 的 `opusLadder`：5.5 -> 5 -> 4.8，三档皆无则报告 Opus 不可用。**注意耦合**：执行者是 claude-code 子代理，只认本变量与 Claude Code CLI 自身的 `ANTHROPIC_BASE_URL`/`ANTHROPIC_AUTH_TOKEN`，不读梯子的 provider/model 字段；梯子某档若不在该 CLI 后端在售清单里，就必须改本变量或换 CLI 后端，否则该档不可执行。改档前先核验来源是否回显同一 id。） |
 | `PTC_CURSOR_KEEP_PROXY` | 未设（默认让 Cursor 域名绕开代理，见坑 5） |
 

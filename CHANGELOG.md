@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.0
+
+子代理失败原因上抛：claude 适配器经 pnpm 静态补丁透传上游 cause（403 余额不足等可操作原因直达调用方）；补丁随 assets/patches 分发、prepare-profile 注入 patchedDependencies，install 即自动应用；opus55 档默认配置目录改指 tokeniss25，claude_config_profiles.py 新增该档、install.ps1 自动预置；acp-resilient 组件锁升至 v0.2.2
+
 ## 0.9.6
 
 codex-relay 模型补 contextWindow：gpt-6.1-sol=500000，gpt-5.6-sol/gpt-5.6/gpt-5.5/gpt-6-astra=272000；修复上游已受理的会话被 pi-ai 误判上下文超限、compaction 恢复无效而整轮失败；新增模型必须在 config/40-models.yml 显式声明窗口

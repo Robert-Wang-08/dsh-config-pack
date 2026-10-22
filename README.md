@@ -335,6 +335,77 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
 
 ---
 
+## 子代理失败原因上抛（2026-10-21）
+
+### 问题
+
+上游真实原因到不了调用方。opus-5.5 档因上游账户余额不足被 403 拒绝时，上层只看到：
+
+```text
+error; diagnostic: Product subagent failure (product: Claude Code; stage: query-run; category: invalid-result)
+```
+
+真实原因（`HTTP 403 预扣费额度失败，余额 ¥0.45 < 预扣 ¥1.16`）被适配器丢弃，只能绕过适配器用
+CLI 直测才查得到。**诊断字段看不出"为什么失败"，等于把排查成本转嫁给使用者。**
+
+### 根因不在服务层
+
+| 层 | 结论 |
+|---|---|
+| `dsh-subagent` | **本来就支持**：`SubagentResult.diagnostic` 字段 + **4096 字节**上限 + `[diagnostic truncated]` 自动截断 |
+| `dsh-tool-subagent` | **本来就支持**：渲染 `Diagnostic: <text>` |
+| 适配器 | **未填充**：只输出固定 facts（stage/category/exit code），原始原因仅挂在 `Error.cause` 链上，从不渲染 |
+
+也就是说通道一直在，缺的是把原因填进去。
+
+### 改动
+
+两个适配器各四处：新增 `causeDetail()` 从 `Error` / `AggregateError` / `cause` 链提取文本
+（去重、压单行、上限 2000 字符），`failureDiagnostic()` 在固定 facts 之后追加一行 `cause:`。
+
+```text
+Product subagent failure (product: Claude Code; stage: query-run; category: invalid-result; result kind: error-result)
+cause: upstream error result: Failed to authenticate. API Error: 403 预扣费额度失败, 用户剩余额度: ¥0.450870,
+需要预扣费额度: ¥1.157422 (request id: ...)
+```
+
+Claude 侧另修三处：`is_error` 分支原本**连 cause 都不传**（403 原文彻底丢失）、
+`resultKind` 从未渲染、`category: unknown` 时丢弃 `message.errors`。
+
+### 分发：pnpm 静态补丁，安装即自动应用
+
+Claude 适配器是官方包，不能改上游发布物，所以本包带一个补丁：
+
+| 组成 | 位置 |
+|---|---|
+| 补丁文件 | `packages/dsh-ptc-multi-agent-mode/assets/patches/@deepseek-ai__dsh-subagent-claude-code@0.2.0-rc.2.patch` |
+| 注入 | `scripts/prepare-profile.mjs` 复制到 `<profile>/patches/` 并写 `patchedDependencies` |
+| 触发 | `install.ps1` 在 `dsh plugin add` **之前**调用 prepare-profile，pnpm 安装时自动套用 |
+
+由 `pnpm patch` + `pnpm patch-commit` 官方流程生成（不是手工 diff）。**任何 `pnpm install` 都会重新应用**，
+不需要事后手工 `git apply`；新设备走 `setup.ps1` / `install.ps1` 即自动获得。
+
+已实测：删掉整个包目录后 `pnpm install --force` 全量重装 136 个包，补丁自动生效，测试 74/74 通过。
+
+### 生效校验
+
+```powershell
+python -B scripts/verify-patches.py <profile-dir>
+# PASS: all declared patches are applied
+```
+
+它读 `pnpm-workspace.yaml` 的 `patchedDependencies`，逐个确认补丁文件在、包已装、且改动标记落在安装产物里。
+补丁失效（例如适配器升级后 key 不再匹配）会明确报 FAIL，不会静默放过。
+
+### 限制
+
+1. **版本绑定**：`patchedDependencies` 的 key 含版本号。升级适配器后补丁不会自动套用，需对新版本重跑
+   `pnpm patch` 流程；缺失时表现为诊断里没有 `cause:` 行，不会静默给出错误结论。
+2. **改动需重启 DSH 生效**：适配器在进程内加载。
+3. **cursor 侧不走补丁**：`dsh-subagent-acp-resilient` 由组件锁固定版本（`pack.manifest.yaml`），
+   该改动需在其仓库发布新 tag 并更新锁，才能随 `install.ps1` 同步到新设备。
+
+---
 ## 本包不覆盖什么
 
 | 行 id | 由谁提供 |

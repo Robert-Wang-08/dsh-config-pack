@@ -90,6 +90,25 @@ Step 'preparing pnpm settings inside the profile'
 & node (Join-Path $root 'scripts/prepare-profile.mjs') $profileDir
 if ($LASTEXITCODE -ne 0) { Fail 'prepare-profile.mjs failed' }
 
+# ---- 2.5 Opus 执行档的 Claude Code 配置目录 ---------------------------------
+# 两个 Opus 档各自绑一个独立 CLAUDE_CONFIG_DIR；目录由本包脚本按凭据库预置。
+# 幂等：已存在的目录不覆盖；缺凭据时只报告、不失败（该档在配置好之前不可用）。
+Step 'preparing Opus Claude Code config profiles (device-local credentials)'
+$profilesScript = Join-Path $root 'packages\dsh-ptc-multi-agent-mode\scripts\claude_config_profiles.py'
+$python = Get-Command python -ErrorAction SilentlyContinue
+if (-not $python) {
+  Info 'python 未安装，跳过 Opus 配置目录预置（可稍后手工运行 claude_config_profiles.py）'
+} elseif (-not (Test-Path -LiteralPath $profilesScript)) {
+  Info ('未找到 ' + $profilesScript + '，跳过预置')
+} else {
+  & python -B $profilesScript 2>&1 | ForEach-Object { Info $_ }
+  if ($LASTEXITCODE -ne 0) {
+    Info 'Opus 配置目录预置未完全成功（缺凭据时属预期）；补齐后重跑该脚本即可，不影响其余安装'
+  } else {
+    Ok 'Opus config profiles prepared'
+  }
+}
+
 # ---- 3. ONE add: pack + optional third-party group --------------------------
 # 连续多次 `dsh plugin add` 的 reconcile 会把先前登记的依赖 bundle 挤掉（实测），
 # 所以 pack 与可选三方件必须合并在**同一次** add 里。

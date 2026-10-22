@@ -156,7 +156,10 @@
         model: !!js process['env'].PTC_CLAUDE_OPUS55_MODEL || 'claude-opus-5-5'
         permissionMode: plan
         env:
-          CLAUDE_CONFIG_DIR: !!js process['env'].PTC_CLAUDE_OPUS55_CONFIG_DIR || (((process['env'].USERPROFILE || process['env'].HOME || '') + '/.claude-profiles/tokeniss'))
+          # 2026-10-21：默认改指 tokeniss25 档（n.tokeness.dev）。tokeniss 档（tokeness.io）
+          # 曾因账户余额不足返回 403 预扣费失败而整档不可用；预置脚本仍同时生成两档，
+          # 需要切回时设 PTC_CLAUDE_OPUS55_CONFIG_DIR 指向 tokeniss 即可。
+          CLAUDE_CONFIG_DIR: !!js process['env'].PTC_CLAUDE_OPUS55_CONFIG_DIR || (((process['env'].USERPROFILE || process['env'].HOME || '') + '/.claude-profiles/tokeniss25'))
 
     - id: subagent-claude-opus5-plan
       name: '@deepseek-ai/dsh-subagent-claude-code'

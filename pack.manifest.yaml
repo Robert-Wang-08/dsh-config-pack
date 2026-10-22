@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.9.6
+version: 0.10.0
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
@@ -132,8 +132,8 @@ components:
   - id: acp-resilient
     package: '@local/dsh-subagent-acp-resilient'
     repo: https://github.com/Robert-Wang-08/dsh-subagent-acp-resilient.git
-    tag: v0.2.1
-    commit: 2959e9330caa2e9061cf419278df2445ebb837dd
+    tag: v0.2.2
+    commit: ee5b3762f17af1a188566dc57156fbc0d12372df
     installable: true
   - id: recent-sessions
     package: dsh-recent-sessions

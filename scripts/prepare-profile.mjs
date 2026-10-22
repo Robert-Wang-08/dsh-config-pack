@@ -9,7 +9,7 @@
 //
 // This script only edits pnpm config. It never touches cordis.patch.yml or package.json.
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, copyFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -129,6 +129,51 @@ if (block) {
 } else {
   out = out.replace(/\s*$/, '\n') + allowBuildsBlock;
   notes.push('added allowBuilds (' + [...existingBuilds.keys()].join(', ') + ')');
+}
+
+// --- patchedDependencies: static patches shipped with this pack ----------------
+// Some upstream packages need a local correction (for example carrying the
+// upstream failure reason into the subagent diagnostic). pnpm applies
+// patchedDependencies on every install, so the correction survives reinstalls
+// and new devices instead of being re-applied by hand.
+const patchesSrc = join(root, 'packages', 'dsh-ptc-multi-agent-mode', 'assets', 'patches');
+if (existsSync(patchesSrc)) {
+  const patchesDest = join(profileDir, 'patches');
+  mkdirSync(patchesDest, { recursive: true });
+  const wanted = new Map();
+  for (const name of readdirSync(patchesSrc)) {
+    if (!name.endsWith('.patch')) continue;
+    copyFileSync(join(patchesSrc, name), join(patchesDest, name));
+    // pnpm names patches "<scope>__<name>@<version>.patch".
+    const m = name.match(/^(.+?)__(.+?)@([^@]+)\.patch$/);
+    if (m) wanted.set(m[1] + '/' + m[2] + '@' + m[3], 'patches/' + name);
+  }
+  if (wanted.size > 0) {
+    const patchedRe = /^patchedDependencies:[ \t]*\r?\n((?:[ \t]+.*\r?\n?)*)/m;
+    const existing = new Map();
+    const blockMatch = out.match(patchedRe);
+    if (blockMatch) {
+      for (const line of blockMatch[1].split(/\r?\n/)) {
+        const kv = line.match(/^[ \t]+'?([^':]+)'?:[ \t]*(.+?)\s*$/);
+        if (kv) existing.set(kv[1], kv[2]);
+      }
+    }
+    let patchedChanged = false;
+    for (const [key, value] of wanted) {
+      if (existing.get(key) !== value) {
+        existing.set(key, value);
+        patchedChanged = true;
+      }
+    }
+    if (patchedChanged) {
+      const patchedBlock = 'patchedDependencies:' + '\n' +
+        [...existing.entries()].map(([k, v]) => "  '" + k + "': " + v).join('\n') + '\n';
+      out = blockMatch
+        ? out.replace(patchedRe, patchedBlock).replace(/\n{3,}/g, '\n\n')
+        : out.replace(/\s*$/, '\n') + patchedBlock;
+      notes.push('patchedDependencies -> ' + [...wanted.keys()].join(', '));
+    }
+  }
 }
 
 // --- scalars ------------------------------------------------------------------
