@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.1
+
+修正 v0.10.0 遗留的档位来源不一致：public-runtime-config 的 opusLadder 首档 provider 改 claudetokeniss25、five_five.defaultConfigDir 改 tokeniss25；SKILL.md 中「5.5 只在 tokeniss 提供」的过时表述同步为 tokeniss/tokeniss25 双源 + 默认 tokeniss25。此前后者已随 bundle 默认值改为 tokeniss25，但运行时配置与 skill 文档仍指旧源，属同一次改动的文档一致性缺口
+
 ## 0.10.0
 
 子代理失败原因上抛：claude 适配器经 pnpm 静态补丁透传上游 cause（403 余额不足等可操作原因直达调用方）；补丁随 assets/patches 分发、prepare-profile 注入 patchedDependencies，install 即自动应用；opus55 档默认配置目录改指 tokeniss25，claude_config_profiles.py 新增该档、install.ps1 自动预置；acp-resilient 组件锁升至 v0.2.2

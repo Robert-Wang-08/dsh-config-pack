@@ -173,7 +173,7 @@ python $ctl session-end --task-id <task-id> --session-id <session-id> --summary 
   `subagent_claude_opus55_plan`（5.5 档，来源 tokeniss）与 `subagent_claude_opus5_plan`（5 档，来源 anthropic-relay）。
 - 隔离必须靠 `CLAUDE_CONFIG_DIR`，不能靠环境变量：Claude Code 的 settings.json 里 env 优先级高于进程环境（2026-10-15 实测——给子进程塞无效 token 仍能成功），只设 env 会让两个档串到同一后端。配置目录由 `scripts/claude_config_profiles.py` 预置，含凭据，属设备本地状态，不入库。
 - Opus 独立复核按 `assets/public-runtime-config.json` 的 `opusLadder` 首条命中降级：5.5 -> 5 -> 4.8；三档都不可用时如实报告 Opus 不可用，不自动改用 Sonnet。
-- 梯子的 provider/model 是档位依据与派发记录，执行档本身不读它。换来源或换档后必须重验「该来源在售且回显同一 model id」。2026-10-15 实测：5.5 只在 tokeniss 提供，anthropic-relay 对它直接返回 403 `该令牌无权访问模型 claude-opus-5-5`；4.8 档用 anthropic-relay，因为 tokeniss 的同名档是别名（实测回 5-5）。“Opus 5.5”是路由能力/工具标签，receipt 必须记录 provider 返回的真实模型 id。
+- 梯子的 provider/model 是档位依据与派发记录，执行档本身不读它。换来源或换档后必须重验「该来源在售且回显同一 model id」。2026-10-15 实测：anthropic-relay 对 5.5 直接返回 403 `该令牌无权访问模型 claude-opus-5-5`，所以 5.5 档只能用 tokeniss 系配置目录；2026-10-21 起默认目录改指 `tokeniss25`（`n.tokeness.dev`，与 tokeniss 同为 claude-opus-5-5），原 `tokeniss` 档（`tokeness.io`）因账户余额不足返回 403 预扣费失败而整档不可用，需要时设 `PTC_CLAUDE_OPUS55_CONFIG_DIR` 切回。4.8 档用 anthropic-relay，因为 tokeniss 的同名档是别名（实测回 5-5）。“Opus 5.5”是路由能力/工具标签，receipt 必须记录 provider 返回的真实模型 id。
 - “复核”必须由独立第二遍检查完成，不能让同一执行者复述原方案。
 - 人工指定 provider/model 时覆盖默认首选，但仍记录真实值。
 - 主控模型由人选择。主控 provider 失败时，路由器不能在当前会话热切换；需要新建或重启会话，并登记 `risk`。
