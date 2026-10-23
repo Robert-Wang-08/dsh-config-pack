@@ -3,13 +3,13 @@ name: ptc-multi-agent-control
 description: 编排跨工具、跨模型的 PTC 多代理任务。分析/设计/验证默认使用 codex-relay/gpt-6.1-sol（reasoning_effort=xhigh）；仅在高难度独立复核或全新领域自顶向下设计时使用一次 Opus 5.5 plan reviewer。提供唯一根任务、追加式项目账本、契约冻结、分层路由、worker receipt 和证据化收口。
 managed-by: git
 source: dsh-config-pack
-version: 0.16.0
+version: 0.16.1
 metadata:
   origin: self
   author: wang
   created: 2026-10-12
-  updated: 2026-10-20
-  version: 0.16.0
+  updated: 2026-10-23
+  version: 0.16.1
   managed-by: skillhub
   source: skillhub
   asset-type: skill

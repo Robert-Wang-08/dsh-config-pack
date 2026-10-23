@@ -9,7 +9,8 @@ CLAUDE_CONFIG_DIR 才是有效隔离点。本脚本据此为每个 Opus 档预�
     python claude_config_profiles.py            # 预置（已存在则不覆盖，除非 --force）
     python claude_config_profiles.py --check    # 只报告状态，不写
 
-凭据来源：DSH 凭据库（DSH_CREDENTIALS 或 ~/.dsh/.credentials.yaml）。
+凭据来源顺序：DSH 凭据库（DSH_CREDENTIALS 或 ~/.dsh/.credentials.yaml）>
+当前进程环境 > Windows User 环境 > Windows Machine 环境。
 本脚本从不打印任何凭据值，只打印目录路径与档位映射。
 """
 
@@ -64,15 +65,55 @@ def credentials_path() -> Path:
     return Path(home) / ".dsh" / ".credentials.yaml"
 
 
+def read_windows_environment(name: str, scope: str) -> str | None:
+    """Read a named Windows User or Machine environment value without logging it."""
+    if os.name != "nt":
+        return None
+    try:
+        import winreg
+    except ImportError:
+        return None
+
+    locations = {
+        "User": (winreg.HKEY_CURRENT_USER, r"Environment"),
+        "Machine": (
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
+        ),
+    }
+    location = locations.get(scope)
+    if location is None:
+        return None
+    try:
+        with winreg.OpenKey(*location) as key:
+            value, value_type = winreg.QueryValueEx(key, name)
+    except (FileNotFoundError, OSError):
+        return None
+    if not isinstance(value, str):
+        return None
+    if value_type == winreg.REG_EXPAND_SZ:
+        value = os.path.expandvars(value)
+    return value.strip() or None
+
+
 def read_key(name: str) -> str | None:
     path = credentials_path()
-    if not path.is_file():
-        return None
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        stripped = line.strip()
-        if stripped.startswith(name + ":"):
-            value = stripped.split(":", 1)[1].strip().strip('"').strip("'")
-            return value or None
+    if path.is_file():
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            stripped = line.strip()
+            if stripped.startswith(name + ":"):
+                value = stripped.split(":", 1)[1].strip().strip('"').strip("'")
+                if value:
+                    return value
+                break
+
+    process_value = os.environ.get(name)
+    if process_value and process_value.strip():
+        return process_value.strip()
+    for scope in ("User", "Machine"):
+        value = read_windows_environment(name, scope)
+        if value:
+            return value
     return None
 
 

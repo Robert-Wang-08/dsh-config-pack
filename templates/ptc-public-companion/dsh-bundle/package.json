@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-ptc-public-companion",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "private": true,
   "description": "Public Git-distributed PTC multi-agent DSH bundle",
   "type": "module",
@@ -29,7 +29,7 @@
   },
   "metadata": {
     "origin": "self",
-    "version": "0.16.0",
+    "version": "0.16.1",
     "managedBy": "git",
     "source": "dsh-config-pack",
     "assetType": "agent-profile",
