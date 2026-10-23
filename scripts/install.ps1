@@ -37,6 +37,14 @@
 .PARAMETER SkipOptional
   跳过可选三方插件组（升级时跳过会把已装件从 node_modules 移除）。
 
+.PARAMETER SkipComponentRegistration
+  跳过硬性登记本包依赖的组件 bundle。开发机上这些组件多以 link: 本地仓库登记，
+  逐个按名字再装一遍只会拉远端同款，既慢又可能覆盖本地登记。
+
+.PARAMETER NoRetry
+  关掉重试：pnpm 取包不重试（fetch-retries=0），自愈安装也只跑一次。
+  网络差或首次装配多组 git 依赖时不要加。
+
 .EXAMPLE
   pwsh scripts/install.ps1
   pwsh scripts/install.ps1 -ProfileName mypack -Source github:Robert-Wang-08/dsh-config-pack#vX.Y.Z
@@ -48,7 +56,9 @@ param(
   [string]$FromDefaultProfile = 'web',
   [switch]$Uninstall,
   [switch]$NoVerify,
-  [switch]$SkipOptional
+  [switch]$SkipOptional,
+  [switch]$SkipComponentRegistration,
+  [switch]$NoRetry
 )
 
 $ErrorActionPreference = 'Stop'
@@ -197,7 +207,13 @@ if ($SkipOptional) {
   Warn 'assets/optional-components.json 缺失 - 本包依赖照常安装，可选三方组不装'
 }
 
-$maxAttempts = 10
+if ($NoRetry) {
+  # 默认 pnpm 对每个失败取包重试 1 分钟，跨平台二进制的 403 会把单次 add 拖成 4 分钟以上。
+  $env:npm_config_fetch_retries = '0'
+  $env:npm_config_fetch_retry_maxtimeout = '1000'
+  $env:npm_config_fetch_timeout = '20000'
+}
+$maxAttempts = if ($NoRetry) { 1 } else { 10 }
 $installed = $false
 for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
   Step ('installing (attempt ' + $attempt + ' of ' + $maxAttempts + ')')
@@ -247,19 +263,36 @@ Ok 'dsh plugin add succeeded'
 # `dsh plugin add <pack>` does NOT register the pack's dependency bundles (verified fresh
 # install). Each component must be its own direct dependency with a registered bundle.
 # Idempotent: components already in dsh.profile.bundles are skipped.
-Step 'registering component bundles (explicit, idempotent)'
-$profPack = Get-Content (Join-Path $root 'package.json') -Raw | ConvertFrom-Json
-$profPkg = Get-Content (Join-Path $profileDir 'package.json') -Raw | ConvertFrom-Json
-$knownBundles = @($profPkg.dsh.profile.bundles)
-foreach ($p in $profPack.dependencies.PSObject.Properties) {
-  if ($p.Name -eq 'fzstd') { continue }
-  if ($knownBundles -contains $p.Name) { continue }
-  # npm-style specs need name@version (a bare "0.25.2" would be treated as a package name);
-  # git-hosted specs are already complete ("github:owner/repo#tag").
-  $spec = if ($p.Value -like 'github:*') { $p.Value } else { "$($p.Name)@$($p.Value)" }
-  Info ('registering ' + $p.Name)
-  & dsh plugin --profile $ProfileName add $spec 2>&1 | Select-Object -Last 2 | ForEach-Object { Info $_ }
-  if ($LASTEXITCODE -ne 0) { Warn ('failed registering ' + $p.Name) }
+if ($SkipComponentRegistration) {
+  Info '组件 bundle 登记：-SkipComponentRegistration 跳过（开发机用 link: 本地仓库时选它）'
+} else {
+  Step 'registering component bundles (explicit, idempotent)'
+  $profPack = Get-Content (Join-Path $root 'package.json') -Raw | ConvertFrom-Json
+  $profPkg = Get-Content (Join-Path $profileDir 'package.json') -Raw | ConvertFrom-Json
+  $knownBundles = @($profPkg.dsh.profile.bundles)
+  # 开发机上这些组件多以 link: 本地仓库登记（@local/dsh-plugin-x、@owner/dsh-x）。
+  # 只要依赖里已有同包名或 "<scope>/<同名>" 就别再从远端装一遍。
+  $depNames = @($profPkg.dependencies.PSObject.Properties.Name)
+  $missing = @()
+  foreach ($p in $profPack.dependencies.PSObject.Properties) {
+    if ($p.Name -eq 'fzstd') { continue }
+    if ($knownBundles -contains $p.Name) { continue }
+    $alias = @($depNames | Where-Object { $_ -eq $p.Name -or $_ -like ('*/' + $p.Name) })
+    if ($alias.Count -gt 0) { Info ('  skip ' + $p.Name + '（已由 ' + $alias[0] + ' 提供）'); continue }
+    # npm-style specs need name@version (a bare "0.25.2" would be treated as a package name);
+    # git-hosted specs are already complete ("github:owner/repo#tag").
+    $missing += $(if ($p.Value -like 'github:*') { $p.Value } else { "$($p.Name)@$($p.Value)" })
+  }
+  if ($missing.Count -eq 0) {
+    Ok '组件 bundle 无需登记（依赖已全部满足）'
+  } else {
+    # 合并成一次 add：连续多次 add 的 reconcile 会挤掉先前登记的 bundle（实测），
+    # 且每次 add 都要完整解析一遍依赖，逐个装会把时间乘以组件数。
+    Info ('registering ' + ($missing -join ', '))
+    & dsh plugin --profile $ProfileName add @missing 2>&1 | Select-Object -Last 4 | ForEach-Object { Info $_ }
+    if ($LASTEXITCODE -ne 0) { Warn '组件 bundle 登记失败；可稍后重跑或用 -SkipComponentRegistration' }
+    else { Ok 'component bundles registered' }
+  }
 }
 
 # ---- 3.5 build lib outputs for first-party git components -------------------
