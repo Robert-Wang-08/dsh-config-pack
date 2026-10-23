@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.10.5
+version: 0.10.6
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）
@@ -114,8 +114,8 @@ components:
   - id: provider-badge
     package: dsh-plugin-provider-badge
     repo: https://github.com/Robert-Wang-08/dsh-plugin-provider-badge.git
-    tag: v0.1.0
-    commit: 84873291a3c8bdb085aee9bef4efe3b7d5b167e0
+    tag: v0.3.1
+    commit: 5f7a83883782af578d9fb8b163f49529c69ff72d
     installable: true
   - id: sidebar-visibility
     package: dsh-plugin-sidebar-visibility

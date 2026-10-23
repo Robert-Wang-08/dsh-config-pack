@@ -90,7 +90,7 @@ dsh packed
 | `dsh-mermaid-smooth` | 0.1.0 | 图形渲染 |
 | `dsh-notify-bell` | 0.12.0 | 通知 |
 | `dsh-deepseek-keypool` | github:Robert-Wang-08/dsh-provider-failover#v3.5.0 | 故障转移与档位路由 |
-| `dsh-plugin-provider-badge` | github:Robert-Wang-08/dsh-plugin-provider-badge#v0.1.0 | provider 标识 |
+| `dsh-plugin-provider-badge` | github:Robert-Wang-08/dsh-plugin-provider-badge#v0.3.1 | provider 标识 + 额度/可见配置 |
 | `dsh-plugin-sidebar-visibility` | github:Robert-Wang-08/dsh-plugin-sidebar-visibility#v0.0.3 | 侧栏可见性 |
 | `dsh-archived-sessions` | github:Robert-Wang-08/dsh-archived-sessions#v0.4.1 | 归档会话 |
 | `dsh-plugin-subagent-monitor` | github:Robert-Wang-08/dsh-plugin-subagent-monitor#v0.1.0 | 子代理监控 |

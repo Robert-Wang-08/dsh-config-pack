@@ -17,7 +17,7 @@ companion bundle 现在与主包声明**同一组依赖**（选项 C）。于是
 
 | 包名 | 钉法 | 来源 | 公开仓库 |
 |---|---|---|---|
-| `dsh-plugin-provider-badge` | `#v0.1.0` | **自写** | `Robert-Wang-08/dsh-plugin-provider-badge` |
+| `dsh-plugin-provider-badge` | `#v0.3.1` | **自写** | `Robert-Wang-08/dsh-plugin-provider-badge` |
 | `dsh-plugin-sidebar-visibility` | `#v0.0.3` | **自写** | `Robert-Wang-08/dsh-plugin-sidebar-visibility` |
 | `dsh-plugin-subagent-monitor` | `#v0.1.0` | **自写** | `Robert-Wang-08/dsh-plugin-subagent-monitor` |
 | `dsh-deepseek-keypool` | `#v3.5.0` | **自写** | `Robert-Wang-08/dsh-provider-failover` |

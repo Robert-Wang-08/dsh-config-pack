@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.6
+
+provider 徽标可见配置参考与覆盖示例（docs/provider-badge-config.md、examples/provider-badge.config.yml），并把组合锁里的 dsh-plugin-provider-badge 钉从 v0.1.0 升到 v0.3.1（否则按 tag 安装的设备拿不到 10-23 的额度修复与可见配置）；三处依赖 spec 与两份清单同步，cordis.patch.yml 内容未变
+
 ## 0.10.5
 
 默认切换顺序与 PTC 路由链统一 gpt-6.1-sol：allowedModels/README 的 openai-codex 项改 6.1、subagent-codex 钉 gpt-6.1-sol；ds4.1-flash 在 ais-2dsglm 声明 reasoningEfforts(low/high/max) 并给 failover tier2 加 reasoningEffort max；setup.ps1 复制共享盘答案后按本机 DSHPACK_ROUTE_* 重写档位 route 名，修复源设备路由名被抄成空转条目
