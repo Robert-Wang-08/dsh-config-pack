@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.7
+
+一键安装提速：组件登记跳过 link: 本地仓库已提供的同名包、缺失项合并为一次 add；新增 -NoRetry 关闭 pnpm 取包重试与自愈重试
+
 ## 0.10.6
 
 provider 徽标可见配置参考与覆盖示例（docs/provider-badge-config.md、examples/provider-badge.config.yml），并把组合锁里的 dsh-plugin-provider-badge 钉从 v0.1.0 升到 v0.3.1（否则按 tag 安装的设备拿不到 10-23 的额度修复与可见配置）；三处依赖 spec 与两份清单同步，cordis.patch.yml 内容未变
