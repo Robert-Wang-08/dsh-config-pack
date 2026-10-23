@@ -11,6 +11,7 @@
   "files": [
     "cordis.patch.yml",
     "config",
+    "examples",
     "pack.manifest.yaml",
     "packages",
     "assets",

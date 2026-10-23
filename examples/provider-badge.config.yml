@@ -1,0 +1,40 @@
+# provider-badge 覆盖示例（复制到 profile 的 cordis.patch.yml 里使用）
+#
+# 默认值在插件代码里，本段只写**覆盖**。改完必须重启 DSH，再新开会话。
+# 生效结果：GET http://127.0.0.1:<DSH 端口>/provider-badge/config
+# 只在本机装了 dsh-plugin-provider-badge 时才加这段；不要放进 dsh-config-pack/config/。
+#
+# 不要写凭据值——这里只能出现引用名。
+
+- id: provider-badge
+  config:
+    # 总开关：false 时额度端点一律回 disabled（不打上游）。
+    enabled: true
+    # 宿主缓存窗口与上游超时（毫秒，越界会被收敛）。
+    cacheTtlMs: 60000
+    timeoutMs: 8000
+    sources:
+      opencode-go:
+        # 关掉某个数据源，其余照常。
+        enabled: true
+        # 判定本机真实路由 id 用的 baseURL 片段（一般不用改）。
+        baseHosts: [opencode.ai/zen/go]
+        # 同族命名；设备上叫别的名字时加进来。
+        aliases: [opencode-go, opencodego]
+        # 上游路径：以 / 开头则拼到默认端点的 origin 上。
+        # 绝对 URL 必须是 https 且主机属于 opencode.ai / api.kimi.com / chatgpt.com。
+        usagePath: /zen/go/v1/usage
+      kimi-coding:
+        enabled: true
+      openai-codex:
+        enabled: true
+    ui:
+      # 缩写（≤ 8 字符）：默认 opengo / kimi官 / gpt官
+      labels:
+        opencodego: opengo
+      # 底色（只接受 #RRGGBB）：默认草绿 #7CB342
+      colors:
+        opencodego: "#7CB342"
+      # 别名归一化：配置优先于内置别名表
+      aliases:
+        opencodego: opencode-go

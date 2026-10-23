@@ -107,6 +107,7 @@ dsh packed
 | PTC 多代理预设与 bundle（`@local/dsh-ptc-multi-agent-mode`） | 用 `scripts/generate-ptc-companion.mjs` 生成 companion，再安装其中的 `dsh-bundle/` | `README.md` 的「公开 PTC 伴生配置」一节 |
 | SkillHub 侧资产（如 `ptc-multi-agent-control`） | SkillHub 只做索引登记，正文在 `packages/dsh-ptc-multi-agent-mode/` | `templates/ptc-public-companion/ptc-multi-agent-control/INDEX.md` |
 | 本机 provider 路由顺序 / 端点 / 凭据名 | `DSHPACK_ROUTE_*` / `DSHPACK_BASE_*` / `DSHPACK_KEY_*`，指引见 `docs/AI-DEVICE-SETUP.md` | `config/45-failover.yml`、`config/40-models.yml` |
+| provider 徽标的可见配置（缩写 / 配色 / 额度端点开关） | 默认值在插件代码里；覆盖写 profile 的 `- id: provider-badge` config，示例见 `examples/provider-badge.config.yml` | `docs/provider-badge-config.md` |
 
 因此：**本包一键安装 ≠ 完整 PTC 能力安装**；PTC 需要额外一步生成并安装 companion。
 
@@ -234,6 +235,10 @@ dsh plugin --profile packed add github:Robert-Wang-08/dsh-config-pack#v0.3.0
 > **route id 因设备而异。** 同一 provider 在不同设备上可能叫不同名字（例如一台是 `opencode-go`，
 > 另一台是 `opencodego`）。正确做法是用 `DSHPACK_ROUTE_*` 覆盖，**不要**把本机名字写回仓库默认值。
 > 全部可覆盖项见 `pack.manifest.yaml` 的 `requires_env`。
+>
+> **provider 徽标不需要这类覆盖。** 额度面板按 settings 里 provider 的 `baseURL` 自动判定本机真实
+> 路由 id（`opencodego` 与 `opencode-go` 都能命中），凭据也按该 id 读 `apiKeyEnv`。它的缩写/配色/
+> 端点覆盖是插件自己的 `config`，见 `docs/provider-badge-config.md`。
 
 ---
 
