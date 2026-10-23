@@ -5,6 +5,10 @@ pnpm-lock.yaml
 
 # 本地退役归档（如 templates 副本的 zip 快照）：仅供本机留痕，不进公开仓库。
 backups/
+# 本机改前备份副本（AGENTS.md 备份惯例）：只留本机，不得随发布分发。
+# 2026-10-23 教训：release.ps1 的 git add -A 曾把三个 *.bak-before-sol61-* 打进 v0.10.3。
+*.bak
+*.bak-*
 *.log
 __pycache__/
 *.py[cod]

@@ -1,4 +1,4 @@
-# dsh-config-pack v0.10.3 — GENERATED FILE, DO NOT EDIT.
+# dsh-config-pack v0.10.4 — GENERATED FILE, DO NOT EDIT.
 #
 # Source of truth: config/*.yml   Rebuild with: npm run build
 # Verify before publishing:       npm run verify
