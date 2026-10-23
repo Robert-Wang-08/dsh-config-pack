@@ -116,6 +116,44 @@ dsh plugin --profile packed remove dsh-config-pack
 
 > ⚠️ 卸载**不会**恢复任何被本包覆盖的行；被覆盖的行会回落到上一个声明它的层（通常是该插件的 bundle 默认值）。
 
+### pnpm store 不一致：装不动的头号原因
+
+`dsh plugin add/remove` 底层跑的是 pnpm。pnpm 把**当次安装用的 store** 记在
+`<profile>/node_modules/.modules.yaml` 的 `storeDir` 里；之后若全局配置指向了别的 store，
+命令会直接失败（`ERR_PNPM_UNEXPECTED_STORE`），表现是「装不上 / 卸不掉」，与本包无关。
+
+诊断就两行对比：
+
+```powershell
+pnpm config get store-dir
+Select-String -Path "$env:USERPROFILE\.dsh\profiles\<profile>\node_modules\.modules.yaml" -Pattern storeDir
+```
+
+两者不一致就必须**重链**（只改配置不够，node_modules 要重装一次）：
+
+```powershell
+# 1) 先停掉该 profile 的 DSH 进程（Windows 上文件被占用会重装失败）
+# 2) 旁路旧目录，保留回滚能力
+Rename-Item "$env:USERPROFILE\.dsh\profiles\<profile>\node_modules" node_modules.oldstore
+# 3) 用统一后的 store 重装（CI=true 让 pnpm 在非交互环境重建）
+$env:CI='true'; pnpm install      # 在 profile 目录内执行
+# 4) 验收
+dsh plugin --profile <profile> list
+```
+
+回滚：删掉/改名新 `node_modules`，把 `node_modules.oldstore` 改回 `node_modules` 即可。
+
+> **本机实测过的第二个失败模式**：默认 store（`%LOCALAPPDATA%\pnpm\store`）在部分 Windows
+> 环境下跑不了 git 宿主依赖的 prepare，报 `ERR_PNPM_PREPARE_PACKAGE` 并指向
+> `.../dsh-archived-sessions/tar.gz/...`。这类机器只能用**另一个可写 store**，并让全局配置
+> 指向它——配置与 `.modules.yaml` 两边一致才算装好。具体 store 路径属设备本地信息，
+> 写在 `~/.dsh/device/device.env`，**不进本仓库**。
+> 排障全流程见工作区 `docs/bootstrap/pnpm-store-与重链.md`。
+
+另一个和速度相关的开关：`install.ps1 -NoRetry` 关掉 pnpm 取包重试与自愈重试。镜像对
+跨平台二进制（`claude-agent-sdk-*`、`@openai/codex`、`libreoffice-kit-*`）持续 403 时，
+默认重试会把单次 `add` 拖到 4 分钟以上；确定这些平台包用不到时可以关掉。
+
 ---
 
 ## 为什么不需要安装脚本

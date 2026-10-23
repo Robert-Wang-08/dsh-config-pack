@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.8
+
+文档：pnpm store 不一致（ERR_PNPM_UNEXPECTED_STORE / ERR_PNPM_PREPARE_PACKAGE）的诊断与 profile 重链步骤；补充 -NoRetry 说明
+
 ## 0.10.7
 
 一键安装提速：组件登记跳过 link: 本地仓库已提供的同名包、缺失项合并为一次 add；新增 -NoRetry 关闭 pnpm 取包重试与自愈重试
