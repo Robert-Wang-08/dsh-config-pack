@@ -1,0 +1,157 @@
+# ── Provider 故障转移（dsh-deepseek-keypool）──────────────────────────────
+# 完整 config 覆盖：插件自身的 cordis.patch.yml 只 insert 空 Host 行；
+# 旧 SkillHub failover-tiers bundle 的完整档位表迁入本包后由本文件发布。
+# 补丁按 id 整体替换 config（非合并）；装本包后须删掉 profile / 旧 bundle 里
+# 同 id 的内联覆盖，否则本文件是死码。
+#
+# 路由 id 因设备而异（至少 DeepSeek 备用路由：本机 opencode-go，另一台 opencodego）。
+# 全部 route 用 DSHPACK_ROUTE_* 覆盖；默认值见 pack.manifest.yaml requires_env。
+# 绝不要把 API 密钥写进本文件。
+# 本插件的 agent/request 与 agent/request-error 只服务主控 LLM 请求；
+# 不把 subagent_codex 的工具失败误当成主控失败，也不负责子代理跨 provider 重派发。
+# subagent_codex_relay 是独立工具入口，不能通过本档位表伪装成官方 Codex fallback。
+
+- id: dsh-deepseek-keypool
+  config:
+    enabled: true
+    # 传输层兜底：宿主只把完全匹配 `WebSocket closed unexpectedly` 归一化为
+    # TRANSPORT，带关闭码的文案会落到通用 PI_AI_ERROR，必须靠消息模式兜底。
+    terminalCodes:
+      [
+        QUOTA,
+        AUTH,
+        INVALID_CREDENTIAL,
+        MISSING_CREDENTIAL,
+        NO_ADAPTER,
+        SERVER,
+        RATE_LIMIT,
+        TRANSPORT
+      ]
+    failurePatterns:
+      - insufficient balance
+      - insufficient_quota
+      - quota exceeded
+      - usage limit
+      - usage_limit
+      - balance
+      - overloaded
+      - invalid api key
+      - token limit
+      - rate limit
+      - websocket closed
+      - websocket
+      - connection closed
+      - socket hang up
+      - ECONNRESET
+      - premature close
+    minSwitchIntervalMs: 1000
+    maxSwitchesPerTurn: 6
+    probeTarget: true
+    keyResetAt: '06:00'
+    policyMode: same
+    maxPolicyRetriesPerStep: 2
+    # 按失败类别的重试策略（切换 provider 之前的原地重试）。未列出的错误码一律立即切换，
+    # 保持旧语义，也保证额度类不会因为“默认值”被改成先重试。
+    #   TRANSPORT  连接/流中断（WebSocket error、socket hang up…）：等 5s 重试，5 次或 30s 预算用尽才切换；
+    #              observationWindowMs 内（连接活过 30s 才断）按“意外中断”处理，活过窗口外直接切换。
+    #   RATE_LIMIT 服务端限流：退避 15s 重试，3 次或 60s 预算。
+    #   SERVER     上游 5xx：3s 重试 2 次或 15s 预算。
+    #   QUOTA/AUTH/INVALID_CREDENTIAL/MISSING_CREDENTIAL/NO_ADAPTER：额度与凭据类，attempts 0 = 立即切换。
+    retryPolicies:
+      TRANSPORT:
+        attempts: 5
+        delayMs: 5000
+        budgetMs: 30000
+        observationWindowMs: 30000
+      RATE_LIMIT:
+        attempts: 3
+        delayMs: 15000
+        budgetMs: 60000
+      SERVER:
+        attempts: 2
+        delayMs: 3000
+        budgetMs: 15000
+      QUOTA: { attempts: 0 }
+      AUTH: { attempts: 0 }
+      INVALID_CREDENTIAL: { attempts: 0 }
+      MISSING_CREDENTIAL: { attempts: 0 }
+      NO_ADAPTER: { attempts: 0 }
+    # 失败原因细分（可选，只影响提示文案，不改变切换/重试行为）。
+    # 插件内置中英文词条（余额不足 / 无权访问模型 / invalid api key …），这里只能**追加**；
+    # 同一个 AUTH 码下「余额不足」与「该令牌无权访问模型」的处置不同（充值 vs 换来源），
+    # 内置表已覆盖实测文案，通常无需配置。键为原因 id，值为追加的模式串数组：
+    # failureReasons:
+    #   QUOTA_EXHAUSTED: [ 试用额度已耗尽 ]
+    #   MODEL_NOT_AUTHORIZED: [ 未开通该模型 ]
+    # 启动对齐关闭：新会话保持宿主默认/最近一次选择（agent-default-model）。
+    startup:
+      preferTier: 0
+    # declared = 固定档内顺序；keywords 会让「先试哪个」随失败上下文漂移。
+    ranking:
+      mode: declared
+      timeoutMs: 20000
+      cacheTtlMs: 60000
+      # 同族互备优先：失败路由能在档位表中定位时，先只在它所在档内切换，档内确实
+      # 无可用候选（已尝试/冷却中/能力不兼容/不可解析）才退回「从第 1 档向上扫」。
+      # 打开后：opencode-go 失败先切同档的 ais-2dsglm（同为 deepseek-v4.1-flash），
+      # 不再直接升到第 1 档的 gpt-6.1-sol；整档耗尽才升档。
+      # 关闭（默认 false）时保持 v3.4.0 旧语义。
+      sameTierFirst: true
+    # 档位按模型族对齐：同档条目是同 model 的备用路由。
+    # 说明：sameTierFirst=true 时低档失败优先在本档内互备；该档整体耗尽才升到第 1 档
+    # （因此同一时刻仍是“一个族受益”，但受益者是失败方所在的族）。
+    tiers:
+      - tier: 1
+        enabled: true
+        entries:
+          - id: codex-relay
+            route: !!js process['env'].DSHPACK_ROUTE_CODEX_RELAY || 'codex-relay'
+            model: gpt-6.1-sol
+            description: 主控主力；reasoning 档可调，适合复杂推理
+            keywords: [ 推理, 复杂, reasoning ]
+            compatible: { tools: true, images: true }
+            cooldownMs: 60000
+          - id: codex-official
+            route: !!js process['env'].DSHPACK_ROUTE_OPENAI_CODEX || 'openai-codex'
+            model: gpt-6.1-sol
+            description: 同族备用；gpt（official），OAuth 凭据，需先在 Web Models 页登录
+            keywords: [ 官方, codex ]
+            compatible: { tools: true, images: true }
+            cooldownMs: 120000
+      - tier: 2
+        enabled: true
+        entries:
+          - id: ais
+            route: !!js process['env'].DSHPACK_ROUTE_AIS || 'ais-2dsglm'
+            model: deepseek-v4.1-flash
+            description: 第二族主力；OpenAI 兼容协议，支持文本与图片
+            keywords: [ 主力, 便宜, 稳定 ]
+            compatible: { tools: true, images: true }
+            cooldownMs: 60000
+          - id: opencodego
+            route: !!js process['env'].DSHPACK_ROUTE_OPENCODE || 'opencode-go'
+            model: deepseek-v4.1-flash
+            description: 同族备用；沿用内置目录模型清单（另一设备 route 可能是 opencodego）
+            keywords: [ 默认, 保底 ]
+            compatible: { tools: true, images: true }
+            cooldownMs: 60000
+      - tier: 3
+        enabled: true
+        entries:
+          - id: kimi
+            route: !!js process['env'].DSHPACK_ROUTE_KIMI || 'kimi-coding'
+            model: k3-256k
+            description: 跨族保底；长上下文代码场景
+            keywords: [ 长上下文, k3 ]
+            compatible: { tools: true, images: false }
+            cooldownMs: 60000
+      - tier: 4
+        enabled: false
+        entries:
+          - id: deepseek-official
+            route: !!js process['env'].DSHPACK_ROUTE_DEEPSEEK_OFFICIAL || 'deepseek-official'
+            model: deepseek-flash
+            description: DeepSeek 官网直连；本机无该路由模型声明，保持禁用
+            keywords: [ 官网, 直连 ]
+            compatible: { tools: true, images: true }
+            cooldownMs: 120000

@@ -25,7 +25,8 @@
   目标 profile 名，默认 packed。
 
 .PARAMETER Source
-  包的来源 spec，默认本包已发布的 tag。
+  包的来源 spec。留空则自动解析远端最新 v* 发布 tag（git ls-remote，按语义版本取最大）；
+  离线或需要钉版本时显式传入 github:Robert-Wang-08/dsh-config-pack#vX.Y.Z。
 
 .PARAMETER FromDefaultProfile
   profile 不存在时使用的发行模板，默认 web（PTC 工具面位于 preset 内，需要客户端预设选择能力）。
@@ -38,12 +39,12 @@
 
 .EXAMPLE
   pwsh scripts/install.ps1
-  pwsh scripts/install.ps1 -ProfileName mypack -Source github:Robert-Wang-08/dsh-config-pack#v0.9.6
+  pwsh scripts/install.ps1 -ProfileName mypack -Source github:Robert-Wang-08/dsh-config-pack#vX.Y.Z
 #>
 [CmdletBinding()]
 param(
   [string]$ProfileName = 'packed',
-  [string]$Source = 'github:Robert-Wang-08/dsh-config-pack#v0.9.6',
+  [string]$Source = '',
   [string]$FromDefaultProfile = 'web',
   [switch]$Uninstall,
   [switch]$NoVerify,
@@ -58,6 +59,65 @@ function Ok([string]$m)   { Write-Host ('ok    ' + $m) -ForegroundColor Green }
 function Info([string]$m) { Write-Host ('      ' + $m) }
 function Warn([string]$m) { Write-Host ('warn  ' + $m) -ForegroundColor Yellow }
 function Step([string]$m) { Write-Host ('== ' + $m) -ForegroundColor Cyan }
+
+# 解析远端最新 v* tag。刻意用 ls-remote 而不是 fetch --tags：历史 tag 本地/远端可能分歧，
+# fetch 会整体拒绝；而写死默认 tag 会让 install.ps1 每次都落后于发布（v0.9.6 曾落后 4 版）。
+function Resolve-LatestSourceTag {
+  $gitDir = Join-Path $root '.git'
+  if (-not (Test-Path $gitDir)) {
+    Fail 'config-pack 目录不是 git clone，无法自动解析最新 tag；请传入 -Source github:Robert-Wang-08/dsh-config-pack#vX.Y.Z'
+  }
+  $lines = & git -C $root ls-remote --tags origin 'refs/tags/v*'
+  if ($LASTEXITCODE -ne 0 -or -not $lines) {
+    Fail 'git ls-remote failed (network?) - 可传 -Source 手动指定'
+  }
+  $vers = foreach ($l in $lines) {
+    if ($l -match 'refs/tags/v(\d+\.\d+\.\d+)(\^\{\})?$') { [version]$matches[1] }
+  }
+  $latest = $vers | Sort-Object | Select-Object -Last 1
+  if (-not $latest) { Fail '远端没有任何 v* tag' }
+  return ('github:Robert-Wang-08/dsh-config-pack#v' + $latest)
+}
+
+# 找一个**真能执行**的 Python。仅用 Get-Command 会被 Microsoft Store 的
+# python.exe 别名骗过：命令存在、exit 9009、输出 'Python was not found'，
+# 结果 Claude 预置步骤静默空转并被误判为「缺凭据」。
+function Resolve-PythonCommand {
+  $candidates = @()
+  foreach ($envName in @('DSHPACK_PYTHON', 'PTC_PYTHON')) {
+    foreach ($scope in @('Process', 'User', 'Machine')) {
+      $value = [Environment]::GetEnvironmentVariable($envName, $scope)
+      if ($value) { $candidates += , @($value); break }
+    }
+  }
+  $candidates += , @('py', '-3')
+  $candidates += , @('python')
+  $candidates += , @('python3')
+  foreach ($glob in @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python3*\python.exe'),
+    'C:\Python3*\python.exe',
+    (Join-Path $env:USERPROFILE 'anaconda3\python.exe'),
+    (Join-Path $env:USERPROFILE 'miniconda3\python.exe'),
+    'C:\ProgramData\anaconda3\python.exe'
+  )) {
+    foreach ($hit in @(Get-ChildItem -Path $glob -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)) {
+      $candidates += , @($hit)
+    }
+  }
+
+  foreach ($candidate in $candidates) {
+    $exe = $candidate[0]
+    $prefix = @()
+    if ($candidate.Count -gt 1) { $prefix = @($candidate[1..($candidate.Count - 1)]) }
+    if (-not (Get-Command $exe -ErrorAction SilentlyContinue)) { continue }
+    $probe = (& $exe @($prefix + @('-V')) 2>&1 | Out-String)
+    if ($LASTEXITCODE -ne 0) { continue }
+    if ($probe -match 'was not found') { continue }
+    if ($probe -notmatch '^Python\s+3\.') { continue }
+    return @{ Exe = $exe; Prefix = $prefix; Version = $probe.Trim() }
+  }
+  return $null
+}
 
 if (-not (Get-Command dsh -ErrorAction SilentlyContinue))  { Fail 'dsh is not on PATH' }
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Fail 'node is not on PATH (needed to prepare the profile and to verify)' }
@@ -74,6 +134,13 @@ if ($Uninstall) {
   Write-Host 'Note: rows this pack overrode now fall back to the next layer that declares them.'
   exit 0
 }
+
+# ---- 0. source spec ---------------------------------------------------------
+if (-not $Source) {
+  Step 'resolving latest release tag'
+  $Source = Resolve-LatestSourceTag
+}
+Info ('install source: ' + $Source)
 
 # ---- 1. profile -------------------------------------------------------------
 if (-not (Test-Path $profileDir)) {
@@ -95,13 +162,15 @@ if ($LASTEXITCODE -ne 0) { Fail 'prepare-profile.mjs failed' }
 # 幂等：已存在的目录不覆盖；缺凭据时只报告、不失败（该档在配置好之前不可用）。
 Step 'preparing Opus Claude Code config profiles (device-local credentials)'
 $profilesScript = Join-Path $root 'packages\dsh-ptc-multi-agent-mode\scripts\claude_config_profiles.py'
-$python = Get-Command python -ErrorAction SilentlyContinue
+$python = Resolve-PythonCommand
 if (-not $python) {
-  Info 'python 未安装，跳过 Opus 配置目录预置（可稍后手工运行 claude_config_profiles.py）'
+  Info '未找到可执行的 Python 3，跳过 Opus 配置目录预置'
+  Info '  可设置 DSHPACK_PYTHON=<python.exe> 或手工运行 packages\dsh-ptc-multi-agent-mode\scripts\claude_config_profiles.py'
 } elseif (-not (Test-Path -LiteralPath $profilesScript)) {
   Info ('未找到 ' + $profilesScript + '，跳过预置')
 } else {
-  & python -B $profilesScript 2>&1 | ForEach-Object { Info $_ }
+  Info ('python: ' + $python.Exe + ' (' + $python.Version + ')')
+  & $python.Exe @($python.Prefix + @('-B', $profilesScript)) 2>&1 | ForEach-Object { Info $_ }
   if ($LASTEXITCODE -ne 0) {
     Info 'Opus 配置目录预置未完全成功（缺凭据时属预期）；补齐后重跑该脚本即可，不影响其余安装'
   } else {

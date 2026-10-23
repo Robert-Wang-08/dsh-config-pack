@@ -66,7 +66,7 @@ pwsh scripts/install.ps1 -ProfileName packed
 dsh packed
 ```
 
-`install.ps1` 默认从 `github:Robert-Wang-08/dsh-config-pack#v0.6.1` 安装。它只调**一次**
+`install.ps1` 默认从**远端最新 v\* 发布 tag** 安装：`git ls-remote` 解析后按语义版本取最大，不再写死版本。要钉死版本时显式传 `-Source github:Robert-Wang-08/dsh-config-pack#vX.Y.Z`。它只调**一次**
 `dsh plugin add`（装包与激活仍由 DSH 自己完成），失败时按 pnpm 错误码做有界自愈后重试，
 最后校验 `dsh.profile.bundles` 里确实登记了本包。完整说明见
 [`docs/one-command-install.md`](docs/one-command-install.md)。
@@ -100,10 +100,10 @@ dsh packed
 
 ```powershell
 git -C <repo> fetch --tags origin
-git -C <repo> checkout v0.6.1
-dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#v0.6.1
-# 或直接用安装器（它会顺带把 pnpm 前置与校验一起做掉）
-pwsh scripts/install.ps1 -ProfileName web -Source github:Robert-Wang-08/dsh-config-pack#v0.6.1
+git -C <repo> checkout vX.Y.Z
+dsh plugin --profile web add github:Robert-Wang-08/dsh-config-pack#vX.Y.Z
+# 更省事：一键更新自动解析最新 tag，并顺带做 pnpm 前置与安装后偏差校验
+pwsh scripts/update.ps1 -ProfileName web
 ```
 
 回滚使用旧 tag 重跑同一条安装命令。

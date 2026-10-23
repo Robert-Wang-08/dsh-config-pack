@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.3
+
+install.ps1 自动解析最新 tag 并用可执行校验挑选 Python，修复一键安装落后版本与 Claude 预置空转
+
 ## 0.10.2
 
 修复 Claude 配置预置读取 Windows User 和 Machine 环境变量
