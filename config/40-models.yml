@@ -51,7 +51,11 @@
         baseURL: !!js process['env'].DSHPACK_BASE_AIS || 'http://47.101.159.7:29988/v1'
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_AIS || 'AIS_2DSGLM_API_KEY'
         models:
+          # 2026-10-23：显式声明推理档位。pi-ai 已装目录没有 deepseek-v4.1-flash，
+          # 省略 reasoningEfforts 会让适配器把它当非推理模型（reasoning=false），选择器没有档位、
+          # 请求也不带推理参数。词汇对齐目录里的 deepseek-v4-flash（仅 low/high/max）。
           - id: deepseek-v4.1-flash
+            reasoningEfforts: { off: null, low: low, high: high, max: max }
           - id: deepseek-v4-flash
           - id: glm-5.3-flash
       anthropic-relay:
@@ -100,7 +104,7 @@
       - provider: openai-codex
         model: gpt-6.1-sol
       - provider: openai-codex
-        model: gpt-5.6-sol
+        model: gpt-6.1-sol
       - provider: ais-2dsglm
         model: deepseek-v4.1-flash
       - provider: opencode-go

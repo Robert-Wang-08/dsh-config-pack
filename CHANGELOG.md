@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.5
+
+默认切换顺序与 PTC 路由链统一 gpt-6.1-sol：allowedModels/README 的 openai-codex 项改 6.1、subagent-codex 钉 gpt-6.1-sol；ds4.1-flash 在 ais-2dsglm 声明 reasoningEfforts(low/high/max) 并给 failover tier2 加 reasoningEffort max；setup.ps1 复制共享盘答案后按本机 DSHPACK_ROUTE_* 重写档位 route 名，修复源设备路由名被抄成空转条目
+
 ## 0.10.4
 
 移除误入版本库的本机 .bak 备份副本，并加忽略规则防止 release 再次打包

@@ -92,3 +92,6 @@
 - id: subagent-codex
   config:
     permissionMode: dangerously-bypass-approvals-and-sandbox
+    # 2026-10-23：外部 Codex CLI 子代理的默认模型钉到 gpt-6.1-sol（此前未钉，落 CLI 默认；
+    # 与 failover tier1 / PTC 路由链保持一致）。推理层级仍来自 ~/.codex/config.toml。
+    model: gpt-6.1-sol

@@ -191,7 +191,8 @@ docs/ROW-OWNERSHIP-20261013.md
 | `DSHPACK_ROUTE_CODEX_RELAY` | `codex-relay` | failover tier1 主路由 id |
 | `DSHPACK_ROUTE_OPENAI_CODEX` | `openai-codex` | failover tier1 备用路由 id |
 | `DSHPACK_ROUTE_AIS` | `ais-2dsglm` | failover tier2 主路由 id |
-| `DSHPACK_ROUTE_OPENCODE` | `opencode-go` | failover tier2 DeepSeek 备用；另一设备可设为 `opencodego` |
+| `DSHPACK_ROUTE_OPENCODE` | `opencode-go` | failover tier2 DeepSeek 备用；另一设备可设为 `opencodego`（`setup.ps1 -SharedRoot` 复制共享盘答案后，会按此值重写档位 route 名） |
+| （profile 行 `agent-default-model.reasoningEffort`） | 未设置 | 新会话默认推理档位。`setup.ps1` 不写 profile，故按设备手工加：`agent-default-model` 的 config 里加 `reasoningEffort: max`；模型须先声明 `reasoningEfforts`（本包已为 `deepseek-v4.1-flash` 声明 low/high/max） |
 | `DSHPACK_ROUTE_KIMI` | `kimi-coding` | failover tier3 路由 id |
 | `DSHPACK_ROUTE_DEEPSEEK_OFFICIAL` | `deepseek-official` | failover tier4（默认禁用） |
 
@@ -321,7 +322,7 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
 | `codex-relay` | `gpt-6.1-sol` | 主控 / 分析 / 设计 / 验证默认（`reasoning_effort=xhigh`） |
 | `codex-relay` | `gpt-6-astra` | 可选：需要 Astra 时显式指定，不再作设计默认 |
 | `openai-codex` | `gpt-6.1-sol` | GPT 组降级（官方 OAuth） |
-| `openai-codex` | `gpt-5.6-sol` | 可选：5.6 仍可手动选择，不再作降级目标 |
+| `openai-codex` | `gpt-6.1-sol` | GPT 组降级目标（与 45-failover tier1 一致） |
 | `ais-2dsglm` | `deepseek-v4.1-flash` | 执行 / 验证首选 |
 | `opencode-go` | `deepseek-v4.1-flash` | DS 组降级 |
 | `anthropic-relay` | `claude-opus-5` | Opus 5.5：仅高难度或 `top_down` 独立复核 |

@@ -3,7 +3,7 @@
 # 本文件是"包对自己主张什么"的唯一声明处。安装/校验脚本只读它，不猜。
 schema: dsh-pack/v1
 name: dsh-config-pack
-version: 0.10.4
+version: 0.10.5
 requires_dsh: ">=0.2.0-rc.2 <0.3.0"
 
 # 本包独占的行 id。任何其它层（别的 bundle、目标 profile 的 cordis.patch.yml）

@@ -1,4 +1,4 @@
-# dsh-config-pack v0.10.4 — GENERATED FILE, DO NOT EDIT.
+# dsh-config-pack v0.10.5 — GENERATED FILE, DO NOT EDIT.
 #
 # Source of truth: config/*.yml   Rebuild with: npm run build
 # Verify before publishing:       npm run verify
@@ -110,6 +110,9 @@
 - id: subagent-codex
   config:
     permissionMode: dangerously-bypass-approvals-and-sandbox
+    # 2026-10-23：外部 Codex CLI 子代理的默认模型钉到 gpt-6.1-sol（此前未钉，落 CLI 默认；
+    # 与 failover tier1 / PTC 路由链保持一致）。推理层级仍来自 ~/.codex/config.toml。
+    model: gpt-6.1-sol
 
 # ═══ config/20-mcp.yml ══════════════════════════════════════════════
 # ── MCP 服务器 ───────────────────────────────────────────────────────────
@@ -235,7 +238,11 @@
         baseURL: !!js process['env'].DSHPACK_BASE_AIS || 'http://47.101.159.7:29988/v1'
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_AIS || 'AIS_2DSGLM_API_KEY'
         models:
+          # 2026-10-23：显式声明推理档位。pi-ai 已装目录没有 deepseek-v4.1-flash，
+          # 省略 reasoningEfforts 会让适配器把它当非推理模型（reasoning=false），选择器没有档位、
+          # 请求也不带推理参数。词汇对齐目录里的 deepseek-v4-flash（仅 low/high/max）。
           - id: deepseek-v4.1-flash
+            reasoningEfforts: { off: null, low: low, high: high, max: max }
           - id: deepseek-v4-flash
           - id: glm-5.3-flash
       anthropic-relay:
@@ -284,7 +291,7 @@
       - provider: openai-codex
         model: gpt-6.1-sol
       - provider: openai-codex
-        model: gpt-5.6-sol
+        model: gpt-6.1-sol
       - provider: ais-2dsglm
         model: deepseek-v4.1-flash
       - provider: opencode-go
@@ -427,6 +434,9 @@
           - id: ais
             route: !!js process['env'].DSHPACK_ROUTE_AIS || 'ais-2dsglm'
             model: deepseek-v4.1-flash
+            # 2026-10-23：ds4.1-flash 档位统一 max（依赖 40-models.yml 的 reasoningEfforts 声明；
+            # 目录不支持的层级会被插件预检丢弃并告警，不会阻断切换）
+            reasoningEffort: max
             description: 第二族主力；OpenAI 兼容协议，支持文本与图片
             keywords: [ 主力, 便宜, 稳定 ]
             compatible: { tools: true, images: true }
@@ -434,6 +444,7 @@
           - id: opencodego
             route: !!js process['env'].DSHPACK_ROUTE_OPENCODE || 'opencode-go'
             model: deepseek-v4.1-flash
+            reasoningEffort: max
             description: 同族备用；沿用内置目录模型清单（另一设备 route 可能是 opencodego）
             keywords: [ 默认, 保底 ]
             compatible: { tools: true, images: true }

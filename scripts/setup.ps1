@@ -270,6 +270,34 @@ if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
     Write-Host "本机答案目录: $localDir"
 }
 
+# 只改档位条目的 route 名；其余（failurePolicy / subagentRouting / 各条目 cooldownMs、reasoningEffort）原样保留。
+function Update-SharedRouteIds($Raw, $Map) {
+    $pairs = @(
+        @('codex-relay', 'DSHPACK_ROUTE_CODEX_RELAY'),
+        @('codex-official', 'DSHPACK_ROUTE_OPENAI_CODEX'),
+        @('kimi', 'DSHPACK_ROUTE_KIMI'),
+        @('ais', 'DSHPACK_ROUTE_AIS'),
+        @('opencodego', 'DSHPACK_ROUTE_OPENCODE'),
+        @('deepseek-official', 'DSHPACK_ROUTE_DEEPSEEK_OFFICIAL')
+    )
+    $doc = if ($Raw -is [string]) { $Raw | ConvertFrom-Json } else { $Raw }
+    $changed = New-Object System.Collections.Generic.List[string]
+    foreach ($tier in @($doc.providerFailover.tiers)) {
+        foreach ($entry in @($tier.entries)) {
+            foreach ($p in $pairs) {
+                if ($entry.id -ne $p[0]) { continue }
+                $want = $Map[$p[1]]
+                if ([string]::IsNullOrWhiteSpace($want)) { continue }
+                if ($entry.route -ne $want) {
+                    $changed.Add($entry.id + ':' + $entry.route + '->' + $want)
+                    $entry.route = $want
+                }
+            }
+        }
+    }
+    return [pscustomobject]@{ doc = $doc; changed = $changed }
+}
+
 $writtenEnv = Apply-EnvMap $map
 Write-Host ("用户环境变量: " + ($writtenEnv -join ', '))
 
@@ -286,7 +314,14 @@ if ((Test-Path -LiteralPath $routeDest) -and -not $UpdateRoutes -and -not $share
     if ($secretRe.IsMatch($raw)) { throw '共享盘 route-config.json 含密钥形态，已拒绝。' }
     $dir = Split-Path -Parent $routeDest
     if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }
-    [System.IO.File]::WriteAllText($routeDest, $raw, $utf8)
+    # 2026-10-23：共享盘答案里写的是**源设备**的路由名，直接照抄会把本机不存在的路由名写成
+    # 空转条目（本机 provider 是 opencodego，答案里是 opencode-go，实测该档位必然 NO_ADAPTER）。
+    # 复制后按本机 device.env 的 DSHPACK_ROUTE_* 重写档位路由名，让同一份答案落多台设备都可用。
+    $rewritten = Update-SharedRouteIds $raw $map
+    [System.IO.File]::WriteAllText($routeDest, ($rewritten.doc | ConvertTo-Json -Depth 20), $utf8)
+    if ($rewritten.changed.Count -gt 0) {
+        Write-Host ("按本机 device.env 重写档位路由名: " + ($rewritten.changed -join ', '))
+    }
     Write-Host "已复制共享盘路由到 $routeDest"
 } elseif ($UpdateRoutes -or -not (Test-Path -LiteralPath $routeDest)) {
     $doc = Build-RouteFromMap $map $existing

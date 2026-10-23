@@ -124,6 +124,9 @@
           - id: ais
             route: !!js process['env'].DSHPACK_ROUTE_AIS || 'ais-2dsglm'
             model: deepseek-v4.1-flash
+            # 2026-10-23：ds4.1-flash 档位统一 max（依赖 40-models.yml 的 reasoningEfforts 声明；
+            # 目录不支持的层级会被插件预检丢弃并告警，不会阻断切换）
+            reasoningEffort: max
             description: 第二族主力；OpenAI 兼容协议，支持文本与图片
             keywords: [ 主力, 便宜, 稳定 ]
             compatible: { tools: true, images: true }
@@ -131,6 +134,7 @@
           - id: opencodego
             route: !!js process['env'].DSHPACK_ROUTE_OPENCODE || 'opencode-go'
             model: deepseek-v4.1-flash
+            reasoningEffort: max
             description: 同族备用；沿用内置目录模型清单（另一设备 route 可能是 opencodego）
             keywords: [ 默认, 保底 ]
             compatible: { tools: true, images: true }
