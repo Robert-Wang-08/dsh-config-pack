@@ -217,6 +217,32 @@ pwsh scripts/setup.ps1
 
 先问有没有共享盘。有，就读 `<共享盘>\dsh-device\` 里已经填好的答案。没有，就从本包模板生成本机文件，用命令行确认，或把 [`docs/AI-DEVICE-SETUP.md`](docs/AI-DEVICE-SETUP.md) 交给 AI。然后安装 Git 包、写入 `route-config.json`、设置 `DSHPACK_*` 用户环境变量。密钥只进用户环境变量。说明见 [`docs/device-setup.md`](docs/device-setup.md) §8。
 
+### 一键同步（更新）
+
+已装好的设备不用重装，一条命令把包、可选三方组和 pnpm 前置一起拉到最新发布版：
+
+```powershell
+pwsh scripts/update.ps1 -ProfileName packed
+```
+
+它依次做三件事：解析远端最新 `v*` tag（`git ls-remote` 按语义版本取最大，不信任本地 tag）→ 与 profile 当前 spec 比较（相同则提示无需更新，加 `-Force` 强制重跑）→ 复用 `install.ps1` 全流程（pnpm 前置 + 一次多 spec add + 安装后偏差校验）。
+
+> 它**不重拉**共享盘的设备答案与路由；那两项变更后用 `pwsh scripts/setup.ps1 -UpdateRoutes`。
+
+### 脚本位置
+
+PowerShell 入口全部在本包 `scripts\` 下（路径相对仓库根）：
+
+| 脚本 | 作用 | 典型用法 |
+| --- | --- | --- |
+| `scripts\setup.ps1` | 一键恢复式安装：读共享盘设备答案 → 写 `DSHPACK_*` → 装包进 profile | `pwsh scripts/setup.ps1 -SharedRoot <云盘根>` |
+| `scripts\install.ps1` | 装/升级本包到一个 profile（默认自动取最新 tag） | `pwsh scripts/install.ps1 -ProfileName packed` |
+| `scripts\update.ps1` | **一键同步**：已装设备更新到最新发布版 | `pwsh scripts/update.ps1 -ProfileName packed` |
+| `scripts\backup.ps1` | 备份 profile 配置与清单（凭据不入备份） | `pwsh scripts/backup.ps1 -Profile web` |
+| `scripts\release.ps1` | 发版：升版本 → 重建补丁 → 校验 → 写 CHANGELOG → 打 tag（可推送） | `pwsh scripts/release.ps1 -Bump patch -Note '...' -Push` |
+
+`install.ps1` 与 `update.ps1` 都支持 `-Source github:Robert-Wang-08/dsh-config-pack#vX.Y.Z` 钉死版本；不传则自动解析远端最新 tag。
+
 ### 一键备份
 
 ```powershell
