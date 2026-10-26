@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.9
+
+kimi-coding 对齐 kimi 官网目录：新增 k3.1-pro / k3.1-pro-highspeed（2026-10-23 发布），kimi-for-coding 显示名改 Kimi K2.8 Preview（id 不变），子代理白名单同步两条新路由
+
 ## 0.10.8
 
 文档：pnpm store 不一致（ERR_PNPM_UNEXPECTED_STORE / ERR_PNPM_PREPARE_PACKAGE）的诊断与 profile 重链步骤；补充 -NoRetry 说明

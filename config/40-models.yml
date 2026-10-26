@@ -70,9 +70,48 @@
       # gpt（official）：OAuth 凭据，需在该设备 Web Models 页登录一次。
       openai-codex:
         displayName: gpt（official）
+      # 2026-10-26 对齐 kimi 官网（models.dev kimi-code-plan-cn，api.kimi.com/coding）：
+      # 新增 k3.1-pro / k3.1-pro-highspeed；kimi-for-coding 官网显示名改为 Kimi K2.8 Preview（id 不变）。
       kimi-coding:
         displayName: Kimi Coding
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_KIMI || 'LLMKEY_KIMI'
+        models:
+          - id: k3
+            name: Kimi K3
+            contextWindow: 1048576
+            maxTokens: 131072
+            input: [text, image]
+            reasoningEfforts: { low: low, high: high, max: max }
+          - id: k3-256k
+            name: Kimi K3-256K
+            contextWindow: 262144
+            maxTokens: 131072
+            input: [text, image]
+            reasoningEfforts: { low: low, high: high, max: max }
+          - id: kimi-for-coding
+            name: Kimi K2.8 Preview
+            contextWindow: 1048576
+            maxTokens: 32768
+            input: [text, image]
+            reasoningEfforts: { low: low, high: high, max: max }
+          - id: kimi-for-coding-highspeed
+            name: Kimi For Coding HighSpeed
+            contextWindow: 262144
+            maxTokens: 32768
+            input: [text, image]
+            reasoningEfforts: { low: low, high: high, max: max }
+          - id: k3.1-pro
+            name: Kimi K3.1 Pro
+            contextWindow: 1048576
+            maxTokens: 131072
+            input: [text, image]
+            reasoningEfforts: { low: low, high: high, max: max }
+          - id: k3.1-pro-highspeed
+            name: Kimi K3.1 Pro Highspeed
+            contextWindow: 1048576
+            maxTokens: 131072
+            input: [text, image]
+            reasoningEfforts: { low: low, high: high, max: max }
       # OpenCode Go：沿用 DSH 内置目录模型清单。
       opencode-go:
         displayName: OpenCode Go
@@ -111,6 +150,10 @@
         model: deepseek-v4.1-flash
       - provider: kimi-coding
         model: k3-256k
+      - provider: kimi-coding
+        model: k3.1-pro
+      - provider: kimi-coding
+        model: k3.1-pro-highspeed
       - provider: codex-relay
         model: gpt-5.6
       # Opus 降级链（5.5 -> 5 -> 4.8 -> 报告 Opus 不可用）。本包只声明 relay 的档位；
