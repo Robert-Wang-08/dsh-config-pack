@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.10
+
+组件锁推进：provider-failover v3.6.0（多 key 保存按 Host 同口径预校验、冷却语义修正、WINDOWFIX 上下文溢出切换）、sidebar-visibility v0.0.7（rc.2 目录树视图与未读亮点）；三份依赖 pin 同步
+
 ## 0.10.9
 
 kimi-coding 对齐 kimi 官网目录：新增 k3.1-pro / k3.1-pro-highspeed（2026-10-23 发布），kimi-for-coding 显示名改 Kimi K2.8 Preview（id 不变），子代理白名单同步两条新路由
