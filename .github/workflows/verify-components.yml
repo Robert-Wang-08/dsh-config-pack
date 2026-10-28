@@ -7,7 +7,7 @@ name: verify components
 
 on:
   push:
-    branches: [main]
+    branches: [main, cursor/gha-node22-verify-e786]
   pull_request:
   schedule:
     - cron: '17 4 * * 1'
