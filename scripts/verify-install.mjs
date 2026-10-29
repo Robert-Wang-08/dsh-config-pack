@@ -24,6 +24,7 @@ import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { installConfigProblems } from './model-config.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -213,7 +214,7 @@ const config = {};
 if (!asJson || argv.includes('--with-config')) {
   const v = run('node', [join(root, 'scripts', 'verify.mjs'), '--profile', profileName]);
   config.shadowCheck = { exit: v.code, tail: (v.out + v.err).trim().split(/\r?\n/).slice(-1)[0] || '' };
-  if (v.code !== 0) warnings.push('verify.mjs --profile reported problems (shadowing or errors) - see its output');
+  // Combined checks below make shadowing and activation failures blocking.
 
   const composedPath = join(tmpdir(), 'verify-install-composed-' + process.pid + '.yml');
   const dump = run('dsh', ['--profile', profileName, '--dump-config']);
@@ -223,9 +224,7 @@ if (!asJson || argv.includes('--with-config')) {
     const c = run('node', [join(root, 'scripts', 'verify.mjs'), '--composed', composedPath]);
     const m = (c.out + c.err).match(/(\d+) tool row\(s\), (\d+) registered provider name\(s\), (\d+) dangling/);
     config.composed = { exit: c.code, toolRows: m ? +m[1] : null, providers: m ? +m[2] : null, dangling: m ? +m[3] : null };
-    if (config.composed.dangling === null || config.composed.dangling > 0) {
-      problems.push('composed config check failed or reported dangling providers');
-    }
+    problems.push(...installConfigProblems(v, dump, {code:c.code, dangling:config.composed.dangling}));
   } catch (e) {
     problems.push('composed check could not run: ' + e.message);
   } finally {

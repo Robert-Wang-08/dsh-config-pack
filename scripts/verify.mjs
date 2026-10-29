@@ -17,6 +17,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
+import { officialModelProblems } from './model-config.mjs';
 
 const USAGE = `verify.mjs — read-only checks on this pack. It never writes any file.
 
@@ -152,6 +153,8 @@ for (const id of delegated) {
     );
   }
 }
+
+errors.push(...officialModelProblems(patchLines.join('\n')));
 
 // 2. !!js scalar constraints
 patchLines.forEach((line, i) => {

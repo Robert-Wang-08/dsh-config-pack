@@ -1,6 +1,6 @@
 {
   "name": "dsh-config-pack",
-  "version": "0.10.12",
+  "version": "0.10.13",
   "private": false,
   "type": "module",
   "description": "A generic, git-distributable DSH configuration pack: plugin selection + profile config layer + agent presets, installable into any DSH profile with one command.",
@@ -32,7 +32,8 @@
     "metrics:scan": "node scripts/metrics.mjs scan --sessions",
     "metrics:stats": "node scripts/metrics.mjs stats --sessions",
     "metrics:selftest": "node scripts/metrics.mjs selftest",
-    "test": "npm run test:ptc-public",
+    "test": "npm run test:ptc-public && node scripts/test-model-config.mjs",
+    "test:backup": "pwsh -NoProfile -File scripts/test-backup.ps1",
     "test:ptc-public": "node scripts/test-ptc-public-template.mjs",
     "ptc:generate": "node scripts/generate-ptc-companion.mjs"
   },

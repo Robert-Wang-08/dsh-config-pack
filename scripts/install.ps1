@@ -337,6 +337,7 @@ if ($registered) {
   Warn 'Fix: remove it and re-run this script so a single add registers the bundle:'
   Warn ('  dsh plugin --profile ' + $ProfileName + ' remove dsh-config-pack')
   Warn ('  pwsh scripts/install.ps1 -ProfileName ' + $ProfileName + ' -Source ' + $Source)
+  Fail '配置包未登记为 bundle；本次安装未完成。'
 }
 
 # ---- 4.6 post-install deviation check (plugins + config) --------------------
@@ -344,7 +345,7 @@ if (-not $NoVerify) {
   Step 'post-install deviation check (plugins + config)'
   & node (Join-Path $root 'scripts/verify-install.mjs') --profile $ProfileName
   if ($LASTEXITCODE -ne 0) {
-    Warn '安装完成但存在插件/配置偏差 —— 见上方报告：missing(核心件) 必须处理；optional missing 若因 -SkipOptional 属预期；shadowing/设备字面量属已知设备差异'
+    Fail '安装已执行，但验收失败：核心依赖、配置遮蔽、未激活行或模型声明必须修复；见上方报告。'
   } else {
     Ok 'verify-install: 无偏差'
   }

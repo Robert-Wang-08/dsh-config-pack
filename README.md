@@ -288,10 +288,11 @@ pwsh scripts/backup.ps1 -Profile web           # 目录 + zip + manifest.json + 
 pwsh scripts/backup.ps1 -Profile web -NoZip    # 只要目录
 ```
 
-只备份配置与清单（profile 的 `cordis.patch.yml`/`package.json`/`pnpm-workspace.yaml`、
-本机 `route-config.json`，加登记变量名与 link 依赖的 `manifest.json`）。
-**凭据文件与凭据值永不进入备份**：允许清单之外的文件不复制，复制前逐个做凭据形状与个人路径扫描，
-命中即拒绝并在 `PRIVACY.md` 中列出。恢复时在新设备重新提供凭据即可。
+配置备份覆盖 profile 的 `cordis.yml`、`cordis.patch.yml`、`package.json`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`、`compatibility.json` 和 `patches/*.patch`，以及设备答案、预设、插件的 settings/config/route-config 文件。清单记录 SHA256、缺失项、拒绝项与排除项。ZIP 同时包含隐藏预设。
+
+扫描会拒绝凭据形态和个人家目录路径；单纯的环境变量引用无需填入密钥即可备份。退出 0 只代表本次配置范围完整；退出 2 表示 partial，不能当作完整恢复点；其他非零表示失败。旧输出目录不可重复使用。此包不包含宿主依赖、CLI/OAuth 登录态、会话或任意插件数据库；完整本机私密快照使用 `dsh-backup-restore`。
+
+官网模型从 v0.10.11 起显式声明，v0.10.13 起安装验收会阻断旧 profile 遮蔽与激活失败，同版本更新也会验收。新设备恢复、回滚和验证步骤见 [备份恢复审计](docs/backup-restore-audit.md)。
 
 ---
 

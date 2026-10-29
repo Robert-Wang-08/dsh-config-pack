@@ -2,7 +2,11 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
-## Unreleased
+## 0.10.13
+
+配置备份补齐主配置、锁文件、兼容性文件、pnpm patches、设备答案、预设与插件设置；增加 SHA256、complete/partial 状态、部分拒绝退出 2、隐藏文件 ZIP 与旧输出目录拒绝。安装验收将 profile 遮蔽、dump 失败、未激活行、组合验证失败及官网模型缺失改为阻断；同版本更新也验收。补充模型/备份往返回归测试与跨设备恢复审计说明。
+
+同时包含此前待发布的变更：
 
 failover `ais` 条目登记同路由 `glm-5.3-flash` 共用该组 key（`models: [deepseek-v4.1-flash, glm-5.3-flash]`）；setup.ps1 新设备生成的 route-config 同步。切到该条目仍用主模型 deepseek-v4.1-flash。
 

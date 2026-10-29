@@ -96,8 +96,12 @@ $latestVer = [regex]::Match($Source, '#v([\d.]+)').Groups[1].Value
 Info ('installed: ' + $(if ($currentVer) { 'v' + $currentVer } else { '(unknown)' }) + '  latest: v' + $latestVer)
 
 if (-not $Force -and $currentVer -eq $latestVer) {
-  Ok ('已是最新（v' + $latestVer + '）——无需更新。要强制重跑加 -Force')
+  Ok ('已是最新（v' + $latestVer + '）——无需重装，继续验收。要强制重跑加 -Force')
   Write-Host '提示：云盘上的 route-config.json / 个人答案若有变更，用 setup.ps1 -UpdateRoutes 同步。'
+  if (-not $NoVerify) {
+    & node (Join-Path $root 'scripts/verify-install.mjs') --profile $ProfileName
+    if ($LASTEXITCODE -ne 0) { Fail '版本相同但安装验收失败；不能仅凭版本号判断配置已经生效。' }
+  }
   exit 0
 }
 
