@@ -85,13 +85,15 @@ function New-Tier($Number, [bool] $Enabled, $Entries) {
     }
 }
 
-function New-Entry([string] $Id, [string] $Route, [string] $Model, [int] $CooldownMs) {
-    return [ordered]@{
+function New-Entry([string] $Id, [string] $Route, [string] $Model, [int] $CooldownMs, $Models) {
+    $entry = [ordered]@{
         id         = $Id
         route      = $Route
         model      = $Model
         cooldownMs = $CooldownMs
     }
+    if ($null -ne $Models) { $entry.models = @($Models) }
+    return $entry
 }
 
 function Build-RouteFromMap($Map, $Existing) {
@@ -106,7 +108,7 @@ function Build-RouteFromMap($Map, $Existing) {
             (New-Entry 'codex-official' (& $pick 'DSHPACK_ROUTE_OPENAI_CODEX' 'openai-codex') 'gpt-6.1-sol' 120000)
         ))
         (New-Tier 2 $true @(
-            (New-Entry 'ais' (& $pick 'DSHPACK_ROUTE_AIS' 'ais-2dsglm') 'deepseek-v4.1-flash' 60000)
+            (New-Entry 'ais' (& $pick 'DSHPACK_ROUTE_AIS' 'ais-2dsglm') 'deepseek-v4.1-flash' 60000 @('deepseek-v4.1-flash', 'glm-5.3-flash'))
             (New-Entry 'opencodego' (& $pick 'DSHPACK_ROUTE_OPENCODE' 'opencode-go') 'deepseek-v4.1-flash' 60000)
         ))
         (New-Tier 3 $true @(
@@ -343,6 +345,7 @@ if (-not $SkipInstall) {
     } else {
         & $install -ProfileName $ProfileName -SkipOptional:$SkipOptional
     }
+    if ($LASTEXITCODE -ne 0) { throw 'install.ps1 验收失败；一键安装未完成，见上方报告。' }
 } else {
     Write-Host '已跳过 install.ps1'
 }

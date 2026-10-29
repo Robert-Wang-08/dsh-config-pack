@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## Unreleased
+
+failover `ais` 条目登记同路由 `glm-5.3-flash` 共用该组 key（`models: [deepseek-v4.1-flash, glm-5.3-flash]`）；setup.ps1 新设备生成的 route-config 同步。切到该条目仍用主模型 deepseek-v4.1-flash。
+
 ## 0.10.12
 
 安装/更新脚本补「按实际在用选定 profile」判据（2026-10-27 web/packed 装反事故的教训：默认值 packed 只代表新装引导场景，装前必须用运行中进程/AGENTS 声明/活跃度取证确认目标），update.ps1 更新后验收 Recent Sessions 登记；bundle 补丁内容与 v0.10.11 相同

@@ -499,11 +499,14 @@
           - id: ais
             route: !!js process['env'].DSHPACK_ROUTE_AIS || 'ais-2dsglm'
             model: deepseek-v4.1-flash
+            # 同路由 glm-5.3-flash 共用本条目的 key（apiKeyEnv 在路由上，不按模型拆）。
+            # 切到本条目时仍用主模型 deepseek-v4.1-flash；glm 失败时按路由命中本条目轮换 key。
+            models: [deepseek-v4.1-flash, glm-5.3-flash]
             # 2026-10-23：ds4.1-flash 档位统一 max（依赖 40-models.yml 的 reasoningEfforts 声明；
             # 目录不支持的层级会被插件预检丢弃并告警，不会阻断切换）
             reasoningEffort: max
-            description: 第二族主力；OpenAI 兼容协议，支持文本与图片
-            keywords: [ 主力, 便宜, 稳定 ]
+            description: 第二族主力；OpenAI 兼容协议，支持文本与图片；glm-5.3-flash 共用本组 key
+            keywords: [ 主力, 便宜, 稳定, glm ]
             compatible: { tools: true, images: true }
             cooldownMs: 60000
           - id: opencodego
