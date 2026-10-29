@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.11
+
+openai-codex（gpt official）显式声明官方模型清单——新增 gpt-6.1-sol（pi-ai 0.87.1 内置目录缺失、1.4.0 才收录；声明窗口 500k / 输出 128k / 文本+图片 / 全推理档位），补齐 0.87.1 ∪ 1.4.0 全部 9 个官方 id（旧目录独有的 gpt-5.5、gpt-5.3-codex-spark 标注保留）；同时去掉子代理模型白名单里重复的 openai-codex/gpt-6.1-sol 条目
+
 ## 0.10.10
 
 组件锁推进：provider-failover v3.6.0（多 key 保存按 Host 同口径预校验、冷却语义修正、WINDOWFIX 上下文溢出切换）、sidebar-visibility v0.0.7（rc.2 目录树视图与未读亮点）；三份依赖 pin 同步

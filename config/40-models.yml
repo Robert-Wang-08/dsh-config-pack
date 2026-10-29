@@ -68,8 +68,32 @@
           - id: claude-opus-4-8
           - id: claude-sonnet-5
       # gpt（official）：OAuth 凭据，需在该设备 Web Models 页登录一次。
+      #
+      # 2026-10-29：显式声明官方模型清单。DSH 0.2.0-rc.2 默认装的 pi-ai 0.87.1
+      # 内置目录没有 gpt-6.1-sol（pi-ai 1.4.0 起才收录），而 `models` 是整体替换
+      # 内置目录：不声明时该路由整体继承目录，选择器只显示 0.87.1 的 8 个旧 id，
+      # 6.1 完全不可选。这里列出 0.87.1 ∪ 1.4.0 的全部官方 id：6.1 目录里没有，
+      # 按 1.4.0 的 openai-codex-responses 条目声明窗口 500k / 输出 128k /
+      # 文本+图片 / 全档位；其余条目省略字段，仍按同名目录条目继承
+      # （升级 pi-ai 后若目录新增或下线模型，同步本列表）。
       openai-codex:
         displayName: gpt（official）
+        models:
+          - id: gpt-6.1-sol
+            name: GPT-6.1 Sol
+            contextWindow: 500000
+            maxTokens: 128000
+            input: [text, image]
+            reasoningEfforts: { off: null, minimal: low, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-6-sol
+          - id: gpt-6-astra
+          - id: gpt-6-luna
+          - id: gpt-5.6-sol
+          - id: gpt-5.6-terra
+          - id: gpt-5.6-luna
+          # 下面两个 id 仅在 0.87.1 目录中存在（1.4.0 已移除）；保留以兼容仍装旧版 pi-ai 的设备
+          - id: gpt-5.5
+          - id: gpt-5.3-codex-spark
       # 2026-10-26 对齐 kimi 官网（models.dev kimi-code-plan-cn，api.kimi.com/coding）：
       # 新增 k3.1-pro / k3.1-pro-highspeed；kimi-for-coding 官网显示名改为 Kimi K2.8 Preview（id 不变）。
       kimi-coding:
@@ -140,8 +164,6 @@
         model: gpt-6.1-sol
       - provider: codex-relay
         model: gpt-6-astra
-      - provider: openai-codex
-        model: gpt-6.1-sol
       - provider: openai-codex
         model: gpt-6.1-sol
       - provider: ais-2dsglm
