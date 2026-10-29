@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.10.12
+
+安装/更新脚本补「按实际在用选定 profile」判据（2026-10-27 web/packed 装反事故的教训：默认值 packed 只代表新装引导场景，装前必须用运行中进程/AGENTS 声明/活跃度取证确认目标），update.ps1 更新后验收 Recent Sessions 登记；bundle 补丁内容与 v0.10.11 相同
+
 ## 0.10.11
 
 openai-codex（gpt official）显式声明官方模型清单——新增 gpt-6.1-sol（pi-ai 0.87.1 内置目录缺失、1.4.0 才收录；声明窗口 500k / 输出 128k / 文本+图片 / 全推理档位），补齐 0.87.1 ∪ 1.4.0 全部 9 个官方 id（旧目录独有的 gpt-5.5、gpt-5.3-codex-spark 标注保留）；同时去掉子代理模型白名单里重复的 openai-codex/gpt-6.1-sol 条目

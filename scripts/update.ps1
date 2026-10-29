@@ -19,6 +19,11 @@
 .PARAMETER ProfileName
   目标 profile，默认 packed。
 
+  ⚠ 判据是「实际在用」，不是「脚本默认」或「谁声明了 dsh-config-pack 依赖」：
+  更新前先用使用证据确认（运行中的 dsh --profile <X> 进程、AGENTS.md 主 profile
+  声明、profile 目录活跃度）；证据不足就停下来问用户。2026-10-27 曾凭结构推断
+  把 v0.10.10 装进闲置的 packed 而用户实际在跑 web——装对了 profile 才算交付。
+
 .PARAMETER Source
   指定安装源（github:Robert-Wang-08/dsh-config-pack#vX.Y.Z）；默认自动取远端最新 tag。
 
@@ -104,6 +109,17 @@ if ($NoVerify)     { $installArgs.NoVerify = $true }
 & (Join-Path $PSScriptRoot 'install.ps1') @installArgs
 $code = $LASTEXITCODE
 if ($code -ne 0) { Fail ('install.ps1 exited ' + $code) }
+
+if (-not $SkipOptional) {
+  $recentSpec = 'dsh-recent-sessions'
+  $recent = & dsh plugin --profile $ProfileName list 2>&1 | Out-String
+  if ($LASTEXITCODE -ne 0 -or $recent -notmatch [regex]::Escape($recentSpec)) {
+    Fail 'Recent Sessions 未登记：请确认未使用 -SkipOptional，并重新运行 scripts/update.ps1 -Force'
+  }
+  Ok 'Recent Sessions 已登记'
+} else {
+  Warn 'Recent Sessions 未验收：本次使用 -SkipOptional，插件可能不可见'
+}
 
 Ok ('更新完成：' + $(if ($currentVer) { 'v' + $currentVer + ' -> ' }) + 'v' + $latestVer)
 Write-Host '下一步：关掉正在跑的 DSH，重新打开，并新开一个会话（工具表随会话冻结）。'

@@ -24,6 +24,13 @@
 .PARAMETER ProfileName
   目标 profile 名，默认 packed。
 
+  ⚠ 选 profile 的判据是「实际在用」，不是「谁的依赖长得像」：
+  默认值 packed 只代表"一键装出一个新 profile"的引导场景，绝不代表用户日常在跑它。
+  装/升级前必须用使用证据确认目标——运行中的 `dsh --profile <X>` 进程、工作区
+  AGENTS.md 的主 profile 声明、profile 目录的最近活跃时间；仅凭"某 profile 声明了
+  dsh-config-pack 依赖"或"脚本默认值"来选目标，曾经导致把整套恢复装进了没人用的
+  profile（2026-10-27，web/packed 装反事故）。证据不足时停下来问用户，不要猜。
+
 .PARAMETER Source
   包的来源 spec。留空则自动解析远端最新 v* 发布 tag（git ls-remote，按语义版本取最大）；
   离线或需要钉版本时显式传入 github:Robert-Wang-08/dsh-config-pack#vX.Y.Z。
