@@ -2,7 +2,9 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
-## 0.10.14
+## 0.10.15
+
+新增 scripts/refresh-model-catalog.mjs：读取 pi-ai provider 目录，检查 provider 配置、subagent allowedModels 和本机 ACP/CLI 命令可用性；--apply 固定 OpenCode Go 模型列表并写本机快照。自定义 relay 标记为需端点 /models 实测，不把公共目录误当私有端点能力。
 
 更新 provider 模型目录：OpenCode Go 固定当前 pi-ai 目录的 30 个模型，避免跨设备因宿主 pi-ai 版本不同而出现不同选择器；Kimi 补齐官方当前列表中的 `kimi-k2.7-code`、`kimi-k2.7-code-highspeed`、`kimi-k2.6`，保留既有兼容别名与 K3.1 Pro。
 

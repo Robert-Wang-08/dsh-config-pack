@@ -11,4 +11,5 @@ backups/
 *.bak-*
 *.log
 __pycache__/
+assets/provider-model-catalog.snapshot.json
 *.py[cod]
