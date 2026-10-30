@@ -3,6 +3,8 @@ import {readFileSync} from 'node:fs';
 import {officialModelProblems,installConfigProblems} from './model-config.mjs';
 const text=readFileSync(new URL('../cordis.patch.yml',import.meta.url),'utf8');
 assert.deepEqual(officialModelProblems(text),[]);
+for (const id of ['deepseek-v4.1-flash','glm-5.3-flash','qwen3.8-max','grok-4.7']) assert.match(text, new RegExp('opencode-go:[\\s\\S]*- id: '+id));
+for (const id of ['kimi-k2.7-code','kimi-k2.7-code-highspeed','kimi-k2.6','k3.1-pro']) assert.match(text, new RegExp('kimi-coding:[\\s\\S]*- id: '+id));
 const old=text.replace(/      openai-codex:[\s\S]*?(?=      kimi-coding:)/,'      openai-codex:\n        displayName: official\n');
 assert.ok(old.includes('id: gpt-6.1-sol'));
 assert.ok(officialModelProblems(old).length);

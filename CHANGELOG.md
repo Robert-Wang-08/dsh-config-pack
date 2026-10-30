@@ -2,7 +2,9 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
-## 0.10.13
+## 0.10.14
+
+更新 provider 模型目录：OpenCode Go 固定当前 pi-ai 目录的 30 个模型，避免跨设备因宿主 pi-ai 版本不同而出现不同选择器；Kimi 补齐官方当前列表中的 `kimi-k2.7-code`、`kimi-k2.7-code-highspeed`、`kimi-k2.6`，保留既有兼容别名与 K3.1 Pro。
 
 配置备份补齐主配置、锁文件、兼容性文件、pnpm patches、设备答案、预设与插件设置；增加 SHA256、complete/partial 状态、部分拒绝退出 2、隐藏文件 ZIP 与旧输出目录拒绝。安装验收将 profile 遮蔽、dump 失败、未激活行、组合验证失败及官网模型缺失改为阻断；同版本更新也验收。补充模型/备份往返回归测试与跨设备恢复审计说明。
 

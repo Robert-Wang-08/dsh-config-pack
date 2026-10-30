@@ -136,10 +136,62 @@
             maxTokens: 131072
             input: [text, image]
             reasoningEfforts: { low: low, high: high, max: max }
+          # Kimi API official current list (platform.kimi.ai/docs/models).
+          - id: kimi-k2.7-code
+            name: Kimi K2.7 Code
+            contextWindow: 262144
+            maxTokens: 131072
+            input: [text, image]
+            reasoningEfforts: { low: low, high: max, max: max }
+          - id: kimi-k2.7-code-highspeed
+            name: Kimi K2.7 Code HighSpeed
+            contextWindow: 262144
+            maxTokens: 131072
+            input: [text, image]
+            reasoningEfforts: { low: low, high: max, max: max }
+          - id: kimi-k2.6
+            name: Kimi K2.6
+            contextWindow: 262144
+            maxTokens: 131072
+            input: [text, image]
+            reasoningEfforts: { low: low, high: high, max: max }
       # OpenCode Go：沿用 DSH 内置目录模型清单。
+      # OpenCode Go：固定当前 pi-ai 目录快照，避免设备之间因 pi-ai 版本不同而显示不同模型。
+      # 来源：本机 @earendil-works/pi-ai opencode-go.json；升级 pi-ai 后需重新核对并发版。
       opencode-go:
         displayName: OpenCode Go
         apiKeyEnv: !!js process['env'].DSHPACK_KEY_OPENCODE || 'OPENCODE_API_KEY'
+        models:
+          - id: minimax-m3
+          - id: qwen3.8-flash
+          - id: deepseek-v4-flash
+          - id: deepseek-v4-flash-vision-exp
+          - id: deepseek-v4-pro
+          - id: deepseek-v4.1-flash
+          - id: glm-5.1
+          - id: glm-5.2
+          - id: glm-5.3
+          - id: glm-5.3-flash
+          - id: hy3
+          - id: hy4-preview
+          - id: kimi-k2.6
+          - id: kimi-k2.7-code
+          - id: kimi-k3
+          - id: longcat-2.0
+          - id: mimo-v2.5
+          - id: mimo-v2.5-pro
+          - id: mimo-v2.6-flash
+          - id: mimo-v2.6-pro
+          - id: minimax-m2.7
+          - id: qwen3.6-plus
+          - id: qwen3.7-max
+          - id: qwen3.7-plus
+          - id: qwen3.8-max
+          - id: gpt-5.6-luna
+          - id: grok-4.6
+          - id: grok-4.7
+          - id: muse-spark-1.2-contributor
+          - id: muse-spark-1.3-contributor
 
 # ── 子智能体逐次模型选择（Host 偏好 subagent-model-selection-settings）────────
 # 工具侧开关由 config/50-presets.yml 的 tool-subagent 提供（modelSelectionSettings: true）；
@@ -176,6 +228,12 @@
         model: k3.1-pro
       - provider: kimi-coding
         model: k3.1-pro-highspeed
+      - provider: kimi-coding
+        model: kimi-k2.7-code
+      - provider: kimi-coding
+        model: kimi-k2.7-code-highspeed
+      - provider: kimi-coding
+        model: kimi-k2.6
       - provider: codex-relay
         model: gpt-5.6
       # Opus 降级链（5.5 -> 5 -> 4.8 -> 报告 Opus 不可用）。本包只声明 relay 的档位；

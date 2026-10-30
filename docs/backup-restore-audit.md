@@ -56,6 +56,12 @@ node scripts/verify-install.mjs --profile <实际profile>
 
 恢复后重启 DSH 并新开会话，在 Models 页确认 gpt（official）包含 GPT-6.1 Sol，完成 OAuth 登录后再做真实请求。目录注册验证不能证明账号权限、额度或上游可用性。
 
+## Provider 模型清单更新（v0.10.14）
+
+OpenCode Go 不再省略 `models` 字段，包内固定当前 pi-ai `opencode-go.json` 的 30 个模型；以后 pi-ai 升级后必须重新核对并发布。Kimi 按官方模型页补充 K3.1 Pro 系列、K2.7 Code 系列和 K2.6；旧 `k3-256k`、`kimi-for-coding` 等别名保留，避免现有路由和 ACP 配置失效。OpenAI official 的 9 个模型继续与当前 `openai-codex.json` 对齐。Anthropic relay、Codex relay、AIS 使用自定义端点，配置包只声明已确认的路由模型，不能把公共目录自动等同于私有端点可用性。
+
+来源： [OpenCode Go 官方说明](https://opencode.ai/v2/docs/console/go/)、[Kimi API 官方模型列表](https://platform.kimi.ai/docs/models)、本机 pi-ai provider data。
+
 ## 本轮验证证据
 
 使用真实 DSH 适配器，把宿主目录中的 6.1 Sol 条目移除后，仍从配置成功解析该模型，保留原 OAuth auth 对象及 openai-codex-responses 协议；默认配置的六条 provider 均成功注册，白名单引用均存在。合成备份覆盖配置/补丁、逐文件 SHA256 往返、隐藏 ZIP、纯 env 指针、凭据拒绝、partial 退出与重复输出拒绝。源设备真实配置备份已达到 12 个文件、零拒绝；本机私密快照另行保存在用户 DSH backups 目录。另一设备运行态和真实官网请求未在本会话直接验证。
