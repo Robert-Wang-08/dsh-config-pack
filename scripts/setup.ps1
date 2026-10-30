@@ -214,6 +214,8 @@ if (-not $NonInteractive -and [string]::IsNullOrWhiteSpace($SharedRoot)) {
 $deviceEnvPath = Join-Path $localDir 'device.env'
 $answersPath = $null
 $sharedRoute = $null
+$sharedCatalog = $null
+$sharedResourceManifest = $null
 
 if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
     if (-not (Test-Path -LiteralPath $SharedRoot)) { throw "共享盘目录不存在: $SharedRoot" }
@@ -226,13 +228,16 @@ if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
         $bundle = Join-Path $SharedRoot 'dsh-device'
         $sharedEnv = $nestedEnv
     } else {
-        throw "共享盘上没有 device.env。可放在 $directEnv ，或 $nestedEnv 。同目录可选 device-answers.json 和 route-config.json。"
+        throw "共享盘上没有 device.env。可放在 $directEnv ，或 $nestedEnv 。同目录可选 device-answers.json、route-config.json 和 provider-model-catalog.snapshot.json。"
     }
     $map = Read-DeviceEnv $sharedEnv
     if (-not (Test-Path -LiteralPath $localDir)) { New-Item -ItemType Directory -Path $localDir | Out-Null }
     Copy-Item -LiteralPath $sharedEnv -Destination $deviceEnvPath -Force
     $answersPath = Join-Path $bundle 'device-answers.json'
     $sharedRoute = Join-Path $bundle 'route-config.json'
+        $sharedCatalog = Join-Path $bundle 'provider-model-catalog.snapshot.json'
+        $sharedResourceManifest = Join-Path $bundle 'provider-resource-manifest.json'
+        if (-not (Test-Path -LiteralPath $sharedResourceManifest)) { $sharedResourceManifest = Join-Path $bundle 'manifest.json' }
     Write-Host "已读取共享盘 $bundle"
 } else {
     New-Item -ItemType Directory -Force -Path $localDir | Out-Null
@@ -271,6 +276,24 @@ if (-not [string]::IsNullOrWhiteSpace($SharedRoot)) {
     if (Test-Path -LiteralPath $localAnswers) { $answersPath = $localAnswers }
     Write-Host "本机答案目录: $localDir"
 }
+
+# 模型目录快照来自共享盘资源包；只复制无凭据的 inventory，不复制 node_modules 或登录态。
+$modelCatalogDest = Join-Path $localDir 'provider-model-catalog.snapshot.json'
+$modelResourceManifestDest = Join-Path $localDir 'provider-resource-manifest.json'
+if ($sharedCatalog -and (Test-Path -LiteralPath $sharedCatalog)) {
+    try {
+        $catalogDoc = Get-Content -LiteralPath $sharedCatalog -Raw | ConvertFrom-Json
+        if ($catalogDoc.schema_version -ne 'dsh-provider-model-catalog/v1') { throw 'schema_version 不受支持' }
+        Copy-Item -LiteralPath $sharedCatalog -Destination $modelCatalogDest -Force
+        if ($sharedResourceManifest -and (Test-Path -LiteralPath $sharedResourceManifest)) { Copy-Item -LiteralPath $sharedResourceManifest -Destination $modelResourceManifestDest -Force }
+        Write-Host "已同步云盘模型目录快照: $modelCatalogDest"
+    } catch { throw "云盘模型目录快照无效: $($_.Exception.Message)" }
+} elseif (Test-Path -LiteralPath $modelCatalogDest) {
+    Write-Host "沿用本机模型目录快照: $modelCatalogDest"
+} else {
+    Write-Host '未找到模型目录快照；安装仍可继续，运行 refresh-model-catalog.mjs 生成。'
+}
+
 
 # 只改档位条目的 route 名；其余（failurePolicy / subagentRouting / 各条目 cooldownMs、reasoningEffort）原样保留。
 function Update-SharedRouteIds($Raw, $Map) {

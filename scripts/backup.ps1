@@ -22,7 +22,7 @@ foreach ($name in @('cordis.yml','cordis.patch.yml','package.json','pnpm-lock.ya
   $allow.Add(@{ Src=(Join-Path $profileDir $name); Rel=('profile/' + $name) })
 }
 $allow.Add(@{ Src=(Join-Path $dshHome 'settings.yaml'); Rel='settings.yaml' })
-foreach ($name in @('device.env','device-answers.json','route-config.json','cordis.local.yml','ptc.local.patch.yml','ptc-settings.json')) {
+foreach ($name in @('device.env','device-answers.json','route-config.json','provider-model-catalog.snapshot.json','provider-resource-manifest.json','cordis.local.yml','ptc.local.patch.yml','ptc-settings.json')) {
   $allow.Add(@{ Src=(Join-Path $dshHome ('device/' + $name)); Rel=('device/' + $name) })
 }
 $excluded=@(); $rejected=@()

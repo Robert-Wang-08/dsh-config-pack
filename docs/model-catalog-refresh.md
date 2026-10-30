@@ -27,7 +27,9 @@
     npm run models:check
     npm run models:apply
 
---apply 当前会固定 opencode-go 的目录模型并写入本机忽略的 assets/provider-model-catalog.snapshot.json。OpenAI official、Kimi 和现有配置会被检查；Kimi 的官方新增模型由配置包维护。脚本不会把凭据、端点返回值或登录状态写入快照。
+--apply 当前会固定 opencode-go 的目录模型并写入本机忽略的 assets/provider-model-catalog.snapshot.json。这个快照应复制到共享盘 dsh-device/provider-model-catalog.snapshot.json，并由 setup.ps1 同步到目标设备的 .dsh/device。OpenAI official、Kimi 和现有配置会被检查；Kimi 的官方新增模型由配置包维护。脚本不会把凭据、端点返回值或登录状态写入快照。
+
+共享盘资源包同时放置 provider-resource-manifest.json（资源说明和 SHA256），不要把 API key、OAuth 登录态或 node_modules 放入资源包。
 
 ## 报告如何解读
 

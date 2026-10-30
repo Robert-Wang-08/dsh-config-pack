@@ -1,6 +1,6 @@
 # 设备安装与本地个性化（去隐私版）
 
-本文是 `dsh-config-pack` 的**设备落地说明**，内容为**去隐私版本**，可以随本仓库公开。
+本文是 `dsh-config-pack` 的**设备落地说明**，内容为**去隐私版本**，可以随本仓库公开。设备共享盘 dsh-device 另包含无凭据的 provider-model-catalog.snapshot.json 和 provider-resource-manifest.json。
 
 > **渠道边界**
 > - **Git（本仓库）**：通用配置——预设、provider 装配、failover 档位表、**个人化模板**，以及新设备入口 `scripts/setup.ps1`。
@@ -9,7 +9,7 @@
 
 ---
 
-## 备份与恢复验收（v0.10.13）
+## 云盘资源包与备份恢复验收（v0.10.16）
 
 模型目录属于 DSH/pi-ai 依赖，不随配置快照复制。官网 `gpt-6.1-sol` 已由包显式声明；仅恢复旧快照仍可能继承旧目录。先确认实际使用的 profile，再更新配置包，不能只核对包版本号。profile 的内联 `llm-pi-ai` 会遮蔽本包，必须在目标设备备份后合并模型声明，保留设备 provider 与凭据指针。安装遇到遮蔽、未激活行或验证失败会非零退出。完整覆盖清单、新设备命令、回滚和验收见 [备份恢复审计](backup-restore-audit.md)。
 
@@ -309,7 +309,7 @@ pwsh -File scripts/setup.ps1 -SkipInstall          # 只写本机答案、路由
 pwsh -File scripts/setup.ps1 -UpdateRoutes         # 已有 route-config.json 时才重写档位
 ```
 
-1. **有共享盘**：填写目录。脚本读取 `<共享盘>\dsh-device\device.env`。同目录还可以有 `device-answers.json` 和 `route-config.json`（有路由文件时优先用它）。不建目录联接，也不运行 `skillhub.py`。
+1. **有共享盘**：填写目录。脚本读取 `<共享盘>\dsh-device\device.env`。同目录还可以有 `device-answers.json`、`route-config.json`、`provider-model-catalog.snapshot.json` 和 `provider-resource-manifest.json`（有路由文件时优先用它；模型快照由 setup 复制到本机 device 目录）。不建目录联接，也不运行 `skillhub.py`。
 2. **没有共享盘**：从 `templates/device-config.env.example` 生成本机 `%USERPROFILE%\.dsh\device\device.env`。命令行可以沿用模板只补密钥，也可以逐项确认。选「交给 AI」时，把 `docs/AI-DEVICE-SETUP.md` 和 `assets/device-answers.example.json` 给 AI，生成的文件放进该目录后再跑一次。档位和模型的默认值来自 `config/45-failover.yml` 与 `config/40-models.yml`。
 
 两条路最后做同样三件事：调用 `scripts/install.ps1` 安装 Git 包，把路由写到 `%USERPROFILE%\.dsh\plugins\provider-failover\route-config.json`，把 `DSHPACK_*` 设为用户环境变量。密钥只在提示时写入用户环境变量，不写进答案文件。然后关掉正在运行的 DSH，重新打开，并新开一个会话。

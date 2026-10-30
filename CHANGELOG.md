@@ -2,7 +2,9 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
-## 0.10.15
+## 0.10.16
+
+一键 setup/backup 纳入云盘 dsh-device 的 provider-model-catalog.snapshot.json 和 provider-resource-manifest.json。Git 保存通用模型配置，云盘保存设备实际 pi-ai/subagent 可用性快照；恢复时校验快照 schema 后复制到本机 device 目录。
 
 新增 scripts/refresh-model-catalog.mjs：读取 pi-ai provider 目录，检查 provider 配置、subagent allowedModels 和本机 ACP/CLI 命令可用性；--apply 固定 OpenCode Go 模型列表并写本机快照。自定义 relay 标记为需端点 /models 实测，不把公共目录误当私有端点能力。
 

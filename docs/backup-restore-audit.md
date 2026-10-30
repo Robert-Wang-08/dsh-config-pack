@@ -16,6 +16,7 @@ v0.10.10 及以前，`openai-codex` 只声明显示名，模型来自设备安�
 | .agent-presets 下 YAML/JSON/Markdown | 纳入；ZIP 不再遗漏隐藏目录 |
 | plugins 下 settings/config/route-config 的 JSON/YAML | 纳入；其他文件列入 excluded |
 | node_modules、CLI/OAuth 登录态、凭据、会话、日志和未知插件数据库 | 不属于此配置备份；不能用配置包备份替代本机私密快照 |
+| dsh-device/provider-model-catalog.snapshot.json、provider-resource-manifest.json | 云盘同步的无凭据模型/子代理可用性资源；setup 恢复到 device/ 并校验 schema |
 
 清单 schema 升至 dsh-backup/v2，包含逐文件 SHA256、complete/partial、absent/rejected/excluded。发现拒绝项仍落盘报告，但返回 2；任何读取/复制错误会失败。输出目录必须为空，避免把旧文件误混进新备份。纯环境变量引用可通过扫描，包含内联 token 或非空常量回退的表达式仍拒绝。扫描不是对任意未知格式的隐私审计，配置备份仍应保存在可信位置，公开分发只使用 Git 配置包。
 
@@ -31,7 +32,7 @@ pwsh -File scripts/backup.ps1 -Profile <实际profile>
 pwsh -File scripts/update.ps1 -ProfileName <实际profile> -Source github:Robert-Wang-08/dsh-config-pack#v0.10.13
 ```
 
-没有安装配置包的新设备使用 setup.ps1；已有内联配置且含自定义 provider 的设备，先用 dsh-backup-restore 创建本机快照，再按同 id 整体覆盖规则合并内联 llm-pi-ai。必须保留设备已有 provider、端点、凭据指针和自定义模型，把官方 models 段同步过去；不要直接删除整个内联块。配套 AI 应使用 dsh-profile-route-config 流程完成这一设备操作。
+没有安装配置包的新设备使用 setup.ps1；共享盘 dsh-device 必须同时提供 device.env、route-config.json、provider-model-catalog.snapshot.json 和 provider-resource-manifest.json；模型快照只记录目录和可用性，不包含 node_modules 或登录态。已有内联配置且含自定义 provider 的设备，先用 dsh-backup-restore 创建本机快照，再按同 id 整体覆盖规则合并内联 llm-pi-ai。必须保留设备已有 provider、端点、凭据指针和自定义模型，把官方 models 段同步过去；不要直接删除整个内联块。配套 AI 应使用 dsh-profile-route-config 流程完成这一设备操作。
 
 ```powershell
 pwsh -File scripts/setup.ps1 -ProfileName <实际profile> -SharedRoot <共享盘根> -Source github:Robert-Wang-08/dsh-config-pack#v0.10.13
