@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1490" viewBox="0 0 1800 1490" role="img" aria-labelledby="title desc">
+<title id="title">DSH 保存边界 v2：Git、云盘与本机</title>
+<desc id="desc">设计图。Git保存程序与兼容基线；云盘保存个人期望配置、分设备观测、设备覆盖与脱敏备份；本机保存秘密值和运行状态。仅允许的配置经过校验生效，观测报告不参与配置合并。</desc>
+<rect width="1800" height="1490" fill="#f5f7fc"/>
+<rect x="48" y="38" width="178" height="34" rx="9" fill="#e6ecfb"/>
+<text x="64.5" y="44" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="16" font-weight="700" fill="#3656a5">DESIGN / 设计定稿</text>
+<text x="48" y="91" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="48" font-weight="700" fill="#17243a">DSH 保存边界 v2</text>
+<text x="49" y="153" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="400" fill="#627087">保存什么 · 谁来维护 · 如何生效</text>
+<rect x="1210" y="91" width="542" height="47" rx="12" fill="#fff5dc"/>
+<text x="1333.0" y="102" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="700" fill="#946100">设计规范 ≠ 功能全部已实现</text>
+<rect x="48" y="212" width="480" height="798" rx="24" fill="#edf3ff" stroke="#d8e3fa" stroke-width="2"/>
+<rect x="558" y="212" width="680" height="798" rx="24" fill="#edf8f5" stroke="#cfe7df" stroke-width="2"/>
+<rect x="1268" y="212" width="484" height="798" rx="24" fill="#fff3ec" stroke="#f1ddcf" stroke-width="2"/>
+<text x="73" y="232" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="31" font-weight="700" fill="#274eaa">01  Git 配置包</text>
+<text x="583" y="232" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="31" font-weight="700" fill="#176955">02  私人云盘资源包</text>
+<text x="1293" y="232" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="31" font-weight="700" fill="#a45b26">03  设备本机</text>
+<rect x="69" y="294" width="438" height="224" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="91" y="312" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#274eaa">程序与通用兼容基线</text>
+<text x="91" y="354" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">推荐插件清单、固定版本与来源</text>
+<text x="91" y="389" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">DSH / pi-ai / CLI 兼容要求</text>
+<text x="91" y="424" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">Provider 协议、模型能力元数据</text>
+<text x="91" y="459" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">安装、迁移、回滚、验收脚本</text>
+<rect x="69" y="536" width="438" height="221" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="91" y="554" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#274eaa">通用规则与默认模板</text>
+<text x="91" y="596" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">路由算法、工具与权限约束</text>
+<text x="91" y="631" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">主 / 子智能体默认模型与角色</text>
+<text x="91" y="666" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">默认 failover 策略、白名单模板</text>
+<text x="91" y="701" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">配置 schema 与字段覆盖规则</text>
+<rect x="69" y="776" width="438" height="203" rx="14" fill="#fffafb" stroke="#e0e6f1" stroke-width="1"/>
+<text x="91" y="794" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#b33f41">不进入 Git</text>
+<text x="91" y="836" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">个人端点、设备检测报告</text>
+<text x="91" y="871" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">API key 原值、OAuth 登录态</text>
+<text x="91" y="906" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">node_modules、会话与实时状态</text>
+<rect x="579" y="294" width="638" height="153" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="601" y="312" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#176955">① 个人期望配置  /  我希望怎么用</text>
+<text x="601" y="354" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">插件选择、Provider 地址、启用模型</text>
+<text x="601" y="389" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">智能体角色绑定、failover 顺序、Key 引用与池策略</text>
+<rect x="579" y="463" width="638" height="187" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="601" y="481" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#176955">② 分设备观测  /  这台设备测到了什么</text>
+<text x="601" y="523" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">实际插件与模型目录、CLI / ACP 探测结果</text>
+<text x="601" y="558" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">Key 存在性、验证分类、检查时间与有效期</text>
+<text x="601" y="593" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">按设备＋profile 隔离；只登记，不参与配置合并</text>
+<rect x="579" y="666" width="638" height="139" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="601" y="684" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#176955">③ 设备覆盖  /  只对匹配设备生效</text>
+<text x="601" y="726" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">路径、代理、CLI 位置及允许覆盖的本机参数</text>
+<text x="601" y="761" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">受字段白名单与本地安全约束限制</text>
+<rect x="579" y="821" width="638" height="158" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="601" y="839" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#176955">④ 版本备份  /  可迁移的脱敏副本</text>
+<text x="601" y="881" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">profile、插件设置、自建预设、资源版本与哈希</text>
+<text x="601" y="916" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">完整 / 缺失项、恢复报告；partial 默认不恢复</text>
+<rect x="1289" y="294" width="442" height="176" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="1311" y="312" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#a45b26">秘密值  /  绝不上传普通云盘</text>
+<text x="1311" y="354" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">API key、密码、私钥原值</text>
+<text x="1311" y="389" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">OAuth token、Cookie、CLI 登录态</text>
+<text x="1311" y="424" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">原始私密配置与安全备份</text>
+<rect x="1289" y="487" width="442" height="176" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="1311" y="505" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#a45b26">实际安装与实时状态</text>
+<text x="1311" y="547" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">DSH / pi-ai / 插件 / CLI 程序</text>
+<text x="1311" y="582" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">真实授权、当前模型、在途任务</text>
+<text x="1311" y="617" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">失败计数、限流与冷却倒计时</text>
+<rect x="1289" y="680" width="442" height="133" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="1311" y="698" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#a45b26">本机信任与批准</text>
+<text x="1311" y="740" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">允许哪些权限与执行入口</text>
+<text x="1311" y="775" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">凭据允许发往哪些 Provider 地址</text>
+<rect x="1289" y="830" width="442" height="149" rx="14" fill="#ffffff" stroke="#e0e6f1" stroke-width="1"/>
+<text x="1311" y="848" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#a45b26">其他数据单独归档</text>
+<text x="1311" y="890" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">会话、附件、日志、插件数据库</text>
+<text x="1311" y="925" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" font-weight="400" fill="#41516b">不混入本次云盘同步资源包</text>
+<polyline points="288,1010 288,1085" fill="none" stroke="#5275c6" stroke-width="4"/>
+<polygon points="288,1085 281.7693065230616,1070.2630240959538 294.2306934769384,1070.2630240959538" fill="#5275c6"/>
+<polyline points="898,1010 898,1085" fill="none" stroke="#22836c" stroke-width="4"/>
+<polygon points="898,1085 891.7693065230616,1070.2630240959538 904.2306934769384,1070.2630240959538" fill="#22836c"/>
+<polyline points="1510,1010 1510,1085" fill="none" stroke="#b77b4f" stroke-width="4"/>
+<polygon points="1510,1085 1503.7693065230617,1070.2630240959538 1516.2306934769383,1070.2630240959538" fill="#b77b4f"/>
+<text x="204.0" y="1030" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="21" font-weight="400" fill="#355da9">可信版本与默认值</text>
+<text x="772.0" y="1030" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="21" font-weight="400" fill="#176955">仅个人期望＋匹配设备覆盖</text>
+<text x="1394.5" y="1030" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="21" font-weight="400" fill="#96531f">本机凭据绑定与安全批准</text>
+<rect x="48" y="1090" width="1704" height="130" rx="20" fill="#20304b"/>
+<text x="683.0" y="1110" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="31" font-weight="700" fill="#ffffff">校验后生成目标设备的生效配置</text>
+<text x="431.5" y="1160" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="23" font-weight="400" fill="#d8e4f7">字段归属与覆盖规则  →  版本 / 完整性 / 引用校验  →  权限与端点批准  →  本机加载与验收</text>
+<rect x="48" y="1242" width="1704" height="80" rx="16" fill="#ffffff" stroke="#dfe5ee" stroke-width="2"/>
+<text x="74" y="1267" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="23" font-weight="700" fill="#41516b">本机检测 / 脱敏导出</text>
+<polyline points="392,1282 704,1282" fill="none" stroke="#6f8da3" stroke-width="3" stroke-dasharray="10 8"/>
+<polygon points="704,1282 689.2630240959538,1288.2306934769383 689.2630240959538,1275.7693065230617" fill="#6f8da3"/>
+<text x="733" y="1267" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="23" font-weight="700" fill="#176955">云盘分设备登记与版本备份</text>
+<text x="1195" y="1267" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="21" font-weight="700" fill="#b14246">仅供核对，不自动回写期望配置</text>
+<text x="489.5" y="1350" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#8f353c">Key 值不上传；Key 存在性可登记，但必须带设备、profile 和检查时间。</text>
+<text x="463.0" y="1400" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="21" font-weight="400" fill="#627087">有清单 ≠ 已安装     ·     存在 ≠ 有权限     ·     探测成功 ≠ 永久可用     ·     同步成功 ≠ 恢复成功</text>
+<text x="565.5" y="1450" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="400" fill="#7d889a">依据《保存边界表 v2》设计定稿绘制 · 实施状态以规范逐项矩阵和目标设备验收为准</text>
+</svg>

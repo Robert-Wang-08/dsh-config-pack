@@ -1,0 +1,634 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dsh-config-pack:snapshot-manifest:v1",
+  "title": "DSH Snapshot Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "snapshot_id",
+    "created_at",
+    "tool",
+    "source",
+    "scope",
+    "completeness",
+    "plugins",
+    "providers",
+    "plugin_settings",
+    "env",
+    "credentials",
+    "files",
+    "retention"
+  ],
+  "properties": {
+    "schema": {
+      "const": "dsh-snapshot/v1"
+    },
+    "snapshot_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^snap-[0-9TZ-]+-[a-z0-9]{4,16}$"
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "schema",
+        "min_restore_tool_version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "schema": {
+          "const": "dsh-snapshot/v1"
+        },
+        "min_restore_tool_version": {
+          "type": "string"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_id",
+        "profile_id",
+        "platform",
+        "node",
+        "dsh_version"
+      ],
+      "properties": {
+        "device_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        },
+        "dsh_version": {
+          "type": "string"
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "included",
+        "excluded"
+      ],
+      "properties": {
+        "included": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reasons",
+        "gates"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "gates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "readback",
+            "digest_pinning",
+            "staging_rehearsal",
+            "settings_coverage"
+          ],
+          "properties": {
+            "readback": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "detail"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "skipped"
+                  ]
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            },
+            "digest_pinning": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "detail",
+                "unpinned"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "skipped"
+                  ]
+                },
+                "detail": {
+                  "type": "string"
+                },
+                "unpinned": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "staging_rehearsal": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "detail"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "skipped"
+                  ]
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            },
+            "settings_coverage": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "detail"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "skipped"
+                  ]
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "spec",
+          "digest",
+          "registered",
+          "mounted",
+          "active"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "spec": {
+            "type": "string"
+          },
+          "digest": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registered": {
+            "type": "boolean"
+          },
+          "mounted": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source",
+          "models"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "profile",
+              "pack",
+              "unknown"
+            ]
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "api": {
+            "type": "string"
+          },
+          "baseURL": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "template": {
+                "type": "string"
+              },
+              "default": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "apiKeyEnv": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "template": {
+                "type": "string"
+              },
+              "default": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "contextWindow": {
+                  "type": "integer"
+                },
+                "maxTokens": {
+                  "type": "integer"
+                },
+                "input": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "reasoningEfforts": {
+                  "type": "object"
+                },
+                "api": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "plugin_settings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "plugin",
+          "adapter",
+          "status",
+          "items"
+        ],
+        "properties": {
+          "plugin": {
+            "type": "string"
+          },
+          "adapter": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "exported",
+              "partial",
+              "unsupported",
+              "not_applicable"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "class"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "class": {
+                  "enum": [
+                    "portable",
+                    "device_bound",
+                    "secret",
+                    "unsupported"
+                  ]
+                },
+                "sha256": {
+                  "type": "string"
+                },
+                "bytes": {
+                  "type": "integer"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "restore": {
+                  "enum": [
+                    "copy",
+                    "reference"
+                  ]
+                },
+                "restoredVia": {
+                  "type": "string"
+                },
+                "sourceKind": {
+                  "enum": [
+                    "file",
+                    "sqlite",
+                    "export-json",
+                    "cordis-config"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "env": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collected",
+        "key_pointers",
+        "policy"
+      ],
+      "properties": {
+        "policy": {
+          "const": "only-DSHPACK-prefixed-read; secrets-never-collected"
+        },
+        "collected": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "value"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^DSHPACK_"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "key_pointers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "pointer",
+              "present"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^DSHPACK_KEY_"
+              },
+              "pointer": {
+                "type": "string"
+              },
+              "present": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "credentials": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inventory",
+        "note"
+      ],
+      "properties": {
+        "note": {
+          "const": "no-secret-values; presence-only"
+        },
+        "inventory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "credential_ref",
+              "provider_ref",
+              "device_id",
+              "profile_id",
+              "source_kind",
+              "presence",
+              "checked_at",
+              "expires_at"
+            ],
+            "properties": {
+              "credential_ref": {
+                "type": "string",
+                "pattern": "^(DSHPACK_KEY_[A-Z0-9_]+|provider:[a-z0-9_.-]+)$"
+              },
+              "provider_ref": {
+                "type": "string"
+              },
+              "device_id": {
+                "type": "string"
+              },
+              "profile_id": {
+                "type": "string"
+              },
+              "source_kind": {
+                "enum": [
+                  "user-env",
+                  "process-env",
+                  "credential-store",
+                  "unknown"
+                ]
+              },
+              "presence": {
+                "enum": [
+                  "present",
+                  "missing",
+                  "unknown"
+                ]
+              },
+              "checked_at": {
+                "type": "string"
+              },
+              "expires_at": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256",
+          "bytes",
+          "class"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[A-Fa-f0-9]{64}$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "class": {
+            "enum": [
+              "portable",
+              "device_bound",
+              "secret",
+              "unsupported"
+            ]
+          },
+          "last_persisted_at": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "keep_count",
+        "keep_days"
+      ],
+      "properties": {
+        "keep_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "keep_days": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

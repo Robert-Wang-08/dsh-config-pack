@@ -1,0 +1,143 @@
+{
+  "schema": "dsh-plugin-settings-adapters/v1",
+  "note": "Settings export plans. class: portable | device_bound | secret | unsupported. source.optional=true means 'expected here if present; absence is not a gap'. optional=false means absence makes the plugin partial.",
+  "generic": {
+    "settingsFiles": [
+      "settings.json",
+      "config.json",
+      "route-config.json"
+    ],
+    "class": "portable"
+  },
+  "adapters": [
+    {
+      "match": "dsh-deepseek-keypool",
+      "plugin": "provider-failover",
+      "sources": [
+        {
+          "kind": "file",
+          "path": "plugins/provider-failover/route-config.json",
+          "class": "portable",
+          "optional": false
+        },
+        {
+          "kind": "file",
+          "path": "plugins/provider-failover/settings.json",
+          "class": "portable",
+          "optional": false
+        }
+      ],
+      "excludes": [
+        {
+          "path": "plugins/provider-failover/notices.jsonl",
+          "reason": "runtime log"
+        },
+        {
+          "path": "plugins/provider-failover/failures.jsonl",
+          "reason": "runtime log"
+        }
+      ]
+    },
+    {
+      "match": "dsh-plugin-provider-badge",
+      "plugin": "provider-badge",
+      "sources": [
+        {
+          "kind": "file",
+          "path": "plugins/provider-badge/settings.json",
+          "class": "portable",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "match": "dsh-plugin-sidebar-visibility",
+      "plugin": "sidebar-visibility",
+      "sources": [
+        {
+          "kind": "file",
+          "path": "plugins/sidebar-visibility/settings.json",
+          "class": "portable",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "match": "dsh-archived-sessions",
+      "plugin": "archived-sessions",
+      "sources": [
+        {
+          "kind": "file",
+          "path": "plugins/archived-sessions/settings.json",
+          "class": "portable",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "match": "dsh-plugin-provider-badge",
+      "plugin": "provider-badge",
+      "sources": [
+        {
+          "kind": "file",
+          "path": "plugins/provider-badge/settings.json",
+          "class": "portable",
+          "optional": true
+        },
+        {
+          "kind": "export-json",
+          "path": "device/browser-exports/provider-badge.json",
+          "class": "portable",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "match": "@deepseek-ai/dsh-subagent-acp",
+      "plugin": "subagent-acp-opencode",
+      "sources": [
+        {
+          "kind": "cordis-config",
+          "pluginRow": "subagent-acp-opencode",
+          "class": "portable",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "match": "@deepseek-ai/dsh-mcp-client",
+      "plugin": "mcp-rows",
+      "sources": [
+        {
+          "kind": "cordis-config",
+          "pluginRow": "mcp-tencent-docs",
+          "class": "portable",
+          "optional": true
+        }
+      ]
+    }
+  ],
+  "kinds": {
+    "file": {
+      "desc": "copy a config file verbatim",
+      "class": "portable"
+    },
+    "sqlite": {
+      "desc": "consistent copy via VACUUM INTO (includes WAL content); requires node:sqlite",
+      "class": "portable"
+    },
+    "export-json": {
+      "desc": "consume an explicit export artifact written by the plugin or a companion exporter; never scrape the browser profile",
+      "class": "portable"
+    },
+    "cordis-config": {
+      "desc": "extract this plugin's row (config subtree) from the profile layer for per-plugin coverage; restoration already happens via profile/cordis.patch.yml, so the item is reference-only",
+      "class": "portable"
+    }
+  },
+  "forbidden": [
+    "copying a browser profile directory (Cookies, Login Data, Local State)",
+    "copying raw db + -wal pairs without a consistent snapshot",
+    "exporting any secret value; secrets are reference-only"
+  ]
+}

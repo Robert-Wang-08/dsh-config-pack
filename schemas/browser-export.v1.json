@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dsh-config-pack:browser-export:v1",
+  "title": "DSH browser settings export v1",
+  "description": "Artifact produced by a plugin or companion exporter. The snapshot tool validates and consumes this file; it never scrapes a browser profile.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "plugin",
+    "exported_at",
+    "values"
+  ],
+  "properties": {
+    "schema": {
+      "const": "dsh-browser-export/v1"
+    },
+    "plugin": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exported_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "origin": {
+      "type": "string",
+      "description": "storage origin or app id the values came from"
+    },
+    "values": {
+      "type": "object",
+      "description": "flat key/value map of UI settings (colors, options). Secret-looking keys must not appear."
+    },
+    "excludes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

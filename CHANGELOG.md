@@ -2,6 +2,20 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.11.0
+
+新增**配置快照**能力（`scripts/snapshot.mjs` + `schemas/snapshot-manifest.v1.json`）：从源设备实际持久化配置自动采集插件、Provider、完整模型元数据、主/子智能体绑定、切换路由、Key 池策略与个人非秘密环境变量，生成不可变云盘快照；目标设备按选定快照重建并逐项验收。恢复值以快照为准，Git 不再用最新默认覆盖个人选择。
+
+**complete 必须同时通过四道闸门**，缺一即 `partial`：① 源机读回核对 ② 重建来源 digest 级钉定 ③ 隔离 staging 重建演练 ④ 插件设置覆盖。没有 `--rehearse-rebuild` 时**必然 partial**——不允许把"材料看起来齐全"当成可恢复。
+
+恢复支持 `isolate`/`mirror`/`merge` 三模式；mirror 的额外文件先隔离到 `.snapshot-quarantine/` 再移除，未确认则阻断。插件设置源支持 `file`、`sqlite`（`VACUUM INTO` 一致性导出，含 WAL）、`export-json`（消费经 `dsh-browser-export/v1` 校验的导出件，含 secret 形态键直接拒绝）、`cordis-config`（从 profile 层抽取插件行做逐插件覆盖）。本地 `file:` 制品随快照携带。
+
+**安全边界**：只读取 `DSHPACK_` 前缀环境变量；`DSHPACK_KEY_*` 只记指针名与存在性，密钥值永不进入快照；凭据按 Provider 的 `apiKeyEnv` 登记需求，presence 保持 `unknown`。
+
+真实演练：`pnpm install --frozen-lockfile --ignore-scripts` 在暂存 profile 目录实际安装 121 个包并退出 0。本机 `web` profile 快照仍为 `partial`，唯一失败闸门是 digest 钉定（10 项 `link:` 本地路径与 `^` 范围版本）。
+
+规范：[保存边界表 v3](docs/storage-boundaries-v3.md)。
+
 ## 0.10.16
 
 一键 setup/backup 纳入云盘 dsh-device 的 provider-model-catalog.snapshot.json 和 provider-resource-manifest.json。Git 保存通用模型配置，云盘保存设备实际 pi-ai/subagent 可用性快照；恢复时校验快照 schema 后复制到本机 device 目录。
