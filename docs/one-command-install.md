@@ -3,6 +3,8 @@
 本包是**唯一公开发布入口**：使用者只装本包，本包再把各组件钉死到各自仓库的不可变 tag 上。
 本文说明这条路径怎么用、一致性由什么强制、以及哪些步骤**任何包都替代不了**。
 
+> 可选组件（微信 HITL 通道）的一键装机见文末「9. 可选组件：微信 HITL 通道（wechat-hitl）」。
+
 ## 1. 一条命令
 
 ```powershell
@@ -131,3 +133,17 @@ node tools/apply-dsh-permission-compat.mjs --revert    # 回滚
 | 版本是否被遮蔽 | `node scripts/verify.mjs --profile <p>` |
 | 装完是否有偏差 | `node scripts/verify-install.mjs --profile <p>`（可加 `--baseline`） |
 | 组件是否一致 | `node scripts/verify-components.mjs` |
+
+## 9. 可选组件：微信 HITL 通道（wechat-hitl）
+
+本包不含微信通道；它以独立子模块随父仓 dsh 分发，装好后提供「微信审批回环 + 结果推送 + 跨会话驱动」。
+
+```powershell
+git clone https://github.com/Robert-Wang-08/dsh.git --recurse-submodules  # 或已有父仓时 git submodule update --init
+pwsh -NoProfile -File <仓库路径>/dsh-wechat-hitl/tools/install-channel.ps1   # 重建 junction + 钉 OpenClaw 模型 + 重启网关
+```
+
+- 前置：OpenClaw runtime 已装并完成微信登录；用户环境变量 DSHPACK_KEY_OPENCODE / DSHPACK_KEY_AIS / DSHPACK_BASE_AIS。
+- 部署形态：仓库为唯一源，profiles 两处 node_modules/dsh-wechat-hitl 与 C:/openclaw-runtime/plugins/dsh-bridge 都是 junction；runtime 装在非默认位置时设 OPENCLAW_RUNTIME_DIR。
+- 跨设备恢复：dsh-backup 的 openclaw/ 段与 private/openclaw/ 段已含本通道配置面（openclaw.json、启动器、自启钩子、通道状态），恢复后重跑 install-channel.ps1。
+- 详细排障：dsh-wechat-hitl/AGENT-USAGE.md 与 POSTMORTEM-20261101-微信通道失效与延迟复盘.md。
