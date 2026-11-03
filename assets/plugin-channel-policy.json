@@ -2,7 +2,7 @@
   "schema": "dsh-plugin-channel-policy/v1",
   "origin": "self",
   "owner": "dsh-config-pack",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "updated_at": "2026-11-03",
   "default_channel": "public",
   "rules": {
@@ -12,7 +12,8 @@
     "public_channel": "device_downloads_installs_configures_and_updates_its_own_declared_version",
     "secrets": "never_export_secret_values",
     "authorship": "independent of install/settings channel; public does not mean third-party; link does not mean self-authored",
-    "backup": "adapter: package/version registration plus explicitly declared non-secret configuration; public: registration only, device installs/configures locally; plugin binaries and node_modules are not backed up"
+    "backup": "adapter: package/version registration plus explicitly declared non-secret configuration; public: registration only, device installs/configures locally; plugin binaries and node_modules are not backed up",
+    "initial_install_time": "First successful plugin registration/install on the observed device/profile, not package release time, file creation time, version upgrade time or table creation time. Unknown history remains null; other devices record their own timestamps."
   },
   "adapters": [
     {
@@ -37,6 +38,13 @@
         ],
         "restore": "install plugin from declared source, then restore adapter configuration",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -61,6 +69,13 @@
         ],
         "restore": "install plugin from declared source, then restore adapter configuration",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -85,6 +100,13 @@
         ],
         "restore": "install plugin from declared source, then restore adapter configuration",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -109,6 +131,13 @@
         ],
         "restore": "install plugin from declared source, then restore adapter configuration",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -133,6 +162,13 @@
         ],
         "restore": "install plugin from declared source, then restore adapter configuration",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -157,6 +193,13 @@
         ],
         "restore": "install plugin from declared source, then restore adapter configuration",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     }
   ],
@@ -182,6 +225,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -205,6 +255,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -228,6 +285,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -251,6 +315,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -274,6 +345,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -297,6 +375,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -320,6 +405,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -343,6 +435,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -366,6 +465,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -389,6 +495,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -412,6 +525,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -436,6 +556,13 @@
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false,
         "note": "Shared PTC switches and Director participation policy are stored in provider-failover route-config and covered by its adapter; no separate switches settings payload."
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -459,6 +586,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -482,6 +616,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -505,6 +646,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -528,6 +676,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -551,6 +706,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -574,6 +736,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -598,6 +767,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     },
     {
@@ -621,6 +797,13 @@
         ],
         "restore": "target device downloads, installs, configures and updates plugin",
         "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
       }
     }
   ]
