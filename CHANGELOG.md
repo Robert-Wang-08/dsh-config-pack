@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.11.1
+
+ais 档主模型 deepseek-v4.1-flash → deepseek-flash（备用 key 白名单缺该 id，422 会绕过 failover 打死回合）；PTC 多代理 skill 更新（按 provider 取模型、开关表热读）；配置备份取上游完整实现
+
 ## 0.11.0
 
 新增**配置快照**能力（`scripts/snapshot.mjs` + `schemas/snapshot-manifest.v1.json`）：从源设备实际持久化配置自动采集插件、Provider、完整模型元数据、主/子智能体绑定、切换路由、Key 池策略与个人非秘密环境变量，生成不可变云盘快照；目标设备按选定快照重建并逐项验收。恢复值以快照为准，Git 不再用最新默认覆盖个人选择。
