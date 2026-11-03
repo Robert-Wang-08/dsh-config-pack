@@ -43,6 +43,27 @@ function collectEnv() {
 }
 
 // ---- plugins --------------------------------------------------------------
+// link: 依赖原来一律算未钉定，因为它的 spec 只是本机路径。但开发态的 link 目标几乎都是
+// 一个可共享的 git 检出：把它的 origin URL 与实际 HEAD 记录下来，目标设备就能 clone + checkout 重建，
+// 这才叫可重建而不是不可迁移。没有 remote 的纯本地目录仍然算未钉定。
+function gitPinFor(dir) {
+  try {
+    const head = spawnSync('git', ['-C', dir, 'rev-parse', 'HEAD'], { encoding: 'utf8' });
+    if (head.status !== 0) return null;
+    const url = spawnSync('git', ['-C', dir, 'remote', 'get-url', 'origin'], { encoding: 'utf8' });
+    if (url.status !== 0) return null;
+    const sha = head.stdout.trim();
+    const m = url.stdout.trim().match(/github\.com[:/](.+?)(?:\.git)?$/);
+    if (!m || !/^[0-9a-f]{40}$/.test(sha)) return null;
+    return 'git+https://github.com/' + m[1] + '#' + sha;
+  } catch { return null; }
+}
+// 范围版本（^ / ~ / latest）本身不能重建出确定内容；读安装后的精确版本，按版本号钉定。
+function installedVersion(profileDir, name) {
+  const pkg = readJson(join(profileDir, 'node_modules', name, 'package.json'));
+  const version = pkg && typeof pkg.version === 'string' ? pkg.version.trim() : '';
+  return /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version) ? version : null;
+}
 function collectPlugins(profileDir) {
   const pkg = readJson(join(profileDir, 'package.json')) || {};
   const bundles = new Set(((pkg.dsh || {}).profile || {}).bundles || []);
@@ -53,7 +74,18 @@ function collectPlugins(profileDir) {
     const s = String(spec);
     const shaRef = /#([0-9a-f]{40})$/.exec(s) || /(?:tar\.gz|tarball|commit)\/([0-9a-f]{40})/.exec(s);
     const idHint = name.replace(/^@[^/]+\//, '');
-    out.push({ name, spec: s, digest: shaRef ? shaRef[1] : null, registered: bundles.has(name), mounted: patch.includes(name) || patch.includes(idHint), active: false });
+    let digest = shaRef ? shaRef[1] : null;
+    let pin = null;
+    if (!digest && s.startsWith('link:')) {
+      const target = s.slice(5).trim();
+      pin = gitPinFor(target) || (existsSync(resolve(dirname(profileDir), '..', target)) ? gitPinFor(resolve(dirname(profileDir), '..', target)) : null);
+      if (pin) digest = pin.split('#')[1];
+    }
+    if (!digest && !s.startsWith('link:') && !s.startsWith('file:')) {
+      const version = installedVersion(profileDir, name);
+      if (version) { digest = version; pin = 'npm:' + version; }
+    }
+    out.push({ name, spec: s, digest, pin, registered: bundles.has(name), mounted: patch.includes(name) || patch.includes(idHint), active: false });
   }
   return out;
 }
@@ -61,7 +93,8 @@ function pinningOf(plugins, collectedArtifacts) {
   const artifacts = collectedArtifacts || new Set();
   const unpinned = [];
   for (const p of plugins) {
-    if (p.spec.startsWith('link:')) { unpinned.push(p.name + ' (link: local path)'); continue; }
+    if (p.pin) continue;   // link 到 git 检出、或读到安装精确版本的，都可重建
+    if (p.spec.startsWith('link:')) { unpinned.push(p.name + ' (link: local path, no git remote)'); continue; }
     if (p.spec.startsWith('file:')) {
       if (artifacts.has(p.name)) continue;   // artifact carried inside the snapshot: reconstructible
       unpinned.push(p.name + ' (local artifact; not included in snapshot)');
@@ -237,6 +270,19 @@ function collectPluginSettings(dshHome, profileDir, plugins, adapters, opts) {
         found = true;
         const rel = 'plugins/' + dir.split(/[\\/]/).pop() + '/' + f;
         items.push({ path: rel, class: adapters.generic.class || 'portable', sha256: sha256File(src), bytes: statSync(src).size });
+      }
+    }
+    if (!found) {
+      // cordis-config 通用回退：没有 adapter、也没有已知 settings 文件的插件，只要在 profile 补丁层
+      // 有自己的配置行，就把那一行导出并按 reference 还原。否则这些插件只能记 unsupported，
+      // 而它们的可迁移配置其实一直在 cordis.patch.yml 里（2026-11-03 复核发现 20/26 被误判 unsupported）。
+      for (const row of [short, short.replace(/^dsh-plugin-/, ''), short.replace(/^dsh-/, ''), p.name]) {
+        if (!row) continue;
+        const block = extractCordisRow(profileDir, row);
+        if (!block) continue;
+        found = true;
+        items.push({ path: 'plugin-config/' + row + '.yaml', class: 'portable', inlineText: block, sourceKind: 'cordis-config', restore: 'reference', restoredVia: 'profile/cordis.patch.yml' });
+        break;
       }
     }
     if (found) out.push({ plugin: p.name, adapter: null, status: 'exported', items });

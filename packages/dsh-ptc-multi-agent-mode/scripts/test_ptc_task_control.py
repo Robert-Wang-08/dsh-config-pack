@@ -329,5 +329,92 @@ class PtcTaskControlTest(unittest.TestCase):
             self._start("task-second", "session-test")
 
 
+class QuarantineAndRepairTest(unittest.TestCase):
+    """账本是多方追加文件：一行坏数据不能把整个控制面打瘫（2026-11-03 实机踩到）。"""
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.ledger = Path(self.temp.name) / "registry.jsonl"
+        contract = {"schema_version": "1.0", "deliverables": [], "invariants": []}
+        ptc.append_events(
+            self.ledger,
+            [
+                ptc.build_event("registry_initialized", "test", payload={"controller_only_write": True}),
+                ptc.build_event("project_created", "test", project_id="p", payload={"name": "P", "description": ""}),
+                ptc.build_event(
+                    "task_created",
+                    "test",
+                    project_id="p",
+                    task_id="task-ok",
+                    payload={"title": "t", "objective": "o", "owner": "test", "contract": contract},
+                ),
+            ],
+        )
+
+    def _poison(self) -> None:
+        bad = {
+            "schema_version": ptc.SCHEMA_VERSION,
+            "event_id": "evt-bad",
+            "event_type": "task_created",
+            "project_id": None,
+            "task_id": "task-bad",
+            "session_id": None,
+            "occurred_at": "2026-11-03T00:00:00.000Z",
+            "actor": "other",
+            "machine": "other-host",
+            "payload": {"title": "坏事件", "objective": "o", "owner": "other", "contract": {}},
+        }
+        with self.ledger.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(bad, ensure_ascii=False) + "\n")
+
+    def test_quarantine_isolates_bad_event(self) -> None:
+        self._poison()
+        kept, invalid = ptc.quarantine_events(ptc.read_events(self.ledger))
+        self.assertEqual(len(invalid), 1)
+        self.assertEqual(invalid[0]["event_id"], "evt-bad")
+        self.assertEqual(invalid[0]["line"], 4)
+        state = ptc.reduce_events(kept)
+        self.assertIn("task-ok", state.tasks)
+
+    def test_load_ledger_tolerates_bad_event(self) -> None:
+        self._poison()
+        kept, invalid = ptc.load_ledger(self.ledger)
+        self.assertEqual(len(kept), 3)
+        self.assertEqual(len(invalid), 1)
+
+    def test_write_still_succeeds_on_poisoned_ledger(self) -> None:
+        self._poison()
+        ptc.append_events(
+            self.ledger,
+            [ptc.build_event("task_status_changed", "test", task_id="task-ok", payload={"status": "in_progress", "progress": 10, "summary": "s", "next_action": "n", "evidence": ["test"]})],
+        )
+        kept, invalid = ptc.load_ledger(self.ledger)
+        self.assertEqual(len(invalid), 1)
+        self.assertEqual(ptc.reduce_events(kept).tasks["task-ok"]["status"], "in_progress")
+
+    def test_repair_dry_run_does_not_touch_file(self) -> None:
+        self._poison()
+        before = self.ledger.read_text(encoding="utf-8")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            ptc.main(["repair", "--ledger", str(self.ledger)])
+        self.assertEqual(before, self.ledger.read_text(encoding="utf-8"))
+        self.assertFalse(json.loads(out.getvalue())["ok"])
+
+    def test_repair_apply_drops_bad_lines_and_backs_up(self) -> None:
+        self._poison()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            ptc.main(["repair", "--ledger", str(self.ledger), "--apply"])
+        payload = json.loads(out.getvalue())
+        self.assertTrue(payload["ok"])
+        self.assertEqual(len(payload["dropped"]), 1)
+        self.assertTrue(Path(payload["backup"]).exists())
+        kept, invalid = ptc.load_ledger(self.ledger)
+        self.assertEqual(invalid, [])
+        self.assertEqual(len(kept), 3)
+
+
 if __name__ == "__main__":
     unittest.main()

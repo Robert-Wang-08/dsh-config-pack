@@ -109,6 +109,18 @@ python $ctl artifact-add --task-id <task-id> --path <workspace-relative-path> --
 
 receipt 的 `route` 必须与已登记 subtask 一致；`executor` 和 `model` 填真实观测值。
 
+#### 账本被写坏时的恢复
+
+账本是同一工作区多方追加的共享文件（多个会话可能同时写）。一旦出现无法重放的事件（典型：`project_id` 为空的 `task_created`），旧实现会让 `init`/`show`/`verify` 与所有写操作一起失效。现在改为**隔离而非失败**：加载时跳过坏事件并照常工作，坏事件通过以下命令查看与清理。
+
+```powershell
+python $ctl verify                       # 输出 invalid_events（行号 + 原因），ok=false 表示有坏事件
+python $ctl repair                       # 只报告，不改文件
+python $ctl repair --apply               # 重写账本前先做 .bak-<UTC> 备份，然后丢弃坏事件
+```
+
+新事件仍然严格校验：历史坏数据可以被隔离，但绝不新写入坏数据。`repair --apply` 会改动历史文件，只有确认那些行确实无效时才用。
+
 ### 5. 收口
 
 ```powershell

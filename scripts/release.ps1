@@ -66,6 +66,18 @@ switch ($Bump) {
 $new = $maj.ToString() + '.' + $min.ToString() + '.' + $pat.ToString()
 Write-Host ('version ' + $old + ' -> ' + $new) -ForegroundColor Cyan
 
+# 并发发布防护：两台设备各自发版时，同一个 tag 可能已被对端推送。git 拒绝覆盖 tag，
+# 结果是版本号已升、CHANGELOG 已写、推送却失败（2026-11-03 本机真的撞上一次）。
+& git -C $root fetch --tags origin 2>&1 | Out-Null
+$tagName = 'v' + $new
+$remoteTag = (& git -C $root ls-remote --tags origin ('refs/tags/' + $tagName) 2>&1) -join ''
+if (-not [string]::IsNullOrWhiteSpace($remoteTag)) {
+  Fail ('tag ' + $tagName + ' 已存在于远端（另一个设备可能刚发布）。先 git pull 集成，再重跑本脚本：版本号会顺延到下一个补丁号')
+}
+if (git -C $root rev-parse --verify --quiet ('refs/tags/' + $tagName)) {
+  Fail ('本地已有 tag ' + $tagName + '，先确认它是否该删再发版')
+}
+
 if (-not $DryRun) {
   $utf8 = New-Object System.Text.UTF8Encoding($false)
 

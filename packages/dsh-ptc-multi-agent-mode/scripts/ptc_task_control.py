@@ -12,6 +12,7 @@ import contextlib
 import hashlib
 import json
 import os
+import shutil
 import socket
 import sys
 import uuid
@@ -460,10 +461,63 @@ def build_event(
     }
 
 
+def _first_failing_prefix(events: list[dict[str, Any]]) -> int:
+    """二分查找最小的"前缀即失败"长度，返回 0 基下标。
+
+    依赖"坏事件之后的前缀继续坏"这一单调性：被破坏的引用关系不会因为后面再追加事件而自愈。
+    """
+    lo, hi = 1, len(events)
+    while lo < hi:
+        mid = (lo + hi) // 2
+        try:
+            reduce_events(events[:mid])
+            lo = mid + 1
+        except LedgerError:
+            hi = mid
+    return lo - 1
+
+
+def quarantine_events(events: Iterable[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """把无法重放的事件挑出来，返回 (可重放事件, 非法事件清单)。
+
+    存在的理由：账本是**多方追加**的共享文件（同一工作区的多个会话都可能写）。只要有一行
+    project_id 为空之类的坏事件，旧实现就让 reduce_events 抛错，于是 init/show/verify 以及任何
+    写操作全部不可用 —— 一行坏数据把整个控制面打瘫。这里改为隔离而不是失败。
+    """
+    # 保留原始行号：删除事件会让后续下标整体前移，直接报当前下标会全部变成同一个数字。
+    indexed = list(enumerate(events, 1))
+    invalid: list[dict[str, Any]] = []
+    while True:
+        try:
+            reduce_events([event for _, event in indexed])
+            return [event for _, event in indexed], invalid
+        except LedgerError as exc:
+            if not indexed:
+                raise
+            index = _first_failing_prefix([event for _, event in indexed])
+            if index < 0 or index >= len(indexed):
+                index = len(indexed) - 1
+            line_no, event = indexed[index]
+            invalid.append(
+                {
+                    "line": line_no,
+                    "event_id": event.get("event_id"),
+                    "event_type": event.get("event_type"),
+                    "reason": str(exc),
+                }
+            )
+            del indexed[index]
+
+
+def load_ledger(path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    return quarantine_events(read_events(path))
+
+
 def append_events(ledger: Path, events: list[dict[str, Any]]) -> LedgerState:
     ledger.parent.mkdir(parents=True, exist_ok=True)
     with exclusive_lock(ledger):
-        existing = read_events(ledger)
+        existing, _invalid = load_ledger(ledger)
+        # 新事件仍然严格校验：历史坏数据可以被隔离，但绝不新写入坏数据。
         state = reduce_events([*existing, *events])
         with ledger.open("a", encoding="utf-8", newline="\n") as stream:
             for event in events:
@@ -496,7 +550,11 @@ def ensure_initialized(ledger: Path, actor: str) -> list[dict[str, Any]]:
 def cmd_init(args: argparse.Namespace) -> None:
     ledger = args.ledger
     events = ensure_initialized(ledger, args.actor)
-    current = reduce_events(read_events(ledger)) if ledger.exists() and ledger.stat().st_size else empty_state()
+    if ledger.exists() and ledger.stat().st_size:
+        kept, _invalid = load_ledger(ledger)
+        current = reduce_events(kept) if kept else empty_state()
+    else:
+        current = empty_state()
     if args.project_id not in current.projects:
         events.append(
             build_event(
@@ -665,21 +723,24 @@ def state_projection(state: LedgerState, task_id: str | None = None) -> dict[str
 
 
 def cmd_show(args: argparse.Namespace) -> None:
-    state = reduce_events(read_events(args.ledger))
+    kept, _invalid = load_ledger(args.ledger)
+    state = reduce_events(kept)
     projection = state_projection(state, args.task_id)
     print(json.dumps(projection, ensure_ascii=False, indent=2, sort_keys=True))
 
 
 def cmd_verify(args: argparse.Namespace) -> None:
     events = read_events(args.ledger)
-    state = reduce_events(events)
+    kept, invalid = quarantine_events(events)
+    state = reduce_events(kept)
     active_sessions = [s["session_id"] for s in state.sessions.values() if not s["ended"]]
     print(
         canonical_json(
             {
-                "ok": True,
+                "ok": not invalid,
                 "ledger": str(args.ledger),
                 "events": len(events),
+                "invalid_events": invalid,
                 "projects": len(state.projects),
                 "tasks": len(state.tasks),
                 "active_sessions": active_sessions,
@@ -690,6 +751,59 @@ def cmd_verify(args: argparse.Namespace) -> None:
         )
     )
 
+
+def cmd_repair(args: argparse.Namespace) -> None:
+    events = read_events(args.ledger)
+    kept, invalid = quarantine_events(events)
+    if not invalid:
+        print(
+            canonical_json(
+                {
+                    "ok": True,
+                    "ledger": str(args.ledger),
+                    "events": len(events),
+                    "invalid_events": [],
+                    "note": "账本没有无法重放的事件，未做改动",
+                }
+            )
+        )
+        return
+    if not args.apply:
+        print(
+            canonical_json(
+                {
+                    "ok": False,
+                    "ledger": str(args.ledger),
+                    "events": len(events),
+                    "invalid_events": invalid,
+                    "note": "只报告不修改；加 --apply 才会重写账本（重写前会先备份）",
+                }
+            )
+        )
+        return
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    backup = args.ledger.with_name(args.ledger.name + ".bak-" + stamp)
+    shutil.copy2(args.ledger, backup)
+    with exclusive_lock(args.ledger):
+        tmp = args.ledger.with_name(args.ledger.name + ".repair-tmp")
+        with tmp.open("w", encoding="utf-8", newline="\n") as stream:
+            for event in kept:
+                stream.write(canonical_json(event) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(tmp, args.ledger)
+    print(
+        canonical_json(
+            {
+                "ok": True,
+                "ledger": str(args.ledger),
+                "events": len(events),
+                "kept": len(kept),
+                "dropped": invalid,
+                "backup": str(backup),
+            }
+        )
+    )
 
 def add_common(parser: argparse.ArgumentParser) -> None:
     """挂载账本与 actor 选项，允许写在子命令之前或之后。
@@ -794,6 +908,11 @@ def build_parser() -> argparse.ArgumentParser:
     add_common(show)
     show.add_argument("--task-id")
     show.set_defaults(func=cmd_show)
+
+    repair = sub.add_parser("repair", help="隔离并（可选）清除账本里无法重放的非法事件")
+    add_common(repair)
+    repair.add_argument("--apply", action="store_true", help="真正重写账本；不加只报告")
+    repair.set_defaults(func=cmd_repair)
 
     verify = sub.add_parser("verify", help="重放并验证账本不变量")
     add_common(verify)
