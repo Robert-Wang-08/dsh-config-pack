@@ -108,8 +108,8 @@ components:
   - id: archived-sessions
     package: dsh-archived-sessions
     repo: https://github.com/Robert-Wang-08/dsh-archived-sessions.git
-    tag: v0.4.2
-    commit: 6f1c5e78a10578c467a0bbb4a3bad723ac51ab0a
+    tag: v0.4.4
+    commit: fffe92fe20a35f76a52b2502f0ea150e7439edcc
     installable: true
   - id: provider-badge
     package: dsh-plugin-provider-badge
@@ -132,8 +132,8 @@ components:
   - id: acp-resilient
     package: '@local/dsh-subagent-acp-resilient'
     repo: https://github.com/Robert-Wang-08/dsh-subagent-acp-resilient.git
-    tag: v0.2.2
-    commit: ee5b3762f17af1a188566dc57156fbc0d12372df
+    tag: v0.2.3
+    commit: 586d3c6bc20952c13343268a2b967b007cc0cbd5
     installable: true
   - id: recent-sessions
     package: dsh-recent-sessions
