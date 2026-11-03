@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.11.4
+
+账本坏事件隔离与 repair；快照 link 依赖按 git 提交钉定、范围版本读安装精确版本；并发发版 tag 预检
+
 ## 0.11.3
 
 allowBuilds 键解析支持 name@url（pnpm 12.5.x 下 git 依赖的安装/卸载会无限重试）
