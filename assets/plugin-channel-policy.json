@@ -2,7 +2,7 @@
   "schema": "dsh-plugin-channel-policy/v1",
   "origin": "self",
   "owner": "dsh-config-pack",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "updated_at": "2026-11-03",
   "default_channel": "public",
   "rules": {
@@ -11,7 +11,8 @@
     "adapter": "only_for_settings_that_must_move_between_devices",
     "public_channel": "device_downloads_installs_configures_and_updates_its_own_declared_version",
     "secrets": "never_export_secret_values",
-    "authorship": "independent of install/settings channel; public does not mean third-party; link does not mean self-authored"
+    "authorship": "independent of install/settings channel; public does not mean third-party; link does not mean self-authored",
+    "backup": "adapter: package/version registration plus explicitly declared non-secret configuration; public: registration only, device installs/configures locally; plugin binaries and node_modules are not backed up"
   },
   "adapters": [
     {
@@ -26,6 +27,16 @@
         "label": "项目自写",
         "maintainer": "Robert-Wang-08",
         "evidence": "dsh-config-pack/docs/component-inventory.md；dsh-provider-failover"
+      },
+      "backup": {
+        "mode": "config_pack",
+        "label": "配置包（含 adapter 声明的配置）",
+        "includes": [
+          "package/source/version registration",
+          "adapter-declared non-secret configuration"
+        ],
+        "restore": "install plugin from declared source, then restore adapter configuration",
+        "plugin_binaries": false
       }
     },
     {
@@ -40,6 +51,16 @@
         "label": "项目自写",
         "maintainer": "Robert-Wang-08",
         "evidence": "dsh-config-pack/docs/component-inventory.md；dsh-plugin-provider-badge"
+      },
+      "backup": {
+        "mode": "config_pack",
+        "label": "配置包（含 adapter 声明的配置）",
+        "includes": [
+          "package/source/version registration",
+          "adapter-declared non-secret configuration"
+        ],
+        "restore": "install plugin from declared source, then restore adapter configuration",
+        "plugin_binaries": false
       }
     },
     {
@@ -54,6 +75,16 @@
         "label": "项目自写",
         "maintainer": "Robert-Wang-08",
         "evidence": "dsh-config-pack/docs/component-inventory.md；dsh-plugin-sidebar-visibility"
+      },
+      "backup": {
+        "mode": "config_pack",
+        "label": "配置包（含 adapter 声明的配置）",
+        "includes": [
+          "package/source/version registration",
+          "adapter-declared non-secret configuration"
+        ],
+        "restore": "install plugin from declared source, then restore adapter configuration",
+        "plugin_binaries": false
       }
     },
     {
@@ -68,6 +99,16 @@
         "label": "上游 fork，本地维护",
         "maintainer": "Jiangdl0220（原作者）；Robert-Wang-08（fork 维护）",
         "evidence": "https://github.com/Jiangdl0220/dsh-archived-sessions；docs/component-inventory.md"
+      },
+      "backup": {
+        "mode": "config_pack",
+        "label": "配置包（含 adapter 声明的配置）",
+        "includes": [
+          "package/source/version registration",
+          "adapter-declared non-secret configuration"
+        ],
+        "restore": "install plugin from declared source, then restore adapter configuration",
+        "plugin_binaries": false
       }
     },
     {
@@ -82,6 +123,16 @@
         "label": "DeepSeek 官方",
         "maintainer": "deepseek-ai",
         "evidence": "https://github.com/deepseek-ai/deepseek-harness/tree/main/packages/subagent/subagent-acp"
+      },
+      "backup": {
+        "mode": "config_pack",
+        "label": "配置包（含 adapter 声明的配置）",
+        "includes": [
+          "package/source/version registration",
+          "adapter-declared non-secret configuration"
+        ],
+        "restore": "install plugin from declared source, then restore adapter configuration",
+        "plugin_binaries": false
       }
     },
     {
@@ -96,6 +147,16 @@
         "label": "DeepSeek 官方",
         "maintainer": "deepseek-ai",
         "evidence": "https://github.com/deepseek-ai/deepseek-harness/tree/main/packages/mcp/mcp-client"
+      },
+      "backup": {
+        "mode": "config_pack",
+        "label": "配置包（含 adapter 声明的配置）",
+        "includes": [
+          "package/source/version registration",
+          "adapter-declared non-secret configuration"
+        ],
+        "restore": "install plugin from declared source, then restore adapter configuration",
+        "plugin_binaries": false
       }
     }
   ],
@@ -112,6 +173,15 @@
         "label": "DeepSeek 官方",
         "maintainer": "deepseek-ai",
         "evidence": "installed package.json repository: deepseek-ai/deepseek-harness/packages/subagent/subagent-claude-code"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -126,6 +196,15 @@
         "label": "DeepSeek 官方",
         "maintainer": "deepseek-ai",
         "evidence": "installed package.json repository: deepseek-ai/deepseek-harness/packages/subagent/subagent-codex"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -140,6 +219,15 @@
         "label": "项目自写",
         "maintainer": "Robert-Wang-08 / wang",
         "evidence": "dsh-config-pack/packages/dsh-ptc-multi-agent-mode；AGENTS.md §7"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -154,6 +242,15 @@
         "label": "项目自写增强，基于官方 ACP",
         "maintainer": "Robert-Wang-08（本地增强）；deepseek-ai（官方 ACP 契约）",
         "evidence": "dsh-subagent-acp-resilient/README.md:3-5；docs/component-inventory.md"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -168,6 +265,15 @@
         "label": "外部第三方",
         "maintainer": "weibaohui",
         "evidence": "https://github.com/weibaohui/dsh-dashboard"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -182,6 +288,15 @@
         "label": "外部第三方",
         "maintainer": "Nwflower",
         "evidence": "https://github.com/Nwflower/dsh-chat-import"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -196,6 +311,15 @@
         "label": "外部第三方",
         "maintainer": "imroc / roc",
         "evidence": "https://github.com/imroc/dsh-embedded-browser"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -210,6 +334,15 @@
         "label": "外部第三方",
         "maintainer": "gitByteFree",
         "evidence": "https://github.com/gitByteFree/dsh-mermaid-smooth"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -224,6 +357,15 @@
         "label": "外部第三方",
         "maintainer": "zyar-er（既有库存记录，安装包未声明 repository）",
         "evidence": "dsh-config-pack/docs/component-inventory.md:28；installed package.json"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -238,6 +380,15 @@
         "label": "外部第三方",
         "maintainer": "1921622004",
         "evidence": "https://github.com/1921622004/dsh-command-palette"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -252,6 +403,15 @@
         "label": "项目自写",
         "maintainer": "wang / Robert-Wang-08",
         "evidence": "dsh-plugin-new-session/README.md:6 origin:self"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -266,6 +426,16 @@
         "label": "项目自写",
         "maintainer": "Robert-Wang-08",
         "evidence": "root git 6cfc3d9；dsh-plugin-ptc-switches/README.md"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false,
+        "note": "Shared PTC switches and Director participation policy are stored in provider-failover route-config and covered by its adapter; no separate switches settings payload."
       }
     },
     {
@@ -280,6 +450,15 @@
         "label": "外部第三方",
         "maintainer": "SeverusZh",
         "evidence": "https://github.com/SeverusZh/dsh-plugin-subagent-director"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -294,6 +473,15 @@
         "label": "项目自写",
         "maintainer": "Robert-Wang-08",
         "evidence": "root git 6cfc3d9；dsh-plugin-subagent-monitor/README.md:25"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -308,6 +496,15 @@
         "label": "外部第三方",
         "maintainer": "huangxp12",
         "evidence": "https://github.com/huangxp12/dsh-recent-sessions"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -322,6 +519,15 @@
         "label": "外部第三方",
         "maintainer": "chen8923",
         "evidence": "https://github.com/chen8923/dsh-task-progress"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -336,6 +542,15 @@
         "label": "外部第三方",
         "maintainer": "gosomea",
         "evidence": "https://github.com/gosomea/dsh-task-supervisor"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -350,6 +565,15 @@
         "label": "外部第三方",
         "maintainer": "sdynasty",
         "evidence": "https://github.com/sdynasty/dsh-ui-progress"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -365,6 +589,15 @@
         "maintainer": "Aisland-SJL",
         "evidence": "https://github.com/Aisland-SJL/dsh-worktable",
         "note": "Installed as a local vendor tgz; upstream repository is declared by installed package.json. Public release/tag installability has not been tested."
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     },
     {
@@ -379,6 +612,15 @@
         "label": "外部第三方",
         "maintainer": "dsh-market",
         "evidence": "https://github.com/dsh-market/dsh-market"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
       }
     }
   ]
