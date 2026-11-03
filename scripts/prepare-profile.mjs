@@ -106,8 +106,11 @@ const blockRe = /^allowBuilds:[ \t]*\r?\n((?:[ \t]+.*\r?\n?)*)/m;
 const block = original.match(blockRe);
 if (block) {
   for (const line of block[1].split(/\r?\n/)) {
-    const m = line.match(/^[ \t]+'?([^':]+)'?:[ \t]*(true|false)\s*$/);
-    if (m) existingBuilds.set(m[1], m[2] === 'true');
+    // 名字里允许出现冒号：git 宿主的 allowBuilds 键形如 'name@https://codeload.../tar.gz/<sha>'，
+    // 旧写法 [^':]+ 会在第一个冒号处截断，导致这类键解析失败并被静默丢弃 ——
+    // 于是 install.ps1 自愈加进来的 URL 键在下一次 prepare-profile 就被抹掉，形成无限重试（2026-11-03 实测）。
+    const m = line.match(/^[ \t]+(?:'([^']+)'|([^':]+)):[ \t]*(true|false)\s*$/);
+    if (m) existingBuilds.set(m[1] || m[2], m[3] === 'true');
   }
 }
 let changed = false;
