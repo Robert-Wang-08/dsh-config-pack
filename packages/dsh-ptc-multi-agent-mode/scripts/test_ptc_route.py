@@ -177,6 +177,33 @@ class TestRules(unittest.TestCase):
         self.assertEqual(d["model"], route.EXECUTE_MODEL)
         self.assertEqual(d["shape"], "foreground-one-shot")
 
+    def test_execute_chain_uses_per_provider_model(self):
+        """execute 链的两个候选各自取自己 provider 的模型，不共用同一个 id。"""
+        chain = route.tier_candidate_chain("execute")
+        by_provider = {c["provider"]: c["model"] for c in chain}
+        self.assertEqual(by_provider[route.EXECUTE_PROVIDER], route.execute_model_for(route.EXECUTE_PROVIDER))
+        self.assertEqual(by_provider[route.OPENCODE_PROVIDER], route.execute_model_for(route.OPENCODE_PROVIDER))
+        # 两个 provider 的模型可以不同；不同即证明没有回落成同一个硬编码值。
+        self.assertNotEqual(
+            route.execute_model_for(route.EXECUTE_PROVIDER),
+            route.execute_model_for(route.OPENCODE_PROVIDER),
+        )
+
+    def test_execute_model_falls_back_to_shared_model(self):
+        """没有 modelsByProvider 时，execute_model_for 回落到 execute.model（向后兼容）。"""
+        saved = route.EXECUTE_MODELS
+        try:
+            route.EXECUTE_MODELS = {}
+            self.assertEqual(route.execute_model_for("opencode-go"), route.EXECUTE_MODEL)
+            self.assertEqual(route.execute_model_for(route.EXECUTE_PROVIDER), route.EXECUTE_MODEL)
+        finally:
+            route.EXECUTE_MODELS = saved
+
+    def test_continuous_opencode_candidate_uses_own_model(self):
+        chain = route.tier_candidate_chain("continuous")
+        opencode = next(c for c in chain if c["provider"] == route.OPENCODE_PROVIDER)
+        self.assertEqual(opencode["model"], route.execute_model_for(route.OPENCODE_PROVIDER))
+
     def test_validation_defaults_to_ds_group(self):
         d = route.decide(base(validation_burden="high"))
         self.assertEqual(d["tier"], "execute")

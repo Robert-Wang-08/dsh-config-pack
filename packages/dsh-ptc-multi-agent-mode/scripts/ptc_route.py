@@ -73,6 +73,16 @@ FALLBACK_PROVIDER = _RUNTIME["controller"]["fallbackProvider"]
 FALLBACK_MODEL = _RUNTIME["controller"]["fallbackModel"]
 EXECUTE_PROVIDER = _RUNTIME["execute"]["provider"]
 EXECUTE_MODEL = _RUNTIME["execute"]["model"]
+# execute 档的同一条候选链会落到不同 provider 上（ais-2dsglm 与 opencode-go），而各
+# provider 的模型目录并不一致：同一个 id 在 A 上有、在 B 上可能 422。modelsByProvider
+# 允许按 provider 覆盖模型；未列出的 provider 回落到 execute.model（向后兼容）。
+EXECUTE_MODELS = dict(_RUNTIME["execute"].get("modelsByProvider") or {})
+OPENCODE_PROVIDER = "opencode-go"
+
+
+def execute_model_for(provider: str) -> str:
+    """execute 档在指定 provider 上应使用的模型 id。"""
+    return EXECUTE_MODELS.get(provider, EXECUTE_MODEL)
 # 连续修改档（R7）：2026-10-16 用户指定改用 ais-2dsglm 的 GLM，不再走 Cursor/Grok ACP。
 # 该 provider 上唯一的 GLM 档是 glm-5.3-flash；值仍从公开运行时配置读取，不写死在代码里。
 CONTINUOUS_PROVIDER = _RUNTIME["continuous"]["provider"]
@@ -462,12 +472,12 @@ def tier_candidate_chain(
         ]
         ds = [
             _candidate(
-                "execute-dsv41-flash", EXEC_SPAWN, EXECUTE_MODEL,
+                "execute-dsv41-flash", EXEC_SPAWN, execute_model_for(EXECUTE_PROVIDER),
                 provider=EXECUTE_PROVIDER, shape="foreground-one-shot",
             ),
             _candidate(
-                "execute-dsv41-flash", EXEC_OPENCODE, EXECUTE_MODEL,
-                provider="opencode-go", shape="one-shot",
+                "execute-dsv41-flash", EXEC_OPENCODE, execute_model_for(OPENCODE_PROVIDER),
+                provider=OPENCODE_PROVIDER, shape="one-shot",
             ),
         ]
         if design_mode in ("high", "top_down"):
@@ -488,8 +498,8 @@ def tier_candidate_chain(
             _candidate(
                 "execute-dsv41-flash",
                 EXEC_OPENCODE,
-                EXECUTE_MODEL,
-                provider="opencode-go",
+                execute_model_for(OPENCODE_PROVIDER),
+                provider=OPENCODE_PROVIDER,
                 shape="one-shot",
             ),
             *controller_tail,
@@ -503,15 +513,15 @@ def tier_candidate_chain(
         spawn = _candidate(
             "execute-dsv41-flash",
             EXEC_SPAWN,
-            EXECUTE_MODEL,
+            execute_model_for(EXECUTE_PROVIDER),
             provider=EXECUTE_PROVIDER,
             shape=execute_shape(prefers_acp=False, background=background),
         )
         opencode = _candidate(
             "execute-dsv41-flash",
             EXEC_OPENCODE,
-            EXECUTE_MODEL,
-            provider="opencode-go",
+            execute_model_for(OPENCODE_PROVIDER),
+            provider=OPENCODE_PROVIDER,
             shape="one-shot",
         )
         ordered = [opencode, spawn] if prefers_acp else [spawn, opencode]

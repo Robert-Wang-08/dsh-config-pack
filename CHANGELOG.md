@@ -28,7 +28,9 @@
 
 同时包含此前待发布的变更：
 
-failover `ais` 条目登记同路由 `glm-5.3-flash` 共用该组 key（`models: [deepseek-v4.1-flash, glm-5.3-flash]`）；setup.ps1 新设备生成的 route-config 同步。切到该条目仍用主模型 deepseek-v4.1-flash。
+failover `ais` 条目主模型由 `deepseek-v4.1-flash` 改为 `deepseek-flash`（`models: [deepseek-flash, glm-5.3-flash]`）：中转站（AxonHub）上 `deepseek-v4.1-flash` 只在主 key 的目录里存在，备用 key 的 profile 白名单没有它，返回 `422 invalid_model_error`，而 422 不在 `switchOn`/`KEY_ROTATION_CODES`，会绕过 failover 打死回合。同步更正 `40-models.yml` 的 ais 模型表（删中转站不存在的 `deepseek-v4-flash`/`deepseek-v4.1-flash`，补 `deepseek-flash`、`deepseek-v4-pro`）与 `allowedModels`，并修正 `sameTierFirst` 注释里「同为 deepseek-v4.1-flash」的过时表述。
+
+failover `ais` 条目登记同路由 `glm-5.3-flash` 共用该组 key；setup.ps1 新设备生成的 route-config 同步。
 
 ## 0.10.12
 

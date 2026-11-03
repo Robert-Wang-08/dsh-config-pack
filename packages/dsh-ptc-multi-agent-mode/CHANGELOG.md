@@ -4,6 +4,8 @@
 
 ## 未发布
 
+- **execute 档按 provider 声明模型 + ais 主模型改 deepseek-flash（2026-10-31）**：`ais-2dsglm` 的主 key 额度耗尽后，keypool 在同一路由内轮换到备用 key，而该 key 的 AxonHub profile 白名单不含 `deepseek-v4.1-flash`，上游返回 `422 invalid_model_error`；该码既不在 `failurePolicy.switchOn` 也不在 `KEY_ROTATION_CODES`，会绕过 failover 直接打死回合（2026-10-31 实测三次复现）。修法：`public-runtime-config.json` 的 `execute.model` 改为 `deepseek-flash`，并新增 `modelsByProvider`（`opencode-go` → `deepseek-v4.1-flash`），`ptc_route.py` 增加 `execute_model_for(provider)`，execute/continuous 链与 design 档的 ds 候选取各自 provider 的模型，不再共用同一个 id（否则第二候选会引用未声明模型）。缺 `modelsByProvider` 时回落到 `execute.model`，向后兼容。新增 3 项单测（per-provider 取模、缺表回落、continuous 候选取模），全套 64 项通过。冻结 route 枚举 `execute-dsv41-flash` 不变，replay 语义不受影响。
+
 - **Claude 配置凭据作用域兼容（0.16.1，2026-10-23）**：`claude_config_profiles.py` 的凭据解析顺序扩展为 DSH credentials 文件 → 当前进程环境 → Windows User 环境 → Windows Machine 环境；解决 `CLAUDETOKENISS25_API_KEY` 已安装在 Machine scope、但一键预置仍误报缺失的问题。Windows registry 读取在非 Windows/不可用时安全退化，`REG_EXPAND_SZ` 会展开，且任何路径均不打印凭据值。新增 6 项隔离测试覆盖优先级与缺失行为。
 
 - **子代理失败原因上抛 + pnpm 静态补丁分发（2026-10-21）**：诊断只报固定 facts，上游 403 余额不足等可操作原因到不了调用方；根因在适配器未填充（服务层 `diagnostic` 字段与 4096 字节截断本就支持）。claude 适配器经 `pnpm patch` 生成的静态补丁修正：`is_error` 分支补传 cause、渲染 `resultKind`、`cause:` 行透出上游原文；补丁随 `assets/patches/` 分发，`prepare-profile.mjs` 复制到 profile 并写 `patchedDependencies`，`install.ps1` 在 `dsh plugin add` 前注入，故任何 `pnpm install` 与新设备安装都自动应用。opus55 档默认配置目录由 `~/.claude-profiles/tokeniss` 改为 `tokeniss25`（tokeness.io 账户余额不足时该档整档 403 不可用），`claude_config_profiles.py` 新增 `tokeniss25` 档，`install.ps1` 第 2.5 步自动预置三个配置目录（缺凭据只报告不失败）；`PTC_CLAUDE_OPUS55_CONFIG_DIR` 仍可覆盖回 tokeniss。

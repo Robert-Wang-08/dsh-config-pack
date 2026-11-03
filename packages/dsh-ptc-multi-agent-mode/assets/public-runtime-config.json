@@ -9,7 +9,11 @@
   },
   "execute": {
     "provider": "ais-2dsglm",
-    "model": "deepseek-v4.1-flash"
+    "model": "deepseek-flash",
+    "modelsByProvider": {
+      "opencode-go": "deepseek-v4.1-flash"
+    },
+    "note": "2026-10-31：ais-2dsglm 的备用 key（AxonHub profile 白名单）不服务 deepseek-v4.1-flash，请求返回 422 invalid_model_error 且该码不在 failover 切换面；execute 档主模型改 deepseek-flash。同链的 opencode-go 候选没有该 id，故按 provider 单独声明（modelsByProvider），避免共用同一 model 值导致第二候选引用未声明模型。"
   },
   "continuous": {
     "provider": "ais-2dsglm",

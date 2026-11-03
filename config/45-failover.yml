@@ -93,7 +93,8 @@
       cacheTtlMs: 60000
       # 同族互备优先：失败路由能在档位表中定位时，先只在它所在档内切换，档内确实
       # 无可用候选（已尝试/冷却中/能力不兼容/不可解析）才退回「从第 1 档向上扫」。
-      # 打开后：opencode-go 失败先切同档的 ais-2dsglm（同为 deepseek-v4.1-flash），
+      # 打开后：opencode-go 失败先切同档的 ais-2dsglm（2026-10-31 起本档主模型为
+      # deepseek-flash，与 opencode-go 的 deepseek-v4.1-flash 已不是同一个 id），
       # 不再直接升到第 1 档的 gpt-6.1-sol；整档耗尽才升档。
       # 关闭（默认 false）时保持 v3.4.0 旧语义。
       sameTierFirst: true
@@ -123,11 +124,15 @@
         entries:
           - id: ais
             route: !!js process['env'].DSHPACK_ROUTE_AIS || 'ais-2dsglm'
-            model: deepseek-v4.1-flash
+            # 2026-10-31：主模型改 deepseek-flash。原 deepseek-v4.1-flash 只在主 key 的
+            # 目录里存在；备用 key 的 AxonHub profile 白名单没有它，返回 422
+            # invalid_model_error，而 422 不在 switchOn 也不在 KEY_ROTATION_CODES，
+            # 会绕过 failover 直接把回合打死（2026-10-31 实测复现）。
+            model: deepseek-flash
             # 同路由 glm-5.3-flash 共用本条目的 key（apiKeyEnv 在路由上，不按模型拆）。
-            # 切到本条目时仍用主模型 deepseek-v4.1-flash；glm 失败时按路由命中本条目轮换 key。
-            models: [deepseek-v4.1-flash, glm-5.3-flash]
-            # 2026-10-23：ds4.1-flash 档位统一 max（依赖 40-models.yml 的 reasoningEfforts 声明；
+            # 切到本条目时用主模型 deepseek-flash；glm 失败时按路由命中本条目轮换 key。
+            models: [deepseek-flash, glm-5.3-flash]
+            # 档位统一 max（依赖 40-models.yml 的 reasoningEfforts 声明；
             # 目录不支持的层级会被插件预检丢弃并告警，不会阻断切换）
             reasoningEffort: max
             description: 第二族主力；OpenAI 兼容协议，支持文本与图片；glm-5.3-flash 共用本组 key
