@@ -410,7 +410,16 @@ function generatedFiles(answers) {
     '.gitignore': '# Generated PTC companion; never sync local output.\n*\n!.gitignore\n!README.md\n'
   };
 }
-function copyArtifact(source, target) { mkdirSync(dirname(target), { recursive: true }); cpSync(source, target, { recursive: true, force: true }); }
+// __pycache__/*.pyc 必须排除：.pyc 里嵌着编译时的绝对路径（如 D:\src\...\scripts\ptc_route.py），
+// 拷进公开伴随件就等于泄露本机个人路径；test-ptc-public-template.mjs 的隐私门禁会拦下它。
+function shouldCopyArtifact(source) {
+  const base = basename(source);
+  return base !== '__pycache__' && !/\.py[cod]$/i.test(base);
+}
+function copyArtifact(source, target) {
+  mkdirSync(dirname(target), { recursive: true });
+  cpSync(source, target, { recursive: true, force: true, filter: shouldCopyArtifact });
+}
 function writeSet(outDir, answers) {
   mkdirSync(outDir, { recursive: true });
   for (const name of GENERATED_ARTIFACTS) rmSync(join(outDir, name), { recursive: true, force: true });

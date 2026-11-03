@@ -178,16 +178,19 @@ class TestRules(unittest.TestCase):
         self.assertEqual(d["shape"], "foreground-one-shot")
 
     def test_execute_chain_uses_per_provider_model(self):
-        """execute 链的两个候选各自取自己 provider 的模型，不共用同一个 id。"""
+        """execute 链的每个候选都按自己的 provider 取模型，不共用同一个硬编码值。"""
         chain = route.tier_candidate_chain("execute")
         by_provider = {c["provider"]: c["model"] for c in chain}
-        self.assertEqual(by_provider[route.EXECUTE_PROVIDER], route.execute_model_for(route.EXECUTE_PROVIDER))
-        self.assertEqual(by_provider[route.OPENCODE_PROVIDER], route.execute_model_for(route.OPENCODE_PROVIDER))
-        # 两个 provider 的模型可以不同；不同即证明没有回落成同一个硬编码值。
-        self.assertNotEqual(
-            route.execute_model_for(route.EXECUTE_PROVIDER),
-            route.execute_model_for(route.OPENCODE_PROVIDER),
-        )
+        for provider in (route.EXECUTE_PROVIDER, route.OPENCODE_PROVIDER):
+            expected = route.EXECUTE_MODELS.get(provider, route.EXECUTE_MODEL)
+            self.assertEqual(by_provider[provider], expected)
+            self.assertEqual(route.execute_model_for(provider), expected)
+        # 只有在运行时有 modelsByProvider 覆盖、且两个 provider 都被覆盖时，才谈"模型不同"。
+        # generate-ptc-companion 生成的公开伴随件只写 execute.provider/model，不带 modelsByProvider，
+        # 此时两个 provider 合法地回落到同一个 execute.model，不能断言它们不同。
+        overridden = [route.EXECUTE_MODELS.get(p) for p in (route.EXECUTE_PROVIDER, route.OPENCODE_PROVIDER)]
+        if all(overridden):
+            self.assertNotEqual(overridden[0], overridden[1])
 
     def test_execute_model_falls_back_to_shared_model(self):
         """没有 modelsByProvider 时，execute_model_for 回落到 execute.model（向后兼容）。"""
