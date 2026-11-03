@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.11.3
+
+allowBuilds 键解析支持 name@url（pnpm 12.5.x 下 git 依赖的安装/卸载会无限重试）
+
 ## 0.11.2
 
 适配宿主 `0.2.1-rc.5` 精确 peer 门闸；去掉 persona 尾缀中已失效的 `{{cwd}}` 插值；依赖钉到 archived-sessions `v0.4.3`、acp-resilient `v0.2.3`。
