@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.11.5
+
+组件锁与三份 manifest 对齐到 archived-sessions v0.4.4、acp-resilient v0.2.3 与宿主 0.2.1-rc.5；新增 scripts/dsh-backup.ps1，备份写本机快照，恢复默认只出计划，Apply 前自动做 pre-restore。
+
 ## 0.11.4
 
 账本坏事件隔离与 repair；快照 link 依赖按 git 提交钉定、范围版本读安装精确版本；并发发版 tag 预检
