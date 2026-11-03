@@ -75,6 +75,8 @@ dsh packed
 最后校验 `dsh.profile.bundles` 里确实登记了本包。完整说明见
 [`docs/one-command-install.md`](docs/one-command-install.md)。
 
+插件设置和安装来源分开管理：新装默认走公共通道，只有少数运行配置走 adapter。详见 [`docs/plugin-channel-policy.md`](docs/plugin-channel-policy.md)；机器可读清单是 [`assets/plugin-channel-policy.json`](assets/plugin-channel-policy.json)。
+
 > ⚠️ **顺序很关键。** 第一次 `add` 失败后直接重试，依赖其实已经落盘，DSH **不会**再为新依赖
 > 登记 `dsh.profile.bundles`，结果是"装上了但整包不生效"。这也是下面这些历史硬约束曾经必须
 > 手工处理的原因——现在由 `scripts/prepare-profile.mjs` 在 `add` **之前**写好。

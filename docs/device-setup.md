@@ -115,6 +115,8 @@ dsh packed
 
 因此：**本包一键安装 ≠ 完整 PTC 能力安装**；PTC 需要额外一步生成并安装 companion。
 
+插件通道规则见 [`plugin-channel-policy.md`](plugin-channel-policy.md)：新设备默认从公共 npm/Git/tag 来源下载、安装和更新；只有列在 Adapter 表中的少数组件才迁移设置。当前没有公共 tag/package 的本机组件不得作为新装默认依赖，必须先完成公共发布。
+
 ---
 
 ## 2.1 干净 profile 复验出的三条硬约束

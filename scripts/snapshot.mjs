@@ -211,7 +211,10 @@ function extractCordisRow(profileDir, rowId) {
 function loadAdapters() {
   const p = join(ROOT, 'assets', 'plugin-settings-adapters.json');
   const j = existsSync(p) ? readJson(p) : null;
-  return j && j.schema === 'dsh-plugin-settings-adapters/v1' ? j : { generic: { settingsFiles: [], class: 'portable' }, adapters: [] };
+  const cp = join(ROOT, 'assets', 'plugin-channel-policy.json');
+  const channelPolicy = existsSync(cp) ? readJson(cp) : null;
+  if (j && j.schema === 'dsh-plugin-settings-adapters/v1') return { ...j, publicChannels: channelPolicy?.public || [] };
+  return { generic: { settingsFiles: [], class: 'portable' }, adapters: [], publicChannels: channelPolicy?.public || [] };
 }
 function pluginDirName(name) { return name.replace(/^@[^/]+\//, ''); }
 function collectPluginSettings(dshHome, profileDir, plugins, adapters, opts) {
@@ -286,8 +289,12 @@ function collectPluginSettings(dshHome, profileDir, plugins, adapters, opts) {
       }
     }
     if (found) out.push({ plugin: p.name, adapter: null, status: 'exported', items });
-    else if (opts.assumeNoSettings) out.push({ plugin: p.name, adapter: null, status: 'not_applicable', reason: 'no adapter and no settings file found; assumed no settings', items: [] });
-    else out.push({ plugin: p.name, adapter: null, status: 'unsupported', reason: 'no adapter and no settings file found; settings location unknown', items: [] });
+    else {
+      const publicChannel = (adapters.publicChannels || []).find(x => x.package === p.name || x.package === short);
+      if (publicChannel) out.push({ plugin: p.name, adapter: null, status: 'not_applicable', channel: 'public', source: publicChannel.source, version: publicChannel.observed_version, reason: 'settings are managed by the public installation channel on the target device', items: [] });
+      else if (opts.assumeNoSettings) out.push({ plugin: p.name, adapter: null, status: 'not_applicable', reason: 'no adapter and no settings file found; assumed no settings', items: [] });
+      else out.push({ plugin: p.name, adapter: null, status: 'unsupported', reason: 'no adapter and no settings file found; settings location unknown', items: [] });
+    }
   }
   return out;
 }

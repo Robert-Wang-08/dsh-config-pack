@@ -1,0 +1,227 @@
+{
+  "schema": "dsh-plugin-channel-policy/v1",
+  "origin": "self",
+  "owner": "dsh-config-pack",
+  "version": "1.0.0",
+  "updated_at": "2026-11-03",
+  "default_channel": "public",
+  "rules": {
+    "new_install": "public",
+    "local_link": "development_only",
+    "adapter": "only_for_settings_that_must_move_between_devices",
+    "public_channel": "device_downloads_installs_configures_and_updates_its_own_declared_version",
+    "secrets": "never_export_secret_values"
+  },
+  "adapters": [
+    {
+      "package": "dsh-deepseek-keypool",
+      "settings_adapter": "provider-failover",
+      "install_source": "github:Robert-Wang-08/dsh-provider-failover#v3.6.0",
+      "observed_version": "3.8.2",
+      "update": "config-pack component lock + install/update script",
+      "reason": "provider routing and failover settings affect runtime behavior"
+    },
+    {
+      "package": "dsh-plugin-provider-badge",
+      "settings_adapter": "provider-badge",
+      "install_source": "github:Robert-Wang-08/dsh-plugin-provider-badge#v0.3.1",
+      "observed_version": "0.4.0",
+      "update": "config-pack component lock + install/update script",
+      "reason": "user-visible provider display settings"
+    },
+    {
+      "package": "dsh-plugin-sidebar-visibility",
+      "settings_adapter": "sidebar-visibility",
+      "install_source": "github:Robert-Wang-08/dsh-plugin-sidebar-visibility#v0.0.7",
+      "observed_version": "0.0.7",
+      "update": "config-pack component lock + install/update script",
+      "reason": "portable sidebar visibility preferences"
+    },
+    {
+      "package": "@jiangdaoli/dsh-archived-sessions",
+      "settings_adapter": "archived-sessions",
+      "install_source": "github:Robert-Wang-08/dsh-archived-sessions#v0.4.3",
+      "observed_version": "0.4.3",
+      "update": "config-pack component lock + install/update script",
+      "reason": "archive plugin configuration and restore behavior"
+    },
+    {
+      "package": "@deepseek-ai/dsh-subagent-acp",
+      "settings_adapter": "subagent-acp-opencode",
+      "install_source": "@deepseek-ai/dsh-subagent-acp@0.2.1-rc.5",
+      "observed_version": "0.2.0-rc.2",
+      "update": "host/config-pack baseline upgrade",
+      "reason": "ACP row configuration is part of the runtime route"
+    },
+    {
+      "package": "@deepseek-ai/dsh-mcp-client",
+      "settings_adapter": "mcp-rows",
+      "install_source": "@deepseek-ai/dsh-mcp-client@0.2.1-rc.5",
+      "observed_version": "0.2.0-rc.2",
+      "update": "host/config-pack baseline upgrade",
+      "reason": "MCP endpoint rows and enablement affect runtime behavior"
+    }
+  ],
+  "public": [
+    {
+      "package": "@deepseek-ai/dsh-subagent-claude-code",
+      "source": "@deepseek-ai/dsh-subagent-claude-code@0.2.1-rc.5",
+      "observed_version": "0.2.0-rc.2",
+      "install": "pack dependency",
+      "update": "target device installs config-pack release",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "@deepseek-ai/dsh-subagent-codex",
+      "source": "@deepseek-ai/dsh-subagent-codex@0.2.1-rc.5",
+      "observed_version": "0.2.0-rc.2",
+      "install": "pack dependency",
+      "update": "target device installs config-pack release",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "@local/dsh-ptc-multi-agent-mode",
+      "source": "github:Robert-Wang-08/dsh-config-pack#v0.11.4 (dsh-bundle)",
+      "observed_version": "0.16.1",
+      "install": "pack bundle",
+      "update": "target device installs config-pack release",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "@local/dsh-subagent-acp-resilient",
+      "source": "github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.3",
+      "observed_version": "0.2.3",
+      "install": "pack dependency",
+      "update": "target device installs config-pack release",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "@weibaohui/dsh-dashboard",
+      "source": "@weibaohui/dsh-dashboard@0.2.1",
+      "observed_version": "0.2.1",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-chat-import",
+      "source": "dsh-chat-import@0.25.2",
+      "observed_version": "0.25.2",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-embedded-browser",
+      "source": "dsh-embedded-browser@0.3.0",
+      "observed_version": "0.3.0",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-mermaid-smooth",
+      "source": "dsh-mermaid-smooth@0.1.0",
+      "observed_version": "0.1.0",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-notify-bell",
+      "source": "dsh-notify-bell@0.12.0",
+      "observed_version": "0.12.0",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-palette",
+      "source": "dsh-palette@0.2.1",
+      "observed_version": "0.2.1",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-plugin-new-session",
+      "source": null,
+      "observed_version": "0.2.0",
+      "install": "blocked until public tag/package is published",
+      "update": "target device installs config-pack release",
+      "settings": "public channel after publication"
+    },
+    {
+      "package": "dsh-plugin-ptc-switches",
+      "source": "github:Robert-Wang-08/dsh-config-pack#v0.11.4 (bundled public artifact)",
+      "observed_version": "0.2.0",
+      "install": "pack bundle",
+      "update": "target device installs config-pack release",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-plugin-subagent-director",
+      "source": "dsh-plugin-subagent-director@0.5.6",
+      "observed_version": "0.5.6",
+      "install": "public npm optional component",
+      "update": "target device runs optional component install",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-plugin-subagent-monitor",
+      "source": "github:Robert-Wang-08/dsh-plugin-subagent-monitor#v0.1.0",
+      "observed_version": "0.1.0",
+      "install": "pack dependency",
+      "update": "target device installs config-pack release",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-recent-sessions",
+      "source": "github:huangxp12/dsh-recent-sessions#v0.1.2",
+      "observed_version": "0.1.2",
+      "install": "public optional component",
+      "update": "target device runs optional component install",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-task-progress",
+      "source": "dsh-task-progress@0.3.0",
+      "observed_version": "0.3.0",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-task-supervisor",
+      "source": "dsh-task-supervisor@0.1.9",
+      "observed_version": "0.1.9",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-ui-progress",
+      "source": "dsh-ui-progress@0.1.2",
+      "observed_version": "0.1.2",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target"
+    },
+    {
+      "package": "dsh-worktable",
+      "source": null,
+      "observed_version": "0.5.0",
+      "install": "blocked until public package/release is published",
+      "update": "target device installs config-pack release",
+      "settings": "public channel after publication"
+    },
+    {
+      "package": "dshmarket",
+      "source": "github:dsh-market/dsh-market#v1.66.21",
+      "observed_version": "1.66.21",
+      "install": "public optional component",
+      "update": "target device runs optional component install",
+      "settings": "public channel; settings configured on target"
+    }
+  ]
+}
