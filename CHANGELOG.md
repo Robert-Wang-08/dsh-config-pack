@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.11.2
+
+适配宿主 `0.2.1-rc.5` 精确 peer 门闸；去掉 persona 尾缀中已失效的 `{{cwd}}` 插值；依赖钉到 archived-sessions `v0.4.3`、acp-resilient `v0.2.3`。
+
 ## 0.11.1
 
 ais 档主模型 deepseek-v4.1-flash → deepseek-flash（备用 key 白名单缺该 id，422 会绕过 failover 打死回合）；PTC 多代理 skill 更新（按 provider 取模型、开关表热读）；配置备份取上游完整实现
