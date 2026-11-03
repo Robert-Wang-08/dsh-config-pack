@@ -84,7 +84,14 @@
             contextWindow: 500000
             maxTokens: 128000
             input: [text, image]
-            reasoningEfforts: { off: null, minimal: low, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+            # 2026-10-30：**不要写 off: null**。DSH 的 resolveModelReasoning 把「off: null」
+            # 从 thinkingLevelMap 里整键丢弃（只留 undefined），pi-ai 的 responses 适配器于是走
+            # `model.thinkingLevelMap?.off ?? "none"` 回落——未选档位时发出
+            # reasoning.effort="none"，而 gpt-6.1-sol 上游只认 low/medium/high/xhigh/max，
+            # 整轮 400 "Unsupported value: 'none'"（2026-10-30 实测，见 CHANGELOG）。
+            # 不声明 off 时 DSH 把 off 钉成 null，适配器直接不带 reasoning 参数（上游默认档），
+            # 与上面 codex-relay 同 id 的声明一致。verify.mjs 会拦回 off。
+            reasoningEfforts: { minimal: low, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-6-sol
           - id: gpt-6-astra
           - id: gpt-6-luna

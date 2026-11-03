@@ -6,6 +6,7 @@
 //   3. (optional) the target profile's own cordis.patch.yml declares none of the owned ids
 //   4. every id in pack.manifest.yaml -> delegated is absent from cordis.patch.yml
 //   A. no providerName: value in cordis.patch.yml is declared twice
+//   B. the subagent selection whitelist lists one entry per exact route
 //   C. (--composed <path>) every provider: consumed by a dsh-tool-subagent row is registered
 //
 // Usage:
@@ -17,7 +18,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
-import { officialModelProblems } from './model-config.mjs';
+import { officialModelProblems, selectionProblems } from './model-config.mjs';
 
 const USAGE = `verify.mjs — read-only checks on this pack. It never writes any file.
 
@@ -155,6 +156,7 @@ for (const id of delegated) {
 }
 
 errors.push(...officialModelProblems(patchLines.join('\n')));
+errors.push(...selectionProblems(patchLines.join('\n')));
 
 // 2. !!js scalar constraints
 patchLines.forEach((line, i) => {
@@ -273,6 +275,7 @@ const okParts = [
   `${delegated.length} delegated id(s) absent from pack`,
   '!!js scalars well-formed',
   `${providerNames.length} providerName(s) unique`,
+  'subagent selection routes unique',
 ];
 if (profile) okParts.push(`no shadow in profile "${profile}"`);
 if (composed) okParts.push('no dangling provider in composed config');
