@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.11.6
+
+adapter 与公共插件通道分表；新装默认走公共来源；快照 settings coverage 完整通过
+
 ## 0.11.5
 
 组件锁与三份 manifest 对齐到 archived-sessions v0.4.4、acp-resilient v0.2.3 与宿主 0.2.1-rc.5；新增 scripts/dsh-backup.ps1，备份写本机快照，恢复默认只出计划，Apply 前自动做 pre-restore。
