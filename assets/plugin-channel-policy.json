@@ -2,7 +2,7 @@
   "schema": "dsh-plugin-channel-policy/v1",
   "origin": "self",
   "owner": "dsh-config-pack",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "updated_at": "2026-11-03",
   "default_channel": "public",
   "rules": {
@@ -10,7 +10,8 @@
     "local_link": "development_only",
     "adapter": "only_for_settings_that_must_move_between_devices",
     "public_channel": "device_downloads_installs_configures_and_updates_its_own_declared_version",
-    "secrets": "never_export_secret_values"
+    "secrets": "never_export_secret_values",
+    "authorship": "independent of install/settings channel; public does not mean third-party; link does not mean self-authored"
   },
   "adapters": [
     {
@@ -19,7 +20,13 @@
       "install_source": "github:Robert-Wang-08/dsh-provider-failover#v3.6.0",
       "observed_version": "3.8.2",
       "update": "config-pack component lock + install/update script",
-      "reason": "provider routing and failover settings affect runtime behavior"
+      "reason": "provider routing and failover settings affect runtime behavior",
+      "authorship": {
+        "class": "self",
+        "label": "项目自写",
+        "maintainer": "Robert-Wang-08",
+        "evidence": "dsh-config-pack/docs/component-inventory.md；dsh-provider-failover"
+      }
     },
     {
       "package": "dsh-plugin-provider-badge",
@@ -27,7 +34,13 @@
       "install_source": "github:Robert-Wang-08/dsh-plugin-provider-badge#v0.3.1",
       "observed_version": "0.4.0",
       "update": "config-pack component lock + install/update script",
-      "reason": "user-visible provider display settings"
+      "reason": "user-visible provider display settings",
+      "authorship": {
+        "class": "self",
+        "label": "项目自写",
+        "maintainer": "Robert-Wang-08",
+        "evidence": "dsh-config-pack/docs/component-inventory.md；dsh-plugin-provider-badge"
+      }
     },
     {
       "package": "dsh-plugin-sidebar-visibility",
@@ -35,7 +48,13 @@
       "install_source": "github:Robert-Wang-08/dsh-plugin-sidebar-visibility#v0.0.7",
       "observed_version": "0.0.7",
       "update": "config-pack component lock + install/update script",
-      "reason": "portable sidebar visibility preferences"
+      "reason": "portable sidebar visibility preferences",
+      "authorship": {
+        "class": "self",
+        "label": "项目自写",
+        "maintainer": "Robert-Wang-08",
+        "evidence": "dsh-config-pack/docs/component-inventory.md；dsh-plugin-sidebar-visibility"
+      }
     },
     {
       "package": "@jiangdaoli/dsh-archived-sessions",
@@ -43,7 +62,13 @@
       "install_source": "github:Robert-Wang-08/dsh-archived-sessions#v0.4.3",
       "observed_version": "0.4.3",
       "update": "config-pack component lock + install/update script",
-      "reason": "archive plugin configuration and restore behavior"
+      "reason": "archive plugin configuration and restore behavior",
+      "authorship": {
+        "class": "upstream_fork",
+        "label": "上游 fork，本地维护",
+        "maintainer": "Jiangdl0220（原作者）；Robert-Wang-08（fork 维护）",
+        "evidence": "https://github.com/Jiangdl0220/dsh-archived-sessions；docs/component-inventory.md"
+      }
     },
     {
       "package": "@deepseek-ai/dsh-subagent-acp",
@@ -51,7 +76,13 @@
       "install_source": "@deepseek-ai/dsh-subagent-acp@0.2.1-rc.5",
       "observed_version": "0.2.0-rc.2",
       "update": "host/config-pack baseline upgrade",
-      "reason": "ACP row configuration is part of the runtime route"
+      "reason": "ACP row configuration is part of the runtime route",
+      "authorship": {
+        "class": "official",
+        "label": "DeepSeek 官方",
+        "maintainer": "deepseek-ai",
+        "evidence": "https://github.com/deepseek-ai/deepseek-harness/tree/main/packages/subagent/subagent-acp"
+      }
     },
     {
       "package": "@deepseek-ai/dsh-mcp-client",
@@ -59,7 +90,13 @@
       "install_source": "@deepseek-ai/dsh-mcp-client@0.2.1-rc.5",
       "observed_version": "0.2.0-rc.2",
       "update": "host/config-pack baseline upgrade",
-      "reason": "MCP endpoint rows and enablement affect runtime behavior"
+      "reason": "MCP endpoint rows and enablement affect runtime behavior",
+      "authorship": {
+        "class": "official",
+        "label": "DeepSeek 官方",
+        "maintainer": "deepseek-ai",
+        "evidence": "https://github.com/deepseek-ai/deepseek-harness/tree/main/packages/mcp/mcp-client"
+      }
     }
   ],
   "public": [
@@ -69,7 +106,13 @@
       "observed_version": "0.2.0-rc.2",
       "install": "pack dependency",
       "update": "target device installs config-pack release",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "official",
+        "label": "DeepSeek 官方",
+        "maintainer": "deepseek-ai",
+        "evidence": "installed package.json repository: deepseek-ai/deepseek-harness/packages/subagent/subagent-claude-code"
+      }
     },
     {
       "package": "@deepseek-ai/dsh-subagent-codex",
@@ -77,7 +120,13 @@
       "observed_version": "0.2.0-rc.2",
       "install": "pack dependency",
       "update": "target device installs config-pack release",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "official",
+        "label": "DeepSeek 官方",
+        "maintainer": "deepseek-ai",
+        "evidence": "installed package.json repository: deepseek-ai/deepseek-harness/packages/subagent/subagent-codex"
+      }
     },
     {
       "package": "@local/dsh-ptc-multi-agent-mode",
@@ -85,7 +134,13 @@
       "observed_version": "0.16.1",
       "install": "pack bundle",
       "update": "target device installs config-pack release",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "self",
+        "label": "项目自写",
+        "maintainer": "Robert-Wang-08 / wang",
+        "evidence": "dsh-config-pack/packages/dsh-ptc-multi-agent-mode；AGENTS.md §7"
+      }
     },
     {
       "package": "@local/dsh-subagent-acp-resilient",
@@ -93,7 +148,13 @@
       "observed_version": "0.2.3",
       "install": "pack dependency",
       "update": "target device installs config-pack release",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "self",
+        "label": "项目自写增强，基于官方 ACP",
+        "maintainer": "Robert-Wang-08（本地增强）；deepseek-ai（官方 ACP 契约）",
+        "evidence": "dsh-subagent-acp-resilient/README.md:3-5；docs/component-inventory.md"
+      }
     },
     {
       "package": "@weibaohui/dsh-dashboard",
@@ -101,7 +162,13 @@
       "observed_version": "0.2.1",
       "install": "public npm dependency",
       "update": "target device installs exact declared version",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "weibaohui",
+        "evidence": "https://github.com/weibaohui/dsh-dashboard"
+      }
     },
     {
       "package": "dsh-chat-import",
@@ -109,7 +176,13 @@
       "observed_version": "0.25.2",
       "install": "public npm dependency",
       "update": "target device installs exact declared version",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "Nwflower",
+        "evidence": "https://github.com/Nwflower/dsh-chat-import"
+      }
     },
     {
       "package": "dsh-embedded-browser",
@@ -117,7 +190,13 @@
       "observed_version": "0.3.0",
       "install": "public npm dependency",
       "update": "target device installs exact declared version",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "imroc / roc",
+        "evidence": "https://github.com/imroc/dsh-embedded-browser"
+      }
     },
     {
       "package": "dsh-mermaid-smooth",
@@ -125,7 +204,13 @@
       "observed_version": "0.1.0",
       "install": "public npm dependency",
       "update": "target device installs exact declared version",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "gitByteFree",
+        "evidence": "https://github.com/gitByteFree/dsh-mermaid-smooth"
+      }
     },
     {
       "package": "dsh-notify-bell",
@@ -133,7 +218,13 @@
       "observed_version": "0.12.0",
       "install": "public npm dependency",
       "update": "target device installs exact declared version",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "zyar-er（既有库存记录，安装包未声明 repository）",
+        "evidence": "dsh-config-pack/docs/component-inventory.md:28；installed package.json"
+      }
     },
     {
       "package": "dsh-palette",
@@ -141,7 +232,13 @@
       "observed_version": "0.2.1",
       "install": "public npm dependency",
       "update": "target device installs exact declared version",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "1921622004",
+        "evidence": "https://github.com/1921622004/dsh-command-palette"
+      }
     },
     {
       "package": "dsh-plugin-new-session",
@@ -149,15 +246,27 @@
       "observed_version": "0.2.0",
       "install": "blocked until public tag/package is published",
       "update": "target device installs config-pack release",
-      "settings": "public channel after publication"
+      "settings": "public channel after publication",
+      "authorship": {
+        "class": "self",
+        "label": "项目自写",
+        "maintainer": "wang / Robert-Wang-08",
+        "evidence": "dsh-plugin-new-session/README.md:6 origin:self"
+      }
     },
     {
       "package": "dsh-plugin-ptc-switches",
-      "source": "github:Robert-Wang-08/dsh-config-pack#v0.11.4 (bundled public artifact)",
+      "source": null,
       "observed_version": "0.2.0",
-      "install": "pack bundle",
-      "update": "target device installs config-pack release",
-      "settings": "public channel; settings configured on target"
+      "install": "project root link only",
+      "update": "pull dsh-ynm3000 root repository; publish a standalone package before public install",
+      "settings": "project-level self-authored component; not a public default",
+      "authorship": {
+        "class": "self",
+        "label": "项目自写",
+        "maintainer": "Robert-Wang-08",
+        "evidence": "root git 6cfc3d9；dsh-plugin-ptc-switches/README.md"
+      }
     },
     {
       "package": "dsh-plugin-subagent-director",
@@ -165,7 +274,13 @@
       "observed_version": "0.5.6",
       "install": "public npm optional component",
       "update": "target device runs optional component install",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "SeverusZh",
+        "evidence": "https://github.com/SeverusZh/dsh-plugin-subagent-director"
+      }
     },
     {
       "package": "dsh-plugin-subagent-monitor",
@@ -173,7 +288,13 @@
       "observed_version": "0.1.0",
       "install": "pack dependency",
       "update": "target device installs config-pack release",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "self",
+        "label": "项目自写",
+        "maintainer": "Robert-Wang-08",
+        "evidence": "root git 6cfc3d9；dsh-plugin-subagent-monitor/README.md:25"
+      }
     },
     {
       "package": "dsh-recent-sessions",
@@ -181,7 +302,13 @@
       "observed_version": "0.1.2",
       "install": "public optional component",
       "update": "target device runs optional component install",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "huangxp12",
+        "evidence": "https://github.com/huangxp12/dsh-recent-sessions"
+      }
     },
     {
       "package": "dsh-task-progress",
@@ -189,7 +316,13 @@
       "observed_version": "0.3.0",
       "install": "public npm dependency",
       "update": "target device installs exact declared version",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "chen8923",
+        "evidence": "https://github.com/chen8923/dsh-task-progress"
+      }
     },
     {
       "package": "dsh-task-supervisor",
@@ -197,7 +330,13 @@
       "observed_version": "0.1.9",
       "install": "public npm dependency",
       "update": "target device installs exact declared version",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "gosomea",
+        "evidence": "https://github.com/gosomea/dsh-task-supervisor"
+      }
     },
     {
       "package": "dsh-ui-progress",
@@ -205,7 +344,13 @@
       "observed_version": "0.1.2",
       "install": "public npm dependency",
       "update": "target device installs exact declared version",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "sdynasty",
+        "evidence": "https://github.com/sdynasty/dsh-ui-progress"
+      }
     },
     {
       "package": "dsh-worktable",
@@ -213,7 +358,14 @@
       "observed_version": "0.5.0",
       "install": "blocked until public package/release is published",
       "update": "target device installs config-pack release",
-      "settings": "public channel after publication"
+      "settings": "public channel after publication",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "Aisland-SJL",
+        "evidence": "https://github.com/Aisland-SJL/dsh-worktable",
+        "note": "Installed as a local vendor tgz; upstream repository is declared by installed package.json. Public release/tag installability has not been tested."
+      }
     },
     {
       "package": "dshmarket",
@@ -221,7 +373,13 @@
       "observed_version": "1.66.21",
       "install": "public optional component",
       "update": "target device runs optional component install",
-      "settings": "public channel; settings configured on target"
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "dsh-market",
+        "evidence": "https://github.com/dsh-market/dsh-market"
+      }
     }
   ]
 }
