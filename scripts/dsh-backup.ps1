@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   配置包内的一键备份与恢复。备份写本机快照；恢复默认只打印计划。
 
@@ -36,6 +36,7 @@ param(
 	[switch]$DryRun,
 	[switch]$Apply,
 	[switch]$AllowPartial,
+	[switch]$AcceptEngineDrift,
 	[switch]$Rehearse,
 	[switch]$ConfirmRemovals,
 	[switch]$AllowPrivateToDest,
@@ -44,6 +45,37 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
+
+
+# ── 引擎一致性门槛 ──────────────────────────────────────────────────────────
+# 读 local-git-sync 预检落下的设备状态（<DSH_HOME>/device/engine-preflight.json）：
+#   conflict → 引擎冲突无法支持，按既定策略不进行一键恢复（硬阻断，不提供豁免开关）
+#   drift    → 引擎不一致，必须人工决策；确认采用 skill 引擎后加 -AcceptEngineDrift
+#   其他/缺失 → 不阻断（保持历史行为）
+function Get-EngineGovernance {
+	$dsh = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
+	$p = Join-Path $dsh 'device\engine-preflight.json'
+	if (-not (Test-Path -LiteralPath $p)) { return [pscustomobject]@{ state = 'unknown'; path = $p; reason = ''; ageDays = $null } }
+	try { $o = Get-Content -LiteralPath $p -Raw -Encoding utf8 | ConvertFrom-Json } catch { return [pscustomobject]@{ state = 'unknown'; path = $p; reason = 'unreadable'; ageDays = $null } }
+	$age = $null
+	try { $age = ((Get-Date) - [datetime]::Parse([string]$o.checkedAt)).TotalDays } catch { }
+	return [pscustomobject]@{ state = [string]$o.state; path = $p; reason = [string]$o.reason; ageDays = $age }
+}
+
+function Assert-EngineGovernance {
+	param([switch]$AcceptDrift)
+	$gov = Get-EngineGovernance
+	if ($gov.state -eq 'conflict') {
+		throw ('引擎预检为 conflict，无法支持：' + $gov.reason + "`n按既定策略，本次不进行一键恢复。先处理引擎差异后重试：" + $gov.path)
+	}
+	if ($gov.state -eq 'drift' -and -not $AcceptDrift) {
+		throw ('引擎预检为 drift（设备引擎与 skill 引擎不一致），需要人工决策：' + "`n确认采用 skill 引擎后加 -AcceptEngineDrift 重跑；否则先手工合并差异。详情：" + $gov.path)
+	}
+	if ($gov.state -eq 'drift' -and $AcceptDrift) {
+		Write-Host '[restore] 引擎漂移已由 -AcceptEngineDrift 人工确认，继续（风险由操作者承担）。'
+	}
+	return $gov
+}
 
 $SnapshotJs = Join-Path $PSScriptRoot 'snapshot.mjs'
 if (-not (Test-Path -LiteralPath $SnapshotJs)) { throw "找不到 snapshot.mjs：$SnapshotJs" }
@@ -119,6 +151,9 @@ if (-not $doWrite) {
 	Write-Host 'restore dry-run：只打印计划，不写 profile。真正写回加 -Apply。'
 	Invoke-SnapshotRestore
 }
+
+# 引擎一致性门槛：conflict 直接拒绝恢复；drift 需 -AcceptEngineDrift 人工确认
+$null = Assert-EngineGovernance -AcceptDrift:$AcceptEngineDrift
 
 $snapManifest = Join-Path ([IO.Path]::GetFullPath($Snapshot)) 'manifest.json'
 if (-not (Test-Path -LiteralPath $snapManifest)) { throw "快照目录没有 manifest.json：$Snapshot" }
