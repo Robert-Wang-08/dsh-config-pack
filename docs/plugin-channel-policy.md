@@ -7,7 +7,7 @@
 
 ## 代码归属（与安装通道独立）
 
-当前表覆盖 26 个插件：**项目自写 8 个、上游 fork 1 个、官方 4 个、外部第三方 13 个**。公共通道不等于第三方，使用本机 link 也不证明自写。
+当前表覆盖 27 个插件：**项目自写 8 个、上游 fork 1 个、官方 4 个、外部第三方 14 个**。公共通道不等于第三方，使用本机 link 也不证明自写。
 
 - ACP resilient：项目维护的增强替换实现，保留基于官方 ACP 契约的来源说明。
 - 会话归档：Jiangdl0220 的上游插件，本项目维护 fork，不标纯自写。
@@ -35,18 +35,18 @@ PTC switches 的开关和角色参与策略由 provider-failover 的 route-confi
 
 后续新增插件应在首次成功安装并验收时记录带时区的 ISO 8601 时间和验收证据；升级不覆盖初始时间。迁移到另一设备时由该设备登记自己的初始安装时间，不继承源设备的日期。
 
-当前 26 项的真实首次安装时间均未获得可靠证据，因此本次统一保留未知；“备份方式”列原样保留。
+当前 27 项的真实首次安装时间均未获得可靠证据，因此本次统一保留未知；“备份方式”列原样保留。
 
 ## A. Adapter 表：少数需要迁移设置的组件
 
 | 插件 | 代码归属 | 作者/维护方 | 备份方式 | 初始安装时间 | Adapter | 公共安装来源 | 当前观测版本 | 设置为什么迁移 |
 |---|---|---|---|---|---|---|---:|---|
-| dsh-deepseek-keypool | 项目自写 | Robert-Wang-08 | 配置包（含 adapter 声明的配置） | 未知 | provider-failover | github:Robert-Wang-08/dsh-provider-failover#v3.6.0 | 3.8.2 | provider routing and failover settings affect runtime behavior |
+| dsh-deepseek-keypool | 项目自写 | Robert-Wang-08 | 配置包（含 adapter 声明的配置） | 未知 | provider-failover | github:Robert-Wang-08/dsh-provider-failover#v3.6.0 | 3.8.3 | provider routing and failover settings affect runtime behavior |
 | dsh-plugin-provider-badge | 项目自写 | Robert-Wang-08 | 配置包（含 adapter 声明的配置） | 未知 | provider-badge | github:Robert-Wang-08/dsh-plugin-provider-badge#v0.3.1 | 0.4.0 | user-visible provider display settings |
 | dsh-plugin-sidebar-visibility | 项目自写 | Robert-Wang-08 | 配置包（含 adapter 声明的配置） | 未知 | sidebar-visibility | github:Robert-Wang-08/dsh-plugin-sidebar-visibility#v0.0.7 | 0.0.7 | portable sidebar visibility preferences |
-| @jiangdaoli/dsh-archived-sessions | 上游 fork，本地维护 | Jiangdl0220（原作者）；Robert-Wang-08（fork 维护） | 配置包（含 adapter 声明的配置） | 未知 | archived-sessions | github:Robert-Wang-08/dsh-archived-sessions#v0.4.3 | 0.4.3 | archive plugin configuration and restore behavior |
-| @deepseek-ai/dsh-subagent-acp | DeepSeek 官方 | deepseek-ai | 配置包（含 adapter 声明的配置） | 未知 | subagent-acp-opencode | @deepseek-ai/dsh-subagent-acp@0.2.1-rc.5 | 0.2.0-rc.2 | ACP row configuration is part of the runtime route |
-| @deepseek-ai/dsh-mcp-client | DeepSeek 官方 | deepseek-ai | 配置包（含 adapter 声明的配置） | 未知 | mcp-rows | @deepseek-ai/dsh-mcp-client@0.2.1-rc.5 | 0.2.0-rc.2 | MCP endpoint rows and enablement affect runtime behavior |
+| @jiangdaoli/dsh-archived-sessions | 上游 fork，本地维护 | Jiangdl0220（原作者）；Robert-Wang-08（fork 维护） | 配置包（含 adapter 声明的配置） | 未知 | archived-sessions | github:Robert-Wang-08/dsh-archived-sessions#v0.4.4 | 0.4.4 | archive plugin configuration and restore behavior |
+| @deepseek-ai/dsh-subagent-acp | DeepSeek 官方 | deepseek-ai | 配置包（含 adapter 声明的配置） | 未知 | subagent-acp-opencode | @deepseek-ai/dsh-subagent-acp@0.2.1-rc.5 | 0.2.1-rc.5 | ACP row configuration is part of the runtime route |
+| @deepseek-ai/dsh-mcp-client | DeepSeek 官方 | deepseek-ai | 配置包（含 adapter 声明的配置） | 未知 | mcp-rows | @deepseek-ai/dsh-mcp-client@0.2.1-rc.5 | 0.2.1-rc.5 | MCP endpoint rows and enablement affect runtime behavior |
 
 Adapter 只处理配置来源；插件本体仍按公共安装来源安装。目标设备先安装插件，再应用配置并重启 DSH。
 
@@ -56,8 +56,8 @@ Adapter 只处理配置来源；插件本体仍按公共安装来源安装。目
 
 | 插件 | 代码归属 | 作者/维护方 | 备份方式 | 初始安装时间 | 公共来源 / 版本 | 默认安装 | 更新方式 | 状态 |
 |---|---|---|---|---|---|---|---|---|
-| @deepseek-ai/dsh-subagent-claude-code | DeepSeek 官方 | deepseek-ai | 仅登记，自行安装配置 | 未知 | @deepseek-ai/dsh-subagent-claude-code@0.2.1-rc.5 / 0.2.0-rc.2 | pack dependency | target device installs config-pack release | 公共 |
-| @deepseek-ai/dsh-subagent-codex | DeepSeek 官方 | deepseek-ai | 仅登记，自行安装配置 | 未知 | @deepseek-ai/dsh-subagent-codex@0.2.1-rc.5 / 0.2.0-rc.2 | pack dependency | target device installs config-pack release | 公共 |
+| @deepseek-ai/dsh-subagent-claude-code | DeepSeek 官方 | deepseek-ai | 仅登记，自行安装配置 | 未知 | @deepseek-ai/dsh-subagent-claude-code@0.2.1-rc.5 / 0.2.1-rc.5 | pack dependency | target device installs config-pack release | 公共 |
+| @deepseek-ai/dsh-subagent-codex | DeepSeek 官方 | deepseek-ai | 仅登记，自行安装配置 | 未知 | @deepseek-ai/dsh-subagent-codex@0.2.1-rc.5 / 0.2.1-rc.5 | pack dependency | target device installs config-pack release | 公共 |
 | @local/dsh-ptc-multi-agent-mode | 项目自写 | Robert-Wang-08 / wang | 仅登记，自行安装配置 | 未知 | github:Robert-Wang-08/dsh-config-pack#v0.11.4 (dsh-bundle) / 0.16.1 | pack bundle | target device installs config-pack release | 公共 |
 | @local/dsh-subagent-acp-resilient | 项目自写增强，基于官方 ACP | Robert-Wang-08（本地增强）；deepseek-ai（官方 ACP 契约） | 仅登记，自行安装配置 | 未知 | github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.3 / 0.2.3 | pack dependency | target device installs config-pack release | 公共 |
 | @weibaohui/dsh-dashboard | 外部第三方 | weibaohui | 仅登记，自行安装配置 | 未知 | @weibaohui/dsh-dashboard@0.2.1 / 0.2.1 | public npm dependency | target device installs exact declared version | 公共 |
@@ -68,11 +68,12 @@ Adapter 只处理配置来源；插件本体仍按公共安装来源安装。目
 | dsh-palette | 外部第三方 | 1921622004 | 仅登记，自行安装配置 | 未知 | dsh-palette@0.2.1 / 0.2.1 | public npm dependency | target device installs exact declared version | 公共 |
 | dsh-plugin-new-session | 项目自写 | wang / Robert-Wang-08 | 仅登记，自行安装配置 | 未知 | 暂无公共来源 / 0.2.0 | blocked until public tag/package is published | target device installs config-pack release | 待发布 |
 | dsh-plugin-ptc-switches | 项目自写 | Robert-Wang-08 | 仅登记，自行安装配置 | 未知 | 暂无独立公共来源 / 0.2.0 | 根仓库项目级 link | 拉取 dsh-ynm3000；发布独立 npm/Git 版本后才能进入公共默认安装 | 自写/待发布 |
-| dsh-plugin-subagent-director | 外部第三方 | SeverusZh | 仅登记，自行安装配置 | 未知 | dsh-plugin-subagent-director@0.5.6 / 0.5.6 | public npm optional component | target device runs optional component install | 公共 |
+| dsh-plugin-subagent-director | 外部第三方 | SeverusZh | 仅登记，自行安装配置 | 未知 | dsh-plugin-subagent-director@0.6.0-beta.2 / 0.6.0-beta.2 | public npm optional component | target device runs optional component install | 公共 |
 | dsh-plugin-subagent-monitor | 项目自写 | Robert-Wang-08 | 仅登记，自行安装配置 | 未知 | github:Robert-Wang-08/dsh-plugin-subagent-monitor#v0.1.0 / 0.1.0 | pack dependency | target device installs config-pack release | 公共 |
 | dsh-recent-sessions | 外部第三方 | huangxp12 | 仅登记，自行安装配置 | 未知 | github:huangxp12/dsh-recent-sessions#v0.1.2 / 0.1.2 | public optional component | target device runs optional component install | 公共 |
 | dsh-task-progress | 外部第三方 | chen8923 | 仅登记，自行安装配置 | 未知 | dsh-task-progress@0.3.0 / 0.3.0 | public npm dependency | target device installs exact declared version | 公共 |
 | dsh-task-supervisor | 外部第三方 | gosomea | 仅登记，自行安装配置 | 未知 | dsh-task-supervisor@0.1.9 / 0.1.9 | public npm dependency | target device installs exact declared version | 公共 |
+| dsh-taskboard | 外部第三方 | cloader | 仅登记，自行安装配置 | 未知 | dsh-taskboard@0.9.9 / 0.9.9 | public npm dependency | target device installs exact declared version | 公共 |
 | dsh-ui-progress | 外部第三方 | sdynasty | 仅登记，自行安装配置 | 未知 | dsh-ui-progress@0.1.2 / 0.1.2 | public npm dependency | target device installs exact declared version | 公共 |
 | dsh-worktable | 外部第三方 | Aisland-SJL | 仅登记，自行安装配置 | 未知 | 暂无公共来源 / 0.5.0 | blocked until public package/release is published | target device installs config-pack release | 待发布 |
 | dshmarket | 外部第三方 | dsh-market | 仅登记，自行安装配置 | 未知 | github:dsh-market/dsh-market#v1.66.21 / 1.66.21 | public optional component | target device runs optional component install | 公共 |

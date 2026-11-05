@@ -2,8 +2,8 @@
   "schema": "dsh-plugin-channel-policy/v1",
   "origin": "self",
   "owner": "dsh-config-pack",
-  "version": "1.0.3",
-  "updated_at": "2026-11-03",
+  "version": "1.0.4",
+  "updated_at": "2026-11-05",
   "default_channel": "public",
   "rules": {
     "new_install": "public",
@@ -20,7 +20,7 @@
       "package": "dsh-deepseek-keypool",
       "settings_adapter": "provider-failover",
       "install_source": "github:Robert-Wang-08/dsh-provider-failover#v3.6.0",
-      "observed_version": "3.8.2",
+      "observed_version": "3.8.3",
       "update": "config-pack component lock + install/update script",
       "reason": "provider routing and failover settings affect runtime behavior",
       "authorship": {
@@ -112,8 +112,8 @@
     {
       "package": "@jiangdaoli/dsh-archived-sessions",
       "settings_adapter": "archived-sessions",
-      "install_source": "github:Robert-Wang-08/dsh-archived-sessions#v0.4.3",
-      "observed_version": "0.4.3",
+      "install_source": "github:Robert-Wang-08/dsh-archived-sessions#v0.4.4",
+      "observed_version": "0.4.4",
       "update": "config-pack component lock + install/update script",
       "reason": "archive plugin configuration and restore behavior",
       "authorship": {
@@ -144,7 +144,7 @@
       "package": "@deepseek-ai/dsh-subagent-acp",
       "settings_adapter": "subagent-acp-opencode",
       "install_source": "@deepseek-ai/dsh-subagent-acp@0.2.1-rc.5",
-      "observed_version": "0.2.0-rc.2",
+      "observed_version": "0.2.1-rc.5",
       "update": "host/config-pack baseline upgrade",
       "reason": "ACP row configuration is part of the runtime route",
       "authorship": {
@@ -175,7 +175,7 @@
       "package": "@deepseek-ai/dsh-mcp-client",
       "settings_adapter": "mcp-rows",
       "install_source": "@deepseek-ai/dsh-mcp-client@0.2.1-rc.5",
-      "observed_version": "0.2.0-rc.2",
+      "observed_version": "0.2.1-rc.5",
       "update": "host/config-pack baseline upgrade",
       "reason": "MCP endpoint rows and enablement affect runtime behavior",
       "authorship": {
@@ -207,7 +207,7 @@
     {
       "package": "@deepseek-ai/dsh-subagent-claude-code",
       "source": "@deepseek-ai/dsh-subagent-claude-code@0.2.1-rc.5",
-      "observed_version": "0.2.0-rc.2",
+      "observed_version": "0.2.1-rc.5",
       "install": "pack dependency",
       "update": "target device installs config-pack release",
       "settings": "public channel; settings configured on target",
@@ -237,7 +237,7 @@
     {
       "package": "@deepseek-ai/dsh-subagent-codex",
       "source": "@deepseek-ai/dsh-subagent-codex@0.2.1-rc.5",
-      "observed_version": "0.2.0-rc.2",
+      "observed_version": "0.2.1-rc.5",
       "install": "pack dependency",
       "update": "target device installs config-pack release",
       "settings": "public channel; settings configured on target",
@@ -567,8 +567,8 @@
     },
     {
       "package": "dsh-plugin-subagent-director",
-      "source": "dsh-plugin-subagent-director@0.5.6",
-      "observed_version": "0.5.6",
+      "source": "dsh-plugin-subagent-director@0.6.0-beta.2",
+      "observed_version": "0.6.0-beta.2",
       "install": "public npm optional component",
       "update": "target device runs optional component install",
       "settings": "public channel; settings configured on target",
@@ -697,6 +697,36 @@
         "label": "外部第三方",
         "maintainer": "gosomea",
         "evidence": "https://github.com/gosomea/dsh-task-supervisor"
+      },
+      "backup": {
+        "mode": "registry_only",
+        "label": "仅登记，自行安装配置",
+        "includes": [
+          "package/source/version registration"
+        ],
+        "restore": "target device downloads, installs, configures and updates plugin",
+        "plugin_binaries": false
+      },
+      "initial_install": {
+        "at": null,
+        "status": "unknown",
+        "scope": "observed source device / web profile",
+        "evidence": null,
+        "note": "首次成功安装时间缺少可靠记录；保留未知，不由文件时间或开发提交日期推断。"
+      }
+    },
+    {
+      "package": "dsh-taskboard",
+      "source": "dsh-taskboard@0.9.9",
+      "observed_version": "0.9.9",
+      "install": "public npm dependency",
+      "update": "target device installs exact declared version",
+      "settings": "public channel; settings configured on target",
+      "authorship": {
+        "class": "external",
+        "label": "外部第三方",
+        "maintainer": "cloader",
+        "evidence": "https://github.com/cloader/dsh-taskboard"
       },
       "backup": {
         "mode": "registry_only",
