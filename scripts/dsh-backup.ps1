@@ -119,7 +119,11 @@ function Get-BackupRoot {
 # digest 钉定行为完全不变；bundle 只是把它们装进一个目录并加清单。
 function Get-ProfileIds {
 	param([string[]]$Only)
-	$explicit = @($Only | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim() })
+	# pwsh -File 传数组时 PowerShell 只给到一个元素（"web,plugtest"），这里按逗号/分号再切一次。
+	$explicit = @($Only | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+		ForEach-Object { $_ -split '[,;]' } |
+		ForEach-Object { $_.Trim() } |
+		Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 	if ($explicit.Count -gt 0) { return $explicit }
 	$pdir = Join-Path $DshRoot 'profiles'
 	if (-not (Test-Path -LiteralPath $pdir)) { throw ('找不到 profiles 目录：' + $pdir) }
@@ -152,6 +156,12 @@ function Invoke-BundleBackup {
 	$failed = 0
 	foreach ($id in $ids) {
 		$target = Join-Path (Join-Path $out 'profiles') $id
+		if (-not (Test-Path -LiteralPath (Join-Path (Join-Path $DshRoot 'profiles') $id))) {
+			$failed++
+			$entries.Add([ordered]@{ profile = $id; status = 'failed'; completeness = $null; dir = 'profiles/' + $id; files = 0; plugins = 0; reason = 'profile not found' })
+			Write-Host ('[bundle] ' + $id + ' 跳过：profiles 下没有这个 profile')
+			continue
+		}
 		$m = New-ProfileSnapshot -ProfileId $id -OutDir $target
 		if ($null -eq $m) {
 			$failed++
