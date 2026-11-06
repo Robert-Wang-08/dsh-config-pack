@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 0.11.7
+
+`scripts/dsh-backup.ps1` 新增 `-AllProfiles`：一条命令把全部 profile 各打一份 snapshot/v1 装进同一 bundle（根 `bundle.json` 记 default_profile，默认 web），并支持按 bundle 逐 profile 恢复（各自 pre-restore）；顺带修 `-Dest` 分支给只读自动变量 `$HOME` 赋值导致整条分支抛错。
+
 ## 0.11.6
 
 adapter 与公共插件通道分表；新装默认走公共来源；快照 settings coverage 完整通过

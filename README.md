@@ -3,6 +3,8 @@
 > **配置快照（v0.11.0）**：`npm run snapshot -- backup|verify|restore`，规范见[保存边界表 v3](docs/storage-boundaries-v3.md)。源设备一键采集实际配置 → 云盘不可变快照 → 目标设备按快照重建；complete 需通过四道闸门，缺一即 partial。
 >
 > **一键备份 / 恢复**：`pwsh -NoProfile -File scripts/dsh-backup.ps1 backup` 写入 `%USERPROFILE%\.dsh\backups\dsh-backup-<时间戳>`。`restore -Snapshot <目录>` 默认只打印计划；`restore -Snapshot <目录> -Apply` 会先写 `pre-restore-<时间戳>` 再写回。未做安装演练的快照是 partial，写回时加 `-AllowPartial`。凭据值不进快照。
+>
+> **多 profile 一键备份 / 恢复（v0.11.7）**：`backup -AllProfiles` 把 `%USERPROFILE%\.dsh\profiles` 下**每个** profile（含 `superagent`、`plugtest` 这类开发/测试 profile）各打一份标准 `dsh-snapshot/v1`，装进同一个 `dsh-backup-<时间戳>\profiles\<profile>\`，根目录写 `bundle.json`（`schema=dsh-backup-bundle/v1`，记 `default_profile`，默认 `web`）。换机后 `restore -AllProfiles -Snapshot <该目录>` 先逐 profile 出计划，加 `-Apply -AllowPartial` 才写回（每个 profile 各自先写 `pre-restore-<时间戳>`）。bundle **不改动启动命令**：恢复完仍以 `dsh web` 启动，默认 profile 依旧是 `web`。子目录仍是单 profile 快照，所以 `restore -Snapshot <bundle>/profiles/<profile>` 的单 profile 入口照旧可用。
 
 一个**通用 DSH 配置包**：把"插件选择 + 本地配置层 + agent 预设"打成单个可被 DSH 直接安装的 npm 包，
 经 git 分发，一条命令装进任意 DSH profile。
