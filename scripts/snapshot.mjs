@@ -229,7 +229,11 @@ function collectPluginSettings(dshHome, profileDir, plugins, adapters, opts) {
         if (s.kind === 'cordis-config') {
           const row = s.pluginRow || s.path;
           const block = extractCordisRow(profileDir, row);
-          if (!block) { items.push({ path: 'plugin-config/' + row + '.yaml', class: s.class, reason: 'plugin row not found in profile layer', sourceKind: 'cordis-config' }); continue; }
+          if (!block) {
+            if (s.optional) continue;                       // expected-if-present; absence is not a gap
+            items.push({ path: 'plugin-config/' + row + '.yaml', class: s.class, reason: 'plugin row not found in profile layer', sourceKind: 'cordis-config' });
+            continue;
+          }
           items.push({ path: 'plugin-config/' + row + '.yaml', class: s.class, inlineText: block, sourceKind: 'cordis-config', restore: 'reference', restoredVia: 'profile/cordis.patch.yml' });
           continue;
         }

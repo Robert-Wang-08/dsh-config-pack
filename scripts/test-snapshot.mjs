@@ -273,6 +273,53 @@ r = run(['restore', '--snapshot', join(WORK, 'snapQ'), '--dsh-home', join(WORK, 
 assert.ok(r.json.reference_items.some(i => i.path.includes('subagent-acp-opencode')), 'reference item must be listed');
 assert.ok(!r.json.writes.some(w => w.to.includes('plugin-config')), 'reference item must not be copied');
 
+// Q2: optional cordis-config row absent is not a gap (pack-managed row)
+reset();
+put('profiles/test/package.json', JSON.stringify({ dependencies: { '@deepseek-ai/dsh-subagent-acp': '0.2.0-rc.2' }, dsh: { profile: { bundles: ['@deepseek-ai/dsh-subagent-acp'] } } }, null, 2));
+r = run(['backup', '--dsh-home', HOME, '--profile', 'test', '--out', join(WORK, 'snapQ2'), '--rehearse-rebuild', OK_REBUILD]);
+const mQ2 = JSON.parse(readFileSync(join(WORK, 'snapQ2', 'manifest.json'), 'utf8'));
+const acpQ2 = mQ2.plugin_settings.find(s => s.plugin === '@deepseek-ai/dsh-subagent-acp');
+assert.equal(acpQ2.status, 'not_applicable', 'optional missing cordis row must not be a gap: ' + JSON.stringify(acpQ2));
+assert.equal(r.json.gates.settings_coverage, 'pass', 'optional missing cordis row must not fail coverage');
+
+// Q3: bundle-only plugins with no independent settings export are not_applicable, not unsupported
+reset();
+put('profiles/test/package.json', JSON.stringify({ dependencies: { 'dsh-config-pack': '0.11.7', '@local/dsh-preset-failover-tiers': '0.1.0', 'dsh-codex-cred-sync': '1.0.0', '@deepseek-ai/dsh-web-app': '0.2.1-rc.5' }, dsh: { profile: { bundles: ['dsh-config-pack', '@local/dsh-preset-failover-tiers', 'dsh-codex-cred-sync', '@deepseek-ai/dsh-web-app'] } } }, null, 2));
+r = run(['backup', '--dsh-home', HOME, '--profile', 'test', '--out', join(WORK, 'snapQ3'), '--rehearse-rebuild', OK_REBUILD]);
+const mQ3 = JSON.parse(readFileSync(join(WORK, 'snapQ3', 'manifest.json'), 'utf8'));
+for (const name of ['dsh-config-pack', '@local/dsh-preset-failover-tiers', 'dsh-codex-cred-sync', '@deepseek-ai/dsh-web-app']) {
+  const row = mQ3.plugin_settings.find(s => s.plugin === name);
+  assert.equal(row.status, 'not_applicable', name + ' must be not_applicable: ' + JSON.stringify(row));
+}
+assert.equal(r.json.gates.settings_coverage, 'pass', 'bundle-only plugins must not fail coverage');
+
+// C2: optional missing settings file is not a gap (plugin never wrote user overrides)
+reset();
+rmSync(join(HOME, 'plugins', 'provider-failover', 'settings.json'), { force: true });
+r = run(['backup', '--dsh-home', HOME, '--profile', 'test', '--out', join(WORK, 'snapC2'), '--rehearse-rebuild', OK_REBUILD, '--assume-no-settings']);
+const mC2 = JSON.parse(readFileSync(join(WORK, 'snapC2', 'manifest.json'), 'utf8'));
+const kpC2 = mC2.plugin_settings.find(s => s.plugin === 'dsh-deepseek-keypool');
+assert.equal(kpC2.status, 'exported', 'missing optional settings file must not be partial: ' + JSON.stringify(kpC2));
+assert.equal(kpC2.items.length, 1);
+assert.equal(r.json.gates.settings_coverage, 'pass');
+
+// G3: literal provider endpoint and pointer export without __jsExpr
+reset();
+put('profiles/test/cordis.patch.yml', ['providers:',
+  '      literal-relay:',
+  '        displayName: Literal Relay',
+  '        api: openai-responses',
+  '        baseURL: https://literal.invalid/v1',
+  '        apiKeyEnv: LITERAL_KEY',
+  '        models:',
+  '          - id: m-literal'].join('\n') + '\n');
+r = run(['backup', '--dsh-home', HOME, '--profile', 'test', '--out', join(WORK, 'snapG3'), '--rehearse-rebuild', OK_REBUILD, '--assume-no-settings']);
+const mG3 = JSON.parse(readFileSync(join(WORK, 'snapG3', 'manifest.json'), 'utf8'));
+const literal = mG3.providers.find(p => p.id === 'literal-relay');
+assert.equal(literal.baseURL.default, 'https://literal.invalid/v1');
+assert.equal(literal.apiKeyEnv.default, 'LITERAL_KEY');
+assert.ok(!JSON.stringify(literal).includes('__jsExpr'), 'literal provider must not expose __jsExpr');
+
 // R: invalid browser export artifact is rejected; valid one is consumed; secret-looking keys are refused
 reset();
 mkdirSync(join(HOME, 'device', 'browser-exports'), { recursive: true });
