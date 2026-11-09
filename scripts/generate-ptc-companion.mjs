@@ -17,7 +17,7 @@ export const DEFAULTS = {
     executeProvider: 'ais-2dsglm', executeModel: 'deepseek-v4.1-flash',
     continuousProvider: 'ais-2dsglm', continuousModel: 'glm-5.3-flash',
     docsProvider: 'kimi-coding', docsModel: 'kimi-code/k3-256k',
-    designAstraProvider: 'codex-relay', designAstraModel: 'gpt-6.1-sol', designEffort: 'xhigh',
+    designAstraProvider: 'codex-relay', designAstraModel: 'gpt-6-astra', designEffort: 'high',
     designFiveFiveProvider: 'tokeniss', designFiveFiveModel: 'claude-opus-5-5',
     designModel: 'claude-opus-5', designLegacyModel: 'claude-opus-4-8'
   },

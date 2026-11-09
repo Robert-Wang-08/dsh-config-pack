@@ -20,9 +20,13 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# 被 dsh 工具子进程调用时环境可能被裁剪（USERPROFILE / LOCALAPPDATA 为空）：统一在此兜底。
+$UserHome = $env:USERPROFILE
+if (-not $UserHome) { $UserHome = [Environment]::GetFolderPath('UserProfile') }
+if (-not $UserHome) { throw '无法确定用户主目录：请设置 USERPROFILE 后重试。' }
 $packRoot = Split-Path -Parent $PSScriptRoot
-$localDir = Join-Path $env:USERPROFILE '.dsh\device'
-$dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
+$localDir = Join-Path $UserHome '.dsh\device'
+$dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $UserHome '.dsh' }
 $routeDest = Join-Path $dshHome 'plugins\provider-failover\route-config.json'
 $utf8 = New-Object System.Text.UTF8Encoding $false
 $secretRe = [regex]'(?i)(^sk-|^ghp_|^gho_|^AKIA|BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY)'
@@ -174,6 +178,29 @@ function Apply-EnvMap($Map) {
         $value = [string]$Map[$name]
         if ([string]::IsNullOrWhiteSpace($value)) { continue }
         if ($value.StartsWith('<') -and $value.EndsWith('>')) { continue }
+        # 特例：DSHPACK_NO_PROXY 不落成同名变量，而是**合并**进用户级 NO_PROXY。
+        # 代理旁路条目（如 api.ticktick.com）只有出现在 NO_PROXY 里才会被 Node / curl 读走，
+        # 而该变量名不带 DSHPACK_ 前缀；直接覆盖会丢掉本机已有的 loopback 条目，故按合并处理（幂等）。
+        if ($name -eq 'DSHPACK_NO_PROXY') {
+            $extra = @($value -split '[,\s]+' | Where-Object { $_ })
+            if ($extra.Count -eq 0) { continue }
+            # 作用域：User 级写入会遮蔽同名 Machine 级变量，所以合并时必须把两级都读进来，
+            # 否则企业/系统级 NO_PROXY 条目会从生效值里消失（只读 User 是初版缺陷）。
+            # 写回仍只动 User：改 Machine 级需要管理员，也会改整机策略。
+            $current = @(
+                [string][Environment]::GetEnvironmentVariable('NO_PROXY', 'Machine')
+                [string][Environment]::GetEnvironmentVariable('NO_PROXY', 'User')
+            ) -join ','
+            $entries = @($current -split '[,\s]+' | Where-Object { $_ })
+            $added = @()
+            foreach ($candidate in $extra) {
+                if ($entries -notcontains $candidate) { $entries += $candidate; $added += $candidate }
+            }
+            if ($added.Count -eq 0) { $set += 'NO_PROXY (已含，未变)'; continue }
+            Set-UserValue 'NO_PROXY' ($entries -join ',')
+            $set += ('NO_PROXY + ' + ($added -join ',') + '（合并 Machine+User，写 User 级）')
+            continue
+        }
         if ($name.StartsWith('DSHPACK_KEY_')) {
             $pointer = $value
             if ([string]::IsNullOrWhiteSpace($pointer)) { continue }

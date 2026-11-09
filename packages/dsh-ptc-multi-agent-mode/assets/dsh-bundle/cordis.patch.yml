@@ -25,7 +25,11 @@
 
 - insert:
     # 原子查询/修改：默认 DeepSeek V4.1 Flash。
+    # 2026-11-06 起默认关闭（ACP opencode/kimi 通道当周异常），但不再硬编码：
+    # PTC_ACP_OPENCODE=on 才打开。与 pack 层 DSHPACK_ACP_OPENCODE 是两个独立层
+    # （那个开关管 subagent-acp-opencode，这里管 PTC 的 dsv41 行），互不冒充。
     - id: subagent-acp-opencode-dsv41
+      disabled: !!js process['env'].PTC_ACP_OPENCODE !== 'on'
       name: '@local/dsh-subagent-acp-resilient'
       config:
         providerName: opencode-dsv41
@@ -64,6 +68,7 @@
 
     # 文档编写：Kimi Code 的 K3 256K 档位（真实 exe，可直接 spawn）。
     - id: subagent-acp-kimi-docs
+      disabled: !!js process['env'].PTC_ACP_KIMI !== 'on'   # 默认关；PTC_ACP_KIMI=on 打开
       name: '@local/dsh-subagent-acp-resilient'
       config:
         providerName: kimi-docs
@@ -142,7 +147,8 @@
         # 如需临时放行（或长时间使用后想清除陈旧守卫），重启 DSH 或改 false。
         guardWorkspaceReuse: !!js (process['env'].PTC_ACP_GUARD_WORKSPACE_REUSE ?? '1') !== '0'
 
-    # 设计/分析/验证默认 codex-relay/gpt-6.1-sol（reasoning_effort=xhigh）；仅高难度复核或全新领域自顶向下设计调用一次 Opus 复核。
+    # 分析/验证默认 codex-relay/gpt-6.1-sol（reasoning_effort=high）；设计档默认 codex-relay/gpt-6-astra（high）。
+    # 仅高难度复核或全新领域自顶向下设计调用一次 Opus 复核。
     # Opus 有两个执行档，各自绑定独立的 Claude Code 配置目录，互不干扰、可同时可用：
     #   subagent_claude_opus55_plan -> 5.5 档（tokeniss）
     #   subagent_claude_opus5_plan  -> 5   档（anthropic-relay）
@@ -300,8 +306,8 @@
                     maxTokens: 32768
                   backgroundMode: one-shot
                   maxDepth: provider-managed
-              # 设计档专用工具（沿用历史名 astra）：实际绑定 codex-relay/gpt-6.1-sol + xhigh，
-              # 与 SKILL.md、assets/public-runtime-config.json 的 design.astraModel 声明保持一致。
+              # 设计档专用工具（沿用历史名 astra）：2026-11-06 起实际绑定 codex-relay/gpt-6-astra + high
+              # 与 SKILL.md、assets/public-runtime-config.json 的 design.astraModel / design.effort 声明保持一致。
               - id: tool-subagent-codex-astra
                 name: '@deepseek-ai/dsh-tool-subagent'
                 config:
@@ -309,8 +315,8 @@
                   toolName: subagent_codex_astra
                   agentOptions:
                     provider: codex-relay
-                    model: gpt-6.1-sol
-                    reasoningEffort: xhigh
+                    model: gpt-6-astra
+                    reasoningEffort: high
                     maxTokens: 32768
                   backgroundMode: one-shot
                   maxDepth: provider-managed
@@ -328,7 +334,9 @@
                   toolName: subagent_claude_opus5_plan
                   backgroundMode: one-shot
                   maxDepth: provider-managed
+              # 工具行与上面的 ACP provider 行共用一个开关：provider 关掉时工具不能单独在。
               - id: tool-subagent-opencode-dsv41
+                disabled: !!js process['env'].PTC_ACP_OPENCODE !== 'on'
                 name: '@deepseek-ai/dsh-tool-subagent'
                 config:
                   provider: opencode-dsv41
@@ -343,6 +351,7 @@
                   backgroundMode: one-shot
                   maxDepth: provider-managed
               - id: tool-subagent-kimi-docs
+                disabled: !!js process['env'].PTC_ACP_KIMI !== 'on'   # 与 subagent-acp-kimi-docs 同开关
                 name: '@deepseek-ai/dsh-tool-subagent'
                 config:
                   provider: kimi-docs
