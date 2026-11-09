@@ -1,123 +1,98 @@
-# AI 协助的设备级配置生成（异构 provider / 不同路由顺序）
+# 设备 provider 配置与旧变量迁移
 
-> **先选模式**：有源设备备份、希望完整还原插件/设置/Provider/模型/路由时，以[保存边界表 v3](storage-boundaries-v3.md)的选定快照为恢复依据，不要求用户再手工填写一份云盘期望配置。本文只作为无快照的新装/个性化引导。v3仍是待实现契约，不是新增恢复命令。
+适用于已有设备升级、共享盘答案同步和无快照新装。真实密钥只放用户环境变量或 DSH 凭据服务；本流程只读取端点与凭据变量名。
 
-适用：换一台设备，本机**没有**与仓库默认相同的 provider 或模型，或想用**不同的路由顺序**。
-目标：不改仓库默认值，生成一份**本机覆盖**，装完即用。
+## 一键入口
 
-入口是 `scripts/setup.ps1`。没有共享盘时选「交给 AI」，再按本文生成文件，放到 `%USERPROFILE%\.dsh\device\` 后重新运行该脚本。
-
----
-
-## 0. 为什么不需要改代码
-
-| 可变项 | 承载方式 | 位置 |
-|---|---|---|
-| 路由顺序 / 档位指向哪条路由 | 环境变量 | `DSHPACK_ROUTE_*`（`cordis.patch.yml` 里每行都是 `!!js process['env'].X || '默认'`） |
-| 新会话默认 provider/model | 环境变量 | `DSHPACK_DEFAULT_PROVIDER` / `DSHPACK_DEFAULT_MODEL` |
-| provider 端点 | **配置文件（写值，不写 `!!js`）** | `config/40-models.yml` 的 `baseURL`；设备差异用 profile 补丁层覆盖同名 provider |
-| 凭据变量名 | **配置文件（只写名字，不写 `!!js`）** | `config/40-models.yml` 的 `apiKeyEnv`；`DSHPACK_KEY_*` 只留给 `setup.ps1`/`snapshot.mjs` 登记指针 |
-| provider 集合、模型清单、api 类型 | **配置文件** | `config/40-models.yml` |
-| 档位表（tier 结构） | **配置文件** | `config/45-failover.yml` |
-
-所以"切换 provider/模型"是**改数据**，不是改代码；仓库里的 YAML 就是那份数据。
-设备差异一律走**本机覆盖层**，不要改仓库默认值（否则下次升级冲突）。
-
----
-
-## 1. 引导文件（AI 的输入）
-
-复制 `assets/device-answers.example.json` 为 `%USERPROFILE%\.dsh\device\device-answers.json`（**不入库**），按下表填写。
-样例本身就是填写契约，仓库里没有单独的 schema 文件。不要加凭据字段；`scripts/setup.ps1` 看到密钥形状会拒绝写入。
-
-| 字段 | 含义 |
-|---|---|
-| `providers[]` | 本机实际可用的 provider：`id`（路由名，如 `anthropic-relay`）、`api`（`openai-responses`/`openai-completions`/`anthropic-messages`）、`baseURL`、`apiKeyEnv`（**变量名**）、`models[]` |
-| `routes[]` | 档位到路由的映射：`tier`（`tier1`..`tier4`）、`primary`、`fallback` |
-| `defaults` | 新会话默认 provider/model |
-| `subagents` | 本机启用的子代理：`opencode`/`kimiDocs`/`cursor`/`claudePlan` 布尔 |
-
-## 2. AI 的产出（两个文件）
-
-### a) `dsh.env.ps1` —— 环境变量（机器本地，不入库）
+新装或从共享盘同步（运行前确认目标 profile）：
 
 ```powershell
-# 路由顺序：按你设备的实际路由名重排
-[Environment]::SetEnvironmentVariable('DSHPACK_ROUTE_CODEX_RELAY', 'anthropic-relay', 'User')
-[Environment]::SetEnvironmentVariable('DSHPACK_ROUTE_OPENAI_CODEX', 'kimi-coding',   'User')
-[Environment]::SetEnvironmentVariable('DSHPACK_ROUTE_AIS',          'local-openai',  'User')
-# 端点与凭据名**不再走环境变量**：改 b) 里的 provider 行（写值/写变量名，别写 !!js）
-# 新会话默认
-[Environment]::SetEnvironmentVariable('DSHPACK_DEFAULT_PROVIDER', 'anthropic-relay', 'User')
-[Environment]::SetEnvironmentVariable('DSHPACK_DEFAULT_MODEL',    'claude-opus-5',   'User')
+pwsh scripts/setup.ps1 -ProfileName web -SharedRoot <共享盘根>
 ```
 
-### b) `cordis.local.yml` —— 本机覆盖层（只写差异）
+已经装好 profile，只更新设备配置：
 
-复用仓库的**同名 id**，profile 补丁是最后一层，按 id 覆盖、后写胜：
+```powershell
+pwsh scripts/setup.ps1 -ProfileName web -SharedRoot <共享盘根> -SkipInstall -NonInteractive
+```
+
+只迁移旧变量或重新应用已绑定的共享盘：
+
+```powershell
+pwsh scripts/migrate-providers.ps1 -ProfileName web -DryRun
+pwsh scripts/migrate-providers.ps1 -ProfileName web
+pwsh scripts/migrate-providers.ps1 -ProfileName web -Check
+```
+
+迁移脚本依赖显式声明的 `yaml` 2.8.2（与 `metrics.mjs` 依赖 `fzstd` 同一约定）：tag 安装由 pnpm 自动装；以 link/junction 方式使用本仓库的开发机需先在仓库根 `npm install`（至少装 `yaml`）。缺依赖会失败并提示，不会静默忽略设备配置。迁移本身不重启 DSH。
+
+setup 同步的 provider-model-catalog.snapshot.json 只作模型目录盘点/审计，不作为 provider 迁移的可执行配置源。模型配置以当前 pack 与设备 providers 输入为准；需要固定设备模型清单时，写 device-answers.json 的 models 字段。无 pi-ai 数据时 refresh 明确报错，不会从审计快照静默恢复。
+
+## 输入与优先级
+
+共享盘根可直接包含 device.env，或包含 dsh-device/device.env。同目录可放 device-answers.json、cordis.local.yml、route-config.json。
+
+按从低到高覆盖：当前 pack 的完整配置 → 现有 profile 的用户修改 → User 环境变量 → Process 环境变量 → device.env → device-answers.json 的 providers → cordis.local.yml 的 config.providers。
+
+旧变量继续兼容，**由迁移脚本转换为字面量**，不再由 llm-pi-ai 中的 !!js 求值：
+
+| 后缀 | provider id |
+|---|---|
+| CODEX_RELAY | codex-relay |
+| AIS | ais-2dsglm |
+| ANTHROPIC_RELAY | anthropic-relay |
+| KIMI | kimi-coding |
+| OPENCODE | opencode-go |
+
+DSHPACK_BASE_<后缀> 对应 baseURL；DSHPACK_KEY_<后缀> 对应 apiKeyEnv。KEY 的值只能是环境变量名。空值与模板占位符忽略，未知后缀阻断并要求改用结构化 providers 输入。
+
+DSHPACK_ROUTE_* 仍用于 failover 路由映射；它与 provider id 是不同配置面。
+
+## 共享盘可写字段差异
+
+推荐复用 assets/device-answers.example.json 的 providers 数组。每项包含 id，以及 api/baseURL/apiKeyEnv/models 等需要覆盖的字段；models 可以是模型 id 字符串或完整模型对象。
+
+或将以下内容放到共享盘 dsh-device/cordis.local.yml：
 
 ```yaml
-# 覆盖 provider 集合：只列出本机有的
 - id: llm-pi-ai
   config:
     providers:
-      anthropic-relay:
-        displayName: Anthropic Relay
-        api: anthropic-messages
-        # 必须是字面量：!!js 会让运行期改配置报 "expected string but got [object Object]"
-        baseURL: https://your-endpoint
-        apiKeyEnv: MY_ANTHROPIC_KEY
-        models:
-          - id: claude-opus-5
-      local-openai:
-        displayName: Local OpenAI-compatible
-        api: openai-completions
-        baseURL: http://127.0.0.1:11434/v1
-        apiKeyEnv: LOCAL_OPENAI_KEY
-        models:
-          - id: qwen3-32b
-
-# 覆盖子代理模型白名单，只列本机可用对
-- id: subagent-model-selection-settings
-  config:
-    enabled: true
-    allowedModels:
-      - provider: anthropic-relay
-        model: claude-opus-5
-      - provider: local-openai
-        model: qwen3-32b
+      ais-2dsglm:
+        baseURL: https://your-endpoint/v1
+        apiKeyEnv: MY_AIS_KEY
 ```
 
-应用方式二选一：
-- 放进 `$DSH_HOME/profiles/<p>/cordis.patch.yml`（本机私有层）；
-- 或用 `dsh --profile <p> --patch ./cordis.local.yml` 临时叠加。
+这里“只写差异”**仅适用于 migrate-providers.ps1 读取的设备输入**：迁移脚本先按 provider/字段合并，再生成完整 providers 集合。未列出的默认 provider 保留；数组（包括 models）整体替换。cordis.local.yml 只接受 llm-pi-ai 的 config.providers，不接受其它插件行、!!js 或密钥值。
 
-## 3. 校验（装完必做）
+**不要把上述局部示例直接复制进 profile 补丁，也不要直接用 dsh --patch 加载。** DSH 原生 - id: X + config 是整行整体替换，直接加载局部 providers 会删除其它 provider。手写 profile 补丁时必须提供完整 llm-pi-ai.config。
+
+## 同步、升级与回滚
+
+setup 记录共享盘来源；后续 install/update 或 migrate-providers 会重新读取该来源。共享盘修改后再次运行一键入口即可应用。共享盘不可用时明确失败；若要改成本机副本，显式执行：
 
 ```powershell
-node scripts/verify.mjs --profile <p>              # id 是否被遮蔽
-dsh --profile <p> --dump-config > "$env:TEMP\composed.yml"
-node scripts/verify.mjs --composed "$env:TEMP\composed.yml"   # 悬空 provider
+pwsh scripts/migrate-providers.ps1 -ProfileName web -InputDir "$env:DSH_HOME/device"
 ```
 
-注意 `--dump-config` 回显的是**未求值**的补丁源，不能证明 `!!js` 取到了什么值；判定可用性要在新会话里实调一次。
+先确保目标目录包含希望保留的 device.env / device-answers.json / cordis.local.yml。切换来源后不会自动复制旧共享文件。
 
-> **`llm-pi-ai` 的 provider 行不要写 `!!js`**（2026-11-09 起）：DSH 校验运行期配置时用的是未求值原值，`apiKeyEnv` 会以对象形态撞上 string schema，报 `$.providers.<route>.apiKeyEnv expected string but got [object Object]`，任何 provider 编辑都会失败。`DSHPACK_ROUTE_*` / `DSHPACK_DEFAULT_*` 等其它插件的 `!!js` 不受影响。
+脚本写入前生成 cordis.patch.yml.bak-before-provider-migration-<时间戳>；保留其它行的注释和 !!js。profile 内 .provider-migration.json 保存上次生成结果和用户修改，用于升级时更新 pack 模型表，同时保留 GUI 修改。该状态随 snapshot 和配置备份保存；跨设备恢复后必须显式重新绑定本机可用的 InputDir。
 
-## 4. 隐私红线（AI 必须遵守）
+设备文件删除字段后，该字段回到 pack 默认值或用户覆盖值；若仍存在低优先级同名环境变量，该环境变量仍生效。设备输入与 GUI 同字段冲突时设备输入优先。
 
-1. **只写变量名，不写值**：`apiKeyEnv` / `DSHPACK_KEY_*` 里永远是名字。
-2. `device-answers.json`、`dsh.env.ps1`、`cordis.local.yml` **都是机器本地文件，不入库**。
-3. 不把任何 key、token、cookie、私钥、凭据文件路径写进上述文件。
-4. profile 目录里的本地状态（`$DSH_HOME/profiles/<p>/*`）与其备份一律不提交。
+回滚时停止 DSH，恢复同一时间点的 profile patch 和迁移状态备份；首次迁移没有旧状态时，可移除新建状态文件。随后重启 DSH。不要只恢复 patch 后立即重跑迁移，否则设备输入会再次应用。
 
-## 5. 一键备份与恢复
+## 验收
 
 ```powershell
-pwsh scripts/backup.ps1 -Profile <p>          # 产出目录 + zip + manifest.json + PRIVACY.md
-pwsh scripts/backup.ps1 -Profile <p> -NoZip   # 只要目录
+pwsh scripts/migrate-providers.ps1 -ProfileName web -Check
+node scripts/verify.mjs --profile web
+dsh --profile web --dump-config > "$env:TEMP/composed.yml"
+node scripts/verify.mjs --composed "$env:TEMP/composed.yml"
+node scripts/test-provider-migration.mjs
 ```
 
-备份只包含配置与清单：profile 的 `cordis.patch.yml`/`package.json`/`pnpm-workspace.yaml`、
-本机路由策略 `route-config.json`，加上登记变量名与 link 依赖的 `manifest.json`。
-**凭据文件与凭据值永不进入备份**；恢复时在新设备重新提供凭据即可。
+verify --profile 仅放行通过迁移一致性校验的受管理 llm-pi-ai 行，其它遮蔽仍报错。verify --composed 的 dangling 检查主要针对子代理工具 providerName，不能替代模型路由实调；还需重启 DSH，在 Models 页面保存 provider 并发起一次请求。
+
+隐私边界：设备文件与生成配置不得包含 API key 原值、token、cookie、私钥或登录态；apiKeyEnv 只写名字。所有个人配置留在共享盘 dsh-device 或本机 DSH_HOME/device，不提交 Git。

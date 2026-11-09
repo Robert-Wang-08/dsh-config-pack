@@ -199,7 +199,8 @@
 # internal/config 钩子里按**未求值**原值跑 Config schema（apiKeyEnv 要求 string），
 # 于是任何 provider 编辑都会报 "$.providers.<route>.apiKeyEnv expected string but got
 # [object Object]"（2026-11-09 实测并修）。apiKeyEnv 只写变量名，值不入库。
-# 设备差异改用 profile 补丁层的 - id: llm-pi-ai 整行覆盖（同样写字面量）。
+# 设备差异放 device.env / device-answers.json / cordis.local.yml，由 migrate-providers.ps1
+# 按字段合并并生成完整 profile 行；直接手写 profile 时仍须整行完整覆盖。
 #
 # 注意：路由名与模型名必须在本机 DSH 内置目录中存在，否则该档位等于空转。
 - id: llm-pi-ai

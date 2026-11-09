@@ -14,7 +14,7 @@
   不做的事：
     - 不动设备个人答案与密钥（云盘 device.env 只存引用名，密钥在用户环境变量）；
     - 云盘上的 route-config.json / 个人答案变更后，用 setup.ps1 -UpdateRoutes 重拉路由；
-    - 不改 cordis.patch.yml；不重启 DSH（更新后需重启并新开会话，工具表才会刷新）。
+    - provider 迁移会备份并更新 cordis.patch.yml；不重启 DSH（更新后需重启并新开会话，工具表才会刷新）。
 
 .PARAMETER ProfileName
   目标 profile，默认 packed。
@@ -98,6 +98,7 @@ Info ('installed: ' + $(if ($currentVer) { 'v' + $currentVer } else { '(unknown)
 if (-not $Force -and $currentVer -eq $latestVer) {
   Ok ('已是最新（v' + $latestVer + '）——无需重装，继续验收。要强制重跑加 -Force')
   Write-Host '提示：云盘上的 route-config.json / 个人答案若有变更，用 setup.ps1 -UpdateRoutes 同步。'
+  & (Join-Path $PSScriptRoot 'migrate-providers.ps1') -ProfileName $ProfileName
   if (-not $NoVerify) {
     & node (Join-Path $root 'scripts/verify-install.mjs') --profile $ProfileName
     if ($LASTEXITCODE -ne 0) { Fail '版本相同但安装验收失败；不能仅凭版本号判断配置已经生效。' }

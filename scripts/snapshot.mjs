@@ -12,7 +12,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCHEMA_ID = 'dsh-snapshot/v1';
 const TOOL = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
 
-const PROFILE_FILES = ['cordis.yml', 'cordis.patch.yml', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'compatibility.json'];
+const PROFILE_FILES = ['cordis.yml', 'cordis.patch.yml', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'compatibility.json', '.provider-migration.json'];
 const DEVICE_FILES = ['device.env', 'device-answers.json', 'route-config.json', 'cordis.local.yml', 'ptc.local.patch.yml', 'ptc-settings.json'];
 const DEVICE_BOUND = new Set(['device/device.env', 'device/route-config.json', 'device/cordis.local.yml', 'device/ptc.local.patch.yml']);
 const SECRET_NAMES = new Set(['.credentials.yaml']);

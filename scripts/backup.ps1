@@ -18,7 +18,7 @@ if ((Test-Path $Out) -and @(Get-ChildItem -LiteralPath $Out -Force).Count) { thr
 if ((Test-Path ($Out + '.zip')) -and -not $NoZip) { throw 'backup zip already exists' }
 New-Item -ItemType Directory -Force $Out | Out-Null
 $allow = [Collections.Generic.List[object]]::new()
-foreach ($name in @('cordis.yml','cordis.patch.yml','package.json','pnpm-lock.yaml','pnpm-workspace.yaml','compatibility.json')) {
+foreach ($name in @('cordis.yml','cordis.patch.yml','package.json','pnpm-lock.yaml','pnpm-workspace.yaml','compatibility.json','.provider-migration.json')) {
   $allow.Add(@{ Src=(Join-Path $profileDir $name); Rel=('profile/' + $name) })
 }
 $allow.Add(@{ Src=(Join-Path $dshHome 'settings.yaml'); Rel='settings.yaml' })
