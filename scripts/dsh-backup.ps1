@@ -8,6 +8,8 @@
   backup
     在 %USERPROFILE%\.dsh\backups（或 -Dest）下新建 dsh-backup-<时间戳>。
     未加 -Rehearse 时快照通常是 partial：文件已复制，但未做隔离安装演练，不能当成跨设备完整恢复点。
+    -Rehearse 走离线演练（pnpm install --frozen-lockfile --ignore-scripts --offline）；
+    -RehearseOnline 走在线演练（pnpm install --frozen-lockfile），用于 store 缺 git-hosted tarball 的 profile。
 
   restore
     默认 -DryRun，只打印计划，不写 profile。
@@ -42,6 +44,7 @@ param(
 	[switch]$AllowPartial,
 	[switch]$AcceptEngineDrift,
 	[switch]$Rehearse,
+	[switch]$RehearseOnline,
 	[switch]$ConfirmRemovals,
 	[switch]$AllowPrivateToDest,
 	[string]$DshHome = ''
@@ -140,7 +143,8 @@ function New-ProfileSnapshot {
 	New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 	$nodeArgs = @($SnapshotJs, 'backup', '--profile', $ProfileId, '--out', $OutDir)
 	if (-not [string]::IsNullOrWhiteSpace($DshHome)) { $nodeArgs += @('--dsh-home', $DshHome) }
-	if ($Rehearse) { $nodeArgs += '--rehearse-install' }
+	if ($RehearseOnline) { $nodeArgs += @('--rehearse-rebuild', 'pnpm install --frozen-lockfile') }
+	elseif ($Rehearse) { $nodeArgs += '--rehearse-install' }
 	& node @nodeArgs | Out-Host
 	$manifestPath = Join-Path $OutDir 'manifest.json'
 	if (-not (Test-Path -LiteralPath $manifestPath)) { return $null }
@@ -241,7 +245,8 @@ function Invoke-SnapshotBackup {
 	$out = Join-Path $root $name
 	$nodeArgs = @($SnapshotJs, 'backup', '--profile', $Profile, '--out', $out)
 	if (-not [string]::IsNullOrWhiteSpace($DshHome)) { $nodeArgs += @('--dsh-home', $DshHome) }
-	if ($Rehearse) { $nodeArgs += '--rehearse-install' }
+	if ($RehearseOnline) { $nodeArgs += @('--rehearse-rebuild', 'pnpm install --frozen-lockfile') }
+	elseif ($Rehearse) { $nodeArgs += '--rehearse-install' }
 	& node @nodeArgs
 	$code = $LASTEXITCODE
 	$manifestPath = Join-Path $out 'manifest.json'
