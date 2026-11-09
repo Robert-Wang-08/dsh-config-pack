@@ -15,8 +15,8 @@
 |---|---|---|
 | 路由顺序 / 档位指向哪条路由 | 环境变量 | `DSHPACK_ROUTE_*`（`cordis.patch.yml` 里每行都是 `!!js process['env'].X || '默认'`） |
 | 新会话默认 provider/model | 环境变量 | `DSHPACK_DEFAULT_PROVIDER` / `DSHPACK_DEFAULT_MODEL` |
-| provider 端点 | 环境变量 | `DSHPACK_BASE_<PROVIDER>` |
-| 凭据变量名 | 环境变量（**只写名字**） | `DSHPACK_KEY_<PROVIDER>` |
+| provider 端点 | **配置文件（写值，不写 `!!js`）** | `config/40-models.yml` 的 `baseURL`；设备差异用 profile 补丁层覆盖同名 provider |
+| 凭据变量名 | **配置文件（只写名字，不写 `!!js`）** | `config/40-models.yml` 的 `apiKeyEnv`；`DSHPACK_KEY_*` 只留给 `setup.ps1`/`snapshot.mjs` 登记指针 |
 | provider 集合、模型清单、api 类型 | **配置文件** | `config/40-models.yml` |
 | 档位表（tier 结构） | **配置文件** | `config/45-failover.yml` |
 
@@ -46,10 +46,7 @@
 [Environment]::SetEnvironmentVariable('DSHPACK_ROUTE_CODEX_RELAY', 'anthropic-relay', 'User')
 [Environment]::SetEnvironmentVariable('DSHPACK_ROUTE_OPENAI_CODEX', 'kimi-coding',   'User')
 [Environment]::SetEnvironmentVariable('DSHPACK_ROUTE_AIS',          'local-openai',  'User')
-# 端点（没有就省略，省略即用仓库默认）
-[Environment]::SetEnvironmentVariable('DSHPACK_BASE_ANTHROPIC_RELAY', 'https://your-endpoint', 'User')
-# 凭据变量名（只写名字；值由你另行设置）
-[Environment]::SetEnvironmentVariable('DSHPACK_KEY_ANTHROPIC_RELAY', 'MY_ANTHROPIC_KEY', 'User')
+# 端点与凭据名**不再走环境变量**：改 b) 里的 provider 行（写值/写变量名，别写 !!js）
 # 新会话默认
 [Environment]::SetEnvironmentVariable('DSHPACK_DEFAULT_PROVIDER', 'anthropic-relay', 'User')
 [Environment]::SetEnvironmentVariable('DSHPACK_DEFAULT_MODEL',    'claude-opus-5',   'User')
@@ -67,15 +64,16 @@
       anthropic-relay:
         displayName: Anthropic Relay
         api: anthropic-messages
-        baseURL: !!js process['env'].DSHPACK_BASE_ANTHROPIC_RELAY || 'https://your-endpoint'
-        apiKeyEnv: !!js process['env'].DSHPACK_KEY_ANTHROPIC_RELAY || 'MY_ANTHROPIC_KEY'
+        # 必须是字面量：!!js 会让运行期改配置报 "expected string but got [object Object]"
+        baseURL: https://your-endpoint
+        apiKeyEnv: MY_ANTHROPIC_KEY
         models:
           - id: claude-opus-5
       local-openai:
         displayName: Local OpenAI-compatible
         api: openai-completions
-        baseURL: !!js process['env'].DSHPACK_BASE_LOCAL || 'http://127.0.0.1:11434/v1'
-        apiKeyEnv: !!js process['env'].DSHPACK_KEY_LOCAL || 'LOCAL_OPENAI_KEY'
+        baseURL: http://127.0.0.1:11434/v1
+        apiKeyEnv: LOCAL_OPENAI_KEY
         models:
           - id: qwen3-32b
 
@@ -103,6 +101,8 @@ node scripts/verify.mjs --composed "$env:TEMP\composed.yml"   # 悬空 provider
 ```
 
 注意 `--dump-config` 回显的是**未求值**的补丁源，不能证明 `!!js` 取到了什么值；判定可用性要在新会话里实调一次。
+
+> **`llm-pi-ai` 的 provider 行不要写 `!!js`**（2026-11-09 起）：DSH 校验运行期配置时用的是未求值原值，`apiKeyEnv` 会以对象形态撞上 string schema，报 `$.providers.<route>.apiKeyEnv expected string but got [object Object]`，任何 provider 编辑都会失败。`DSHPACK_ROUTE_*` / `DSHPACK_DEFAULT_*` 等其它插件的 `!!js` 不受影响。
 
 ## 4. 隐私红线（AI 必须遵守）
 
