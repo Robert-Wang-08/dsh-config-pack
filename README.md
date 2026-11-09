@@ -230,6 +230,7 @@ docs/ROW-OWNERSHIP-20261013.md
 | `DSHPACK_MCP_TENCENT_DOCS` | 关 | 需 `TENCENT_DOCS_TOKEN` |
 | `DSHPACK_MCP_SLIDE` | 关 | 需 `TENCENT_DOCS_TOKEN` |
 | `DSHPACK_TICKTICK_ENTRY` | 空 | 填 ticktick-mcp 的 dist/index.js 绝对路径即自动开启 |
+| `DSHPACK_NO_PROXY` | 空 | 逗号分隔的代理旁路条目；`setup.ps1` 把它们**合并**进用户级 `NO_PROXY`（不覆盖既有条目、幂等）。例：`ticktick.com,api.ticktick.com` —— TickTick MCP 的 `fetch failed` 多由本机代理抖动引起 |
 | `DSHPACK_NODE` | `node` | stdio MCP 用的 node 绝对路径 |
 | `DSHPACK_DEFAULT_PROVIDER` / `DSHPACK_DEFAULT_MODEL` | `codex-relay` / `gpt-6.1-sol` | 新会话默认模型 |
 | `DSHPACK_SELECTED_PRESET` | `ptc-multi-agent` | 预设注册表选中项 |
@@ -392,8 +393,8 @@ node scripts/metrics.mjs stats --sessions "<同上>" --group-by route,executor,m
 
 | provider | model | 用途 |
 |---|---|---|
-| `codex-relay` | `gpt-6.1-sol` | 主控 / 分析 / 设计 / 验证默认（`reasoning_effort=xhigh`） |
-| `codex-relay` | `gpt-6-astra` | 可选：需要 Astra 时显式指定，不再作设计默认 |
+| `codex-relay` | `gpt-6.1-sol` | 主控 / 分析 / 验证默认（`reasoning_effort=high`） |
+| `codex-relay` | `gpt-6-astra` | 设计档默认（`reasoning_effort=high`） |
 | `openai-codex` | `gpt-6.1-sol` | GPT 组降级（官方 OAuth） |
 | `openai-codex` | `gpt-6.1-sol` | GPT 组降级目标（与 45-failover tier1 一致） |
 | `ais-2dsglm` | `deepseek-v4.1-flash` | 执行 / 验证首选 |

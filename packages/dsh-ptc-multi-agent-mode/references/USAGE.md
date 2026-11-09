@@ -10,7 +10,7 @@
 - 备用 `kimi-coding/k3-256k`；
 - `kimi-coding/k3-256k` 支持 `reasoning_effort=max`；Max 是推理强度档位，不是模型名，不得写成模型 `k3-max`。
 
-固定路由：Codex Relay `gpt-6.1-sol`（`reasoning_effort=xhigh`）默认处理分析/设计/验证；仅高难度复核或显式全新领域自顶向下设计使用一次 Opus 5.5 plan reviewer。OpenCode DS V4.1 Flash 处理原子查询/修改；`ais-2dsglm/glm-5.3-flash` 处理同一代码面的连续修改（2026-10-16 起不再派发 Cursor/Grok，Cursor ACP 工具仍安装但不在 PTC 候选链内）；Kimi 生成文档草稿。任何降级都要登记实际 provider/model 和原因。
+固定路由：Codex Relay `gpt-6.1-sol`（`reasoning_effort=high`）默认处理分析与验证，设计档（含模糊设计）默认 `gpt-6-astra`（`reasoning_effort=high`）；仅高难度复核或显式全新领域自顶向下设计使用一次 Opus 5.5 plan reviewer。OpenCode DS V4.1 Flash 处理原子查询/修改；`ais-2dsglm/glm-5.3-flash` 处理同一代码面的连续修改（2026-10-16 起不再派发 Cursor/Grok，Cursor ACP 工具仍安装但不在 PTC 候选链内）；Kimi 生成文档草稿。任何降级都要登记实际 provider/model 和原因。
 
 ## 自动工作分层路由
 
@@ -101,7 +101,9 @@ dsh plugin --profile <名字> add <bundle 绝对路径> `
 ### ACP 插件与超时梯子
 
 三条 ACP 行（`subagent-acp-opencode-dsv41` / `subagent-acp-kimi-docs` / `subagent-acp-cursor-grok`）指向哪个插件，
-由生成器答案 `acpPlugin` 决定，默认 `resilient`：
+由生成器答案 `acpPlugin` 决定，默认 `resilient`。其中 opencode/kimi 两行自 2026-11-06 起默认关闭，
+由 `PTC_ACP_OPENCODE` / `PTC_ACP_KIMI` 门控（设为 `on` 才启用，工具行共用同一开关）；
+它与 pack 层 `DSHPACK_ACP_OPENCODE` / `DSHPACK_ACP_KIMI` 是两层独立开关，各管各的 ACP 行：
 
 | 取值 | 插件 | 超时能力 |
 | --- | --- | --- |

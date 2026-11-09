@@ -2,6 +2,10 @@
 
 本文件由 `scripts/release.ps1` 维护；每次发版在顶部追加一段。
 
+## 未发布
+
+`scripts/setup.ps1` 支持 `DSHPACK_NO_PROXY`：把逗号/空白分隔的旁路条目**合并**进用户级 `NO_PROXY`（保留既有 loopback 与用户条目、去重、幂等），因为该变量名不带 `DSHPACK_` 前缀、原逻辑会整条跳过；直接覆盖则会丢掉本机已有条目。配套更新 `templates/device-config.env.example` 与 README 环境变量表，并说明 `DSHPACK_TICKTICK_ENTRY` 与旁路的搭配（TickTick MCP 的 `fetch failed` 多由代理抖动引起）。合并时同时读取 Machine 与 User 两级 `NO_PROXY`（原先只读 User：用户级写入会遮蔽同名 Machine 级变量，企业级旁路条目会从生效值里消失），写回仍只动 User 级。
+
 ## 0.11.7
 
 `scripts/dsh-backup.ps1` 新增 `-AllProfiles`：一条命令把全部 profile 各打一份 snapshot/v1 装进同一 bundle（根 `bundle.json` 记 default_profile，默认 web），并支持按 bundle 逐 profile 恢复（各自 pre-restore）；顺带修 `-Dest` 分支给只读自动变量 `$HOME` 赋值导致整条分支抛错。

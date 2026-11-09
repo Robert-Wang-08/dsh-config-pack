@@ -2,6 +2,12 @@
 
 本文件只记录技能与配套资产的版本演进。故障诊断、机器环境修复和验证证据见 [ISSUE_FIX_HISTORY.md](ISSUE_FIX_HISTORY.md)。
 
+## 0.16.2 - 2026-11-09
+
+- 设计档默认模型改回 `codex-relay/gpt-6-astra`（`reasoning_effort=high`）：`assets/public-runtime-config.json` 的 `design.astraModel` / `design.effort`、bundle 的 `subagent_codex_astra` 绑定、`SKILL.md` 与 `references/USAGE.md` 口径、`scripts/generate-ptc-companion.mjs` 的公共默认值与 `templates/ptc-public-companion/answers.example.json` 同步；主控与分析/验证（`subagent_codex_relay`）仍是 `gpt-6.1-sol`。
+- 文档与路由文案里 `gpt-6.1-sol` 的推理强度统一写成 `high`（与 `public-runtime-config.json` 的 `controller.effort` 和 bundle 绑定一致；此前多处写 `xhigh`，属文档漂移）；`design_mode=top_down` 行同步改为 GPT-6 Astra high。
+- ACP opencode/kimi 行不再硬编码 `disabled: true`：`subagent-acp-opencode-dsv41` / `subagent-acp-kimi-docs` 及对应工具行改由 `PTC_ACP_OPENCODE` / `PTC_ACP_KIMI` 门控，未设为 `on` 时仍默认关闭（与 2026-11-06 行为一致）；它与 pack 层 `DSHPACK_ACP_*` 是两层独立开关，互不冒充。
+
 ## 未发布
 
 - **execute 档按 provider 声明模型 + ais 主模型改 deepseek-flash（2026-10-31）**：`ais-2dsglm` 的主 key 额度耗尽后，keypool 在同一路由内轮换到备用 key，而该 key 的 AxonHub profile 白名单不含 `deepseek-v4.1-flash`，上游返回 `422 invalid_model_error`；该码既不在 `failurePolicy.switchOn` 也不在 `KEY_ROTATION_CODES`，会绕过 failover 直接打死回合（2026-10-31 实测三次复现）。修法：`public-runtime-config.json` 的 `execute.model` 改为 `deepseek-flash`，并新增 `modelsByProvider`（`opencode-go` → `deepseek-v4.1-flash`），`ptc_route.py` 增加 `execute_model_for(provider)`，execute/continuous 链与 design 档的 ds 候选取各自 provider 的模型，不再共用同一个 id（否则第二候选会引用未声明模型）。缺 `modelsByProvider` 时回落到 `execute.model`，向后兼容。新增 3 项单测（per-provider 取模、缺表回落、continuous 候选取模），全套 64 项通过。冻结 route 枚举 `execute-dsv41-flash` 不变，replay 语义不受影响。
