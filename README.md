@@ -234,7 +234,7 @@ docs/ROW-OWNERSHIP-20261013.md
 | `DSHPACK_NODE` | `node` | stdio MCP 用的 node 绝对路径 |
 | `DSHPACK_DEFAULT_PROVIDER` / `DSHPACK_DEFAULT_MODEL` | `codex-relay` / `gpt-6.1-sol` | 新会话默认模型 |
 | `DSHPACK_SELECTED_PRESET` | `ptc-multi-agent` | 预设注册表选中项 |
-| `DSHPACK_BASE_*` / `DSHPACK_KEY_*` | 见 `templates/device-config.env.example` | **不再被 `config/40-models.yml` 读取**（2026-11-09 起 provider 行改字面量；仅 `setup.ps1`/`snapshot.mjs` 仍用它登记指针名）。换端点/凭据名请用 profile 补丁层覆盖 `- id: llm-pi-ai` 行 |
+| `DSHPACK_BASE_*` / `DSHPACK_KEY_*` | 见 `templates/device-config.env.example` | 兼容旧变量：setup/install/update 调迁移脚本生成字面量 provider。BASE 是端点值，KEY 是凭据变量名；snapshot 分别存 collected / keyPointers。见 [迁移说明](docs/AI-DEVICE-SETUP.md) |
 | `DSHPACK_ROUTE_CODEX_RELAY` | `codex-relay` | failover tier1 主路由 id |
 | `DSHPACK_ROUTE_OPENAI_CODEX` | `openai-codex` | failover tier1 备用路由 id |
 | `DSHPACK_ROUTE_AIS` | `ais-2dsglm` | failover tier2 主路由 id |
@@ -254,7 +254,9 @@ docs/ROW-OWNERSHIP-20261013.md
 | [`assets/device-answers.example.json`](assets/device-answers.example.json) | 填写模板（provider 集合 / 档位映射 / 默认模型 / 子代理开关），**不含凭据字段** |
 
 为什么不需要改代码：路由顺序是 `DSHPACK_ROUTE_*`、端点与凭据名是 `config/40-models.yml` 里的字面量、
-provider 与模型清单也在 `config/40-models.yml`（纯数据）。设备差异一律走 profile 最后一层覆盖。
+provider 与模型清单也在 `config/40-models.yml`（纯数据）。设备差异放共享盘 `dsh-device` 或本机 `DSH_HOME/device`，由迁移脚本合并并生成完整 profile 覆盖，不直接把部分 provider 写入 profile。
+
+已有设备先运行 `pwsh scripts/migrate-providers.ps1 -ProfileName <实际profile> -DryRun`，再去掉 `-DryRun` 应用；随后用 `-Check` 验收。写前自动备份，回滚需配套恢复 profile patch 与 `.provider-migration.json`。共享盘一键安装/更新、依赖安装、来源重绑定和回滚步骤见 [设备引导](docs/AI-DEVICE-SETUP.md)。
 
 ### 一键安装
 

@@ -143,7 +143,7 @@ git clone https://github.com/Robert-Wang-08/dsh.git --recurse-submodules  # 或�
 pwsh -NoProfile -File <仓库路径>/dsh-wechat-hitl/tools/install-channel.ps1   # 重建 junction + 钉 OpenClaw 模型 + 重启网关
 ```
 
-- 前置：OpenClaw runtime 已装并完成微信登录；用户环境变量 DSHPACK_KEY_OPENCODE / DSHPACK_KEY_AIS / DSHPACK_BASE_AIS。
+- 前置：OpenClaw runtime 已装并完成微信登录；通道安装器的用户环境输入为 DSHPACK_KEY_OPENCODE / DSHPACK_KEY_AIS / DSHPACK_BASE_AIS（这是 OpenClaw 通道侧前置条件，须按通道安装器核对）。DSH 的 llm-pi-ai 不直接读取这些变量，由 setup/install/update 的 provider 迁移脚本转换为字面量配置，见 [设备引导](AI-DEVICE-SETUP.md)。
 - 部署形态：仓库为唯一源，profiles 两处 node_modules/dsh-wechat-hitl 与 C:/openclaw-runtime/plugins/dsh-bridge 都是 junction；runtime 装在非默认位置时设 OPENCLAW_RUNTIME_DIR。
 - 跨设备恢复：dsh-backup 的 openclaw/ 段与 private/openclaw/ 段已含本通道配置面（openclaw.json、启动器、自启钩子、通道状态），恢复后重跑 install-channel.ps1。
 - 详细排障：dsh-wechat-hitl/AGENT-USAGE.md 与 POSTMORTEM-20261101-微信通道失效与延迟复盘.md。

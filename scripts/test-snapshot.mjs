@@ -313,8 +313,10 @@ put('profiles/test/cordis.patch.yml', ['providers:',
   '        apiKeyEnv: LITERAL_KEY',
   '        models:',
   '          - id: m-literal'].join('\n') + '\n');
+put('profiles/test/.provider-migration.json', JSON.stringify({schema:1,user:{},output:{},inputDir:'<device-dir>'}));
 r = run(['backup', '--dsh-home', HOME, '--profile', 'test', '--out', join(WORK, 'snapG3'), '--rehearse-rebuild', OK_REBUILD, '--assume-no-settings']);
 const mG3 = JSON.parse(readFileSync(join(WORK, 'snapG3', 'manifest.json'), 'utf8'));
+assert.ok(mG3.files.some(f => f.path === 'profile/.provider-migration.json'), 'migration state must be backed up');
 const literal = mG3.providers.find(p => p.id === 'literal-relay');
 assert.equal(literal.baseURL.default, 'https://literal.invalid/v1');
 assert.equal(literal.apiKeyEnv.default, 'LITERAL_KEY');

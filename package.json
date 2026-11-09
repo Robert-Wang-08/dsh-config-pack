@@ -33,7 +33,7 @@
     "metrics:scan": "node scripts/metrics.mjs scan --sessions",
     "metrics:stats": "node scripts/metrics.mjs stats --sessions",
     "metrics:selftest": "node scripts/metrics.mjs selftest",
-    "test": "npm run test:ptc-public && node scripts/test-model-config.mjs && node scripts/test-snapshot.mjs",
+    "test": "npm run test:ptc-public && node scripts/test-model-config.mjs && node scripts/test-snapshot.mjs && node scripts/test-provider-migration.mjs",
     "snapshot": "node scripts/snapshot.mjs",
     "test:snapshot": "node scripts/test-snapshot.mjs",
     "test:backup": "pwsh -NoProfile -File scripts/test-backup.ps1",
@@ -63,7 +63,8 @@
     "dsh-archived-sessions": "github:Robert-Wang-08/dsh-archived-sessions#v0.4.4",
     "dsh-plugin-subagent-monitor": "github:Robert-Wang-08/dsh-plugin-subagent-monitor#v0.1.0",
     "@local/dsh-subagent-acp-resilient": "github:Robert-Wang-08/dsh-subagent-acp-resilient#v0.2.3",
-    "fzstd": "^0.1.1"
+    "fzstd": "^0.1.1",
+    "yaml": "2.8.2"
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-base": "0.2.1-rc.5",

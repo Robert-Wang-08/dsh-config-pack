@@ -25,8 +25,8 @@ $UserHome = $env:USERPROFILE
 if (-not $UserHome) { $UserHome = [Environment]::GetFolderPath('UserProfile') }
 if (-not $UserHome) { throw '无法确定用户主目录：请设置 USERPROFILE 后重试。' }
 $packRoot = Split-Path -Parent $PSScriptRoot
-$localDir = Join-Path $UserHome '.dsh\device'
 $dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $UserHome '.dsh' }
+$localDir = Join-Path $dshHome 'device'
 $routeDest = Join-Path $dshHome 'plugins\provider-failover\route-config.json'
 $utf8 = New-Object System.Text.UTF8Encoding $false
 $secretRe = [regex]'(?i)(^sk-|^ghp_|^gho_|^AKIA|BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY)'
@@ -388,17 +388,22 @@ if ((Test-Path -LiteralPath $routeDest) -and -not $UpdateRoutes -and -not $share
     Write-Host '要改用共享盘或本次答案，加 -UpdateRoutes'
 }
 
+$providerInputDir = if ($SharedRoot) { $bundle } else { $localDir }
 if (-not $SkipInstall) {
     $install = Join-Path $PSScriptRoot 'install.ps1'
     if ($Source) {
-        & $install -ProfileName $ProfileName -Source $Source -SkipOptional:$SkipOptional
+        & $install -ProfileName $ProfileName -Source $Source -SkipOptional:$SkipOptional -ProviderInputDir $providerInputDir
     } else {
-        & $install -ProfileName $ProfileName -SkipOptional:$SkipOptional
+        & $install -ProfileName $ProfileName -SkipOptional:$SkipOptional -ProviderInputDir $providerInputDir
     }
     if ($LASTEXITCODE -ne 0) { throw 'install.ps1 验收失败；一键安装未完成，见上方报告。' }
 } else {
     Write-Host '已跳过 install.ps1'
 }
+
+$providerArgs = @{ ProfileName = $ProfileName; InputDir = $localDir }
+if ($SharedRoot) { $providerArgs.InputDir = $bundle }
+& (Join-Path $PSScriptRoot 'migrate-providers.ps1') @providerArgs
 
 Write-Host '下一步：关掉正在跑的 DSH，重新打开，并新开一个会话。'
 Write-Host '备份仍用 scripts/backup.ps1 。'
