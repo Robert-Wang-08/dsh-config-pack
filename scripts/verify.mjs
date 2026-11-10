@@ -182,7 +182,17 @@ if (profile) {
   } else {
     const targetLines = readFileSync(target, 'utf8').split('\n');
     const shadows = [];
+    let managedProviders = false;
+    if (existsSync(join(dirname(target), '.provider-migration.json'))) {
+      try {
+        const { migrate } = await import('./migrate-provider-config.mjs');
+        migrate({ profileDir: dirname(target), deviceDir: join(dshHome, 'device'), check: true,
+          env: Object.fromEntries(Object.entries(process.env).filter(([k]) => /^DSHPACK_(BASE|KEY)_/.test(k))) });
+        managedProviders = true;
+      } catch (e) { errors.push('Managed provider override failed validation: ' + e.message); }
+    }
     for (const id of owns) {
+      if (id === 'llm-pi-ai' && managedProviders) continue;
       targetLines.forEach((l, i) => {
         const re = new RegExp(
           '^\\s*- id:\\s*' + id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$'

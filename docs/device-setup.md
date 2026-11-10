@@ -110,7 +110,8 @@ dsh packed
 |---|---|---|
 | PTC 多代理预设与 bundle（`@local/dsh-ptc-multi-agent-mode`） | 用 `scripts/generate-ptc-companion.mjs` 生成 companion，再安装其中的 `dsh-bundle/` | `README.md` 的「公开 PTC 伴生配置」一节 |
 | SkillHub 侧资产（如 `ptc-multi-agent-control`） | SkillHub 只做索引登记，正文在 `packages/dsh-ptc-multi-agent-mode/` | `templates/ptc-public-companion/ptc-multi-agent-control/INDEX.md` |
-| 本机 provider 路由顺序 / 端点 / 凭据名 | `DSHPACK_ROUTE_*` / `DSHPACK_BASE_*` / `DSHPACK_KEY_*`，指引见 `docs/AI-DEVICE-SETUP.md` | `config/45-failover.yml`、`config/40-models.yml` |
+| 本机 provider 路由顺序 | `DSHPACK_ROUTE_*`（`!!js`，可用） | `config/45-failover.yml` |
+| 本机 provider 端点 / 凭据名 | 共享盘或 `DSH_HOME/device` 的 device.env / device-answers.json / cordis.local.yml，由 setup/install/update 调迁移脚本合并成完整字面量 providers；见 [迁移说明](AI-DEVICE-SETUP.md) | `scripts/migrate-providers.ps1` |
 | provider 徽标的可见配置（缩写 / 配色 / 额度端点开关） | 默认值在插件代码里；覆盖写 profile 的 `- id: provider-badge` config，示例见 `examples/provider-badge.config.yml` | `docs/provider-badge-config.md` |
 
 因此：**本包一键安装 ≠ 完整 PTC 能力安装**；PTC 需要额外一步生成并安装 companion。

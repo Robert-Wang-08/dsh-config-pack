@@ -12,7 +12,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCHEMA_ID = 'dsh-snapshot/v1';
 const TOOL = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
 
-const PROFILE_FILES = ['cordis.yml', 'cordis.patch.yml', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'compatibility.json'];
+const PROFILE_FILES = ['cordis.yml', 'cordis.patch.yml', 'package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'compatibility.json', '.provider-migration.json'];
 const DEVICE_FILES = ['device.env', 'device-answers.json', 'route-config.json', 'cordis.local.yml', 'ptc.local.patch.yml', 'ptc-settings.json'];
 const DEVICE_BOUND = new Set(['device/device.env', 'device/route-config.json', 'device/cordis.local.yml', 'device/ptc.local.patch.yml']);
 const SECRET_NAMES = new Set(['.credentials.yaml']);
@@ -229,7 +229,11 @@ function collectPluginSettings(dshHome, profileDir, plugins, adapters, opts) {
         if (s.kind === 'cordis-config') {
           const row = s.pluginRow || s.path;
           const block = extractCordisRow(profileDir, row);
-          if (!block) { items.push({ path: 'plugin-config/' + row + '.yaml', class: s.class, reason: 'plugin row not found in profile layer', sourceKind: 'cordis-config' }); continue; }
+          if (!block) {
+            if (s.optional) continue;                       // expected-if-present; absence is not a gap
+            items.push({ path: 'plugin-config/' + row + '.yaml', class: s.class, reason: 'plugin row not found in profile layer', sourceKind: 'cordis-config' });
+            continue;
+          }
           items.push({ path: 'plugin-config/' + row + '.yaml', class: s.class, inlineText: block, sourceKind: 'cordis-config', restore: 'reference', restoredVia: 'profile/cordis.patch.yml' });
           continue;
         }

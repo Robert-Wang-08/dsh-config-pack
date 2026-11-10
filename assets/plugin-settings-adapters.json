@@ -24,7 +24,7 @@
           "kind": "file",
           "path": "plugins/provider-failover/settings.json",
           "class": "portable",
-          "optional": false
+          "optional": true
         }
       ],
       "excludes": [
@@ -115,6 +115,26 @@
           "optional": true
         }
       ]
+    },
+    {
+      "match": "dsh-config-pack",
+      "plugin": "dsh-config-pack",
+      "sources": []
+    },
+    {
+      "match": "@local/dsh-preset-failover-tiers",
+      "plugin": "dsh-preset-failover-tiers",
+      "sources": []
+    },
+    {
+      "match": "dsh-codex-cred-sync",
+      "plugin": "dsh-codex-cred-sync",
+      "sources": []
+    },
+    {
+      "match": "@deepseek-ai/dsh-web-app",
+      "plugin": "dsh-web-app",
+      "sources": []
     }
   ],
   "kinds": {

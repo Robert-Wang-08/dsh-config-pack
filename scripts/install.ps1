@@ -19,7 +19,7 @@
   director / palette），默认安装；加 -SkipOptional 整组跳过——注意升级时跳过会让
   已装件被依赖变更移除。
 
-  脚本只改 pnpm 配置，不改写 cordis.patch.yml。
+  脚本会备份并迁移 provider 配置；其它 profile 行保持不变。
 
 .PARAMETER ProfileName
   目标 profile 名，默认 packed。
@@ -60,6 +60,7 @@
 param(
   [string]$ProfileName = 'packed',
   [string]$Source = '',
+  [string]$ProviderInputDir = '',
   [string]$FromDefaultProfile = 'web',
   [switch]$Uninstall,
   [switch]$NoVerify,
@@ -286,7 +287,7 @@ if ($SkipComponentRegistration) {
   $depNames = @($profPkg.dependencies.PSObject.Properties.Name)
   $missing = @()
   foreach ($p in $profPack.dependencies.PSObject.Properties) {
-    if ($p.Name -eq 'fzstd') { continue }
+    if ($p.Name -in @('fzstd', 'yaml')) { continue }
     if ($knownBundles -contains $p.Name) { continue }
     $alias = @($depNames | Where-Object { $_ -eq $p.Name -or $_ -like ('*/' + $p.Name) })
     if ($alias.Count -gt 0) { Info ('  skip ' + $p.Name + '（已由 ' + $alias[0] + ' 提供）'); continue }
@@ -343,6 +344,12 @@ if ($registered) {
   Warn ('  pwsh scripts/install.ps1 -ProfileName ' + $ProfileName + ' -Source ' + $Source)
   Fail '配置包未登记为 bundle；本次安装未完成。'
 }
+
+# Apply provider inputs using the newly installed pack before acceptance.
+$providerMigration = Join-Path $profileDir 'node_modules/dsh-config-pack/scripts/migrate-providers.ps1'
+if (-not (Test-Path $providerMigration)) { Fail 'Installed pack has no provider migration entry; upgrade before continuing.' }
+& $providerMigration -ProfileName $ProfileName -InputDir $ProviderInputDir
+if ($LASTEXITCODE -ne 0) { Fail ('provider migration exited ' + $LASTEXITCODE + '；本次安装未完成。') }
 
 # ---- 4.6 post-install deviation check (plugins + config) --------------------
 if (-not $NoVerify) {
