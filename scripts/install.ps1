@@ -69,6 +69,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# 被 dsh 工具子进程调用时环境可能被裁剪（USERPROFILE / LOCALAPPDATA 为空）：统一在此兜底。
+$UserHome = $env:USERPROFILE
+if (-not $UserHome) { $UserHome = [Environment]::GetFolderPath('UserProfile') }
+if (-not $UserHome) { throw '无法确定用户主目录：请设置 USERPROFILE 后重试。' }
 $root = Split-Path -Parent $PSScriptRoot
 
 function Fail([string]$m) { Write-Host ('FAIL  ' + $m) -ForegroundColor Red; exit 1 }
@@ -111,10 +115,10 @@ function Resolve-PythonCommand {
   $candidates += , @('python')
   $candidates += , @('python3')
   foreach ($glob in @(
-    (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python3*\python.exe'),
+    $(if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'Programs\Python\Python3*\python.exe' } else { '' }),
     'C:\Python3*\python.exe',
-    (Join-Path $env:USERPROFILE 'anaconda3\python.exe'),
-    (Join-Path $env:USERPROFILE 'miniconda3\python.exe'),
+    (Join-Path $UserHome 'anaconda3\python.exe'),
+    (Join-Path $UserHome 'miniconda3\python.exe'),
     'C:\ProgramData\anaconda3\python.exe'
   )) {
     foreach ($hit in @(Get-ChildItem -Path $glob -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)) {
@@ -140,7 +144,7 @@ if (-not (Get-Command dsh -ErrorAction SilentlyContinue))  { Fail 'dsh is not on
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Fail 'node is not on PATH (needed to prepare the profile and to verify)' }
 
 $dshHome = $env:DSH_HOME
-if (-not $dshHome) { $dshHome = Join-Path $env:USERPROFILE '.dsh' }
+if (-not $dshHome) { $dshHome = Join-Path $UserHome '.dsh' }
 $profileDir = Join-Path (Join-Path $dshHome 'profiles') $ProfileName
 
 if ($Uninstall) {

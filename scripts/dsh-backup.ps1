@@ -48,12 +48,26 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# 被 dsh 工具子进程调用时环境可能被裁剪（USERPROFILE / LOCALAPPDATA 为空）：统一在此兜底。
+$UserHome = $env:USERPROFILE
+if (-not $UserHome) { $UserHome = [Environment]::GetFolderPath('UserProfile') }
+if (-not $UserHome) { throw '无法确定用户主目录：请设置 USERPROFILE 后重试。' }
+# node 解析：被裁剪环境里 PATH 可能不含 node，回退常见安装位置。
+$NodeExe = (Get-Command node -ErrorAction SilentlyContinue).Source
+if (-not $NodeExe) {
+    $nodeCandidates = @('C:\nvm4w\nodejs\node.exe')
+    if ($env:ProgramFiles) { $nodeCandidates += (Join-Path $env:ProgramFiles 'nodejs\node.exe') }
+    foreach ($c in $nodeCandidates) { if ($c -and (Test-Path -LiteralPath $c)) { $NodeExe = $c; break } }
+}
+if (-not $NodeExe) { throw '需要 Node.js 20 或更高版本（PATH 与常见安装路径都没有 node）。' }
 $PSNativeCommandUseErrorActionPreference = $false
 
 # DSH 根：-DshHome → DSH_HOME → %USERPROFILE%\.dsh（与 Get-BackupRoot 同源）
 $DshRoot = if (-not [string]::IsNullOrWhiteSpace($DshHome)) { [IO.Path]::GetFullPath($DshHome) }
 	elseif ($env:DSH_HOME) { [IO.Path]::GetFullPath($env:DSH_HOME) }
-	else { Join-Path $env:USERPROFILE '.dsh' }
+	else { Join-Path $UserHome '.dsh' }
+# 引擎（snapshot.mjs）不读 DSH_HOME，只认 --dsh-home 开关；此处导出仅给其它子工具用，真正的修复见各 nodeArgs 拼接处。
+if (-not $env:DSH_HOME) { $env:DSH_HOME = $DshRoot }
 
 
 # ── 引擎一致性门槛 ──────────────────────────────────────────────────────────
@@ -62,7 +76,7 @@ $DshRoot = if (-not [string]::IsNullOrWhiteSpace($DshHome)) { [IO.Path]::GetFull
 #   drift    → 引擎不一致，必须人工决策；确认采用 skill 引擎后加 -AcceptEngineDrift
 #   其他/缺失 → 不阻断（保持历史行为）
 function Get-EngineGovernance {
-	$dsh = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
+	$dsh = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $UserHome '.dsh' }
 	$p = Join-Path $dsh 'device\engine-preflight.json'
 	if (-not (Test-Path -LiteralPath $p)) { return [pscustomobject]@{ state = 'unknown'; path = $p; reason = ''; ageDays = $null } }
 	try { $o = Get-Content -LiteralPath $p -Raw -Encoding utf8 | ConvertFrom-Json } catch { return [pscustomobject]@{ state = 'unknown'; path = $p; reason = 'unreadable'; ageDays = $null } }
@@ -106,7 +120,7 @@ function Get-BackupRoot {
 		}
 		return $full
 	}
-	$base = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
+	$base = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $UserHome '.dsh' }
 	return Join-Path $base 'backups'
 }
 
@@ -139,9 +153,9 @@ function New-ProfileSnapshot {
 	param([string]$ProfileId, [string]$OutDir)
 	New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 	$nodeArgs = @($SnapshotJs, 'backup', '--profile', $ProfileId, '--out', $OutDir)
-	if (-not [string]::IsNullOrWhiteSpace($DshHome)) { $nodeArgs += @('--dsh-home', $DshHome) }
+	$nodeArgs += @('--dsh-home', $DshRoot)   # 引擎只认这个开关，不读 DSH_HOME 环境变量
 	if ($Rehearse) { $nodeArgs += '--rehearse-install' }
-	& node @nodeArgs | Out-Host
+	& $NodeExe @nodeArgs | Out-Host
 	$manifestPath = Join-Path $OutDir 'manifest.json'
 	if (-not (Test-Path -LiteralPath $manifestPath)) { return $null }
 	return (Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json)
@@ -217,15 +231,15 @@ function Invoke-BundleRestore {
 		if (-not (Test-Path -LiteralPath (Join-Path $sub 'manifest.json'))) { throw ('bundle 内缺 manifest：' + $sub) }
 		Write-Host ('--- ' + $e.profile + '（completeness=' + [string]$e.completeness + '）---')
 		if ($Write) {
-			& node $SnapshotJs 'verify' '--snapshot' $sub | Out-Host
+			& $NodeExe $SnapshotJs 'verify' '--snapshot' $sub | Out-Host
 			if ($LASTEXITCODE -ne 0) { throw ('profile ' + $e.profile + ' 快照文件校验失败（verify exit ' + $LASTEXITCODE + '）') }
 		}
 		$nodeArgs = @($SnapshotJs, 'restore', '--snapshot', $sub, '--profile', $e.profile, '--mode', $Mode)
-		if (-not [string]::IsNullOrWhiteSpace($DshHome)) { $nodeArgs += @('--dsh-home', $DshHome) }
+		$nodeArgs += @('--dsh-home', $DshRoot)   # 引擎只认这个开关，不读 DSH_HOME 环境变量
 		if (-not $Write) { $nodeArgs += '--dry-run' }
 		$nodeArgs += '--allow-partial'
 		if ($ConfirmRemovals) { $nodeArgs += '--confirm-removals' }
-		& node @nodeArgs | Out-Host
+		& $NodeExe @nodeArgs | Out-Host
 		if ($LASTEXITCODE -ne 0) { throw ('profile ' + $e.profile + ' 恢复失败（exit ' + $LASTEXITCODE + '）') }
 	}
 	if (-not $Write) {
@@ -240,9 +254,9 @@ function Invoke-SnapshotBackup {
 	$name = $NamePrefix + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
 	$out = Join-Path $root $name
 	$nodeArgs = @($SnapshotJs, 'backup', '--profile', $Profile, '--out', $out)
-	if (-not [string]::IsNullOrWhiteSpace($DshHome)) { $nodeArgs += @('--dsh-home', $DshHome) }
+	$nodeArgs += @('--dsh-home', $DshRoot)   # 引擎只认这个开关，不读 DSH_HOME 环境变量
 	if ($Rehearse) { $nodeArgs += '--rehearse-install' }
-	& node @nodeArgs
+	& $NodeExe @nodeArgs
 	$code = $LASTEXITCODE
 	$manifestPath = Join-Path $out 'manifest.json'
 	if (-not (Test-Path -LiteralPath $manifestPath)) {
@@ -265,12 +279,12 @@ function Invoke-SnapshotRestore {
 		throw 'mirror 会把范围内多出来的文件隔离移走。确认后加 -ConfirmRemovals。'
 	}
 	$nodeArgs = @($SnapshotJs, 'restore', '--snapshot', $snap, '--profile', $Profile, '--mode', $Mode)
-	if (-not [string]::IsNullOrWhiteSpace($DshHome)) { $nodeArgs += @('--dsh-home', $DshHome) }
+	$nodeArgs += @('--dsh-home', $DshRoot)   # 引擎只认这个开关，不读 DSH_HOME 环境变量
 	if (-not $Write) { $nodeArgs += '--dry-run' }
 	# 干跑要能看到 partial 快照的写入计划。真正写回仍要调用方显式 -AllowPartial。
 	if ((-not $Write) -or $AllowPartial) { $nodeArgs += '--allow-partial' }
 	if ($ConfirmRemovals) { $nodeArgs += '--confirm-removals' }
-	& node @nodeArgs
+	& $NodeExe @nodeArgs
 	exit $LASTEXITCODE
 }
 

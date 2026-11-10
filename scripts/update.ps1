@@ -51,6 +51,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# 被 dsh 工具子进程调用时环境可能被裁剪（USERPROFILE / LOCALAPPDATA 为空）：统一在此兜底。
+$UserHome = $env:USERPROFILE
+if (-not $UserHome) { $UserHome = [Environment]::GetFolderPath('UserProfile') }
+if (-not $UserHome) { throw '无法确定用户主目录：请设置 USERPROFILE 后重试。' }
 $root = Split-Path -Parent $PSScriptRoot
 
 function Fail([string]$m) { Write-Host ('FAIL  ' + $m) -ForegroundColor Red; exit 1 }
@@ -64,7 +68,7 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Fail 'node is not o
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Fail 'git is not on PATH' }
 
 $dshHome = $env:DSH_HOME
-if (-not $dshHome) { $dshHome = Join-Path $env:USERPROFILE '.dsh' }
+if (-not $dshHome) { $dshHome = Join-Path $UserHome '.dsh' }
 $profileDir = Join-Path (Join-Path $dshHome 'profiles') $ProfileName
 if (-not (Test-Path $profileDir)) {
   Fail ("profile '$ProfileName' 不存在——新设备请先跑 scripts/setup.ps1（一键恢复式安装），再回来更新")

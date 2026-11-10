@@ -9,10 +9,14 @@ param(
   [switch]$NoZip
 )
 $ErrorActionPreference = 'Stop'
-$dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
+# 被 dsh 工具子进程调用时环境可能被裁剪（USERPROFILE / LOCALAPPDATA 为空）：统一在此兜底。
+$UserHome = $env:USERPROFILE
+if (-not $UserHome) { $UserHome = [Environment]::GetFolderPath('UserProfile') }
+if (-not $UserHome) { throw '无法确定用户主目录：请设置 USERPROFILE 后重试。' }
+$dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $UserHome '.dsh' }
 $profileDir = Join-Path $dshHome ('profiles/' + $Profile)
 if (-not (Test-Path $profileDir)) { throw "profile not found: $profileDir" }
-if (-not $Out) { $Out = Join-Path $env:USERPROFILE ('dsh-backups/' + $Profile + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff')) }
+if (-not $Out) { $Out = Join-Path $UserHome ('dsh-backups/' + $Profile + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff')) }
 $Out = [IO.Path]::GetFullPath($Out)
 if ((Test-Path $Out) -and @(Get-ChildItem -LiteralPath $Out -Force).Count) { throw 'backup output must be empty; use a new directory' }
 if ((Test-Path ($Out + '.zip')) -and -not $NoZip) { throw 'backup zip already exists' }
