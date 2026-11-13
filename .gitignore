@@ -13,3 +13,6 @@ backups/
 __pycache__/
 assets/provider-model-catalog.snapshot.json
 *.py[cod]
+
+# 本地 WIP 备份快照，不入库
+.wip-backup-*/
