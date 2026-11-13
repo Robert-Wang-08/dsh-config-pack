@@ -6,6 +6,8 @@
 
 `scripts/setup.ps1` 支持 `DSHPACK_NO_PROXY`：把逗号/空白分隔的旁路条目**合并**进用户级 `NO_PROXY`（保留既有 loopback 与用户条目、去重、幂等），因为该变量名不带 `DSHPACK_` 前缀、原逻辑会整条跳过；直接覆盖则会丢掉本机已有条目。配套更新 `templates/device-config.env.example` 与 README 环境变量表，并说明 `DSHPACK_TICKTICK_ENTRY` 与旁路的搭配（TickTick MCP 的 `fetch failed` 多由代理抖动引起）。合并时同时读取 Machine 与 User 两级 `NO_PROXY`（原先只读 User：用户级写入会遮蔽同名 Machine 级变量，企业级旁路条目会从生效值里消失），写回仍只动 User 级。
 
+按各 provider 端点 `/models` 实测刷新模型清单（2026-11-12）：`codex-relay` 补 gpt-6.1-terra、gpt-5.6-terra/luna、gpt-6-sol/luna、gpt-6（Astra alias）与 codex-auto-review，移除已退役的 gpt-5.5；`ais-2dsglm` 补 deepseek-v4.1-flash、qwen3.8-flash（最小 chat 请求验证可用，reasoning_effort=high 也接受，仍不放进 failover tier2 的 models 列表以避开备用 key 的 422）；`anthropic-relay` 补 claude-opus-4-6/4-7；`openai-codex` 按 pi-ai 1.5.0 目录补 gpt-6.1-terra；`kimi-coding` 与 `opencode-go` 保持目录一致（2026-11-13 复核：当前配置的 30 个 OpenCode Go 模型元数据齐全；仅目录之外的 `hy4`、`longcat-2.5-free` 不进入选择器，修正旧注释）。`scripts/refresh-model-catalog.mjs --check` 的目录比对仍通过。
+
 ## 0.11.7
 
 `scripts/dsh-backup.ps1` 新增 `-AllProfiles`：一条命令把全部 profile 各打一份 snapshot/v1 装进同一 bundle（根 `bundle.json` 记 default_profile，默认 web），并支持按 bundle 逐 profile 恢复（各自 pre-restore）；顺带修 `-Dest` 分支给只读自动变量 `$HOME` 赋值导致整条分支抛错。

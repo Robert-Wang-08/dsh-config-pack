@@ -37,17 +37,41 @@
             contextWindow: 500000
             # pi-ai 内置目录未收录该 id；按 gpt-6-sol / gpt-5.6-sol 同族声明档位（2026-10-20 起为默认档，目录首位）
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          # 2026-11-12：按 relay /models 实测刷新。下列 id 均用最小 Responses 请求验证
+          # status=completed；gpt-5.5 已从上游退役（404：retired from Codex with ChatGPT
+          # sign-in on 2026-10-14），移出清单。gpt-5.4 / gpt-5.4-mini / gpt-5.2 虽在
+          # /models 里，但对 ChatGPT 账号返回 model_not_found，未声明。gpt-6 的显示名是
+          # "GPT-6 (Astra)"，保留为 gpt-6-astra 的别名。
+          - id: gpt-6.1-terra
+            contextWindow: 500000
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-5.6-sol
             contextWindow: 272000
             # 保留为可选档；不再作新会话默认、不再作 failover 目标
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-5.6-terra
+            contextWindow: 272000
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-5.6-luna
+            contextWindow: 272000
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-5.6
             contextWindow: 272000
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
-          - id: gpt-5.5
+          - id: gpt-6-sol
             contextWindow: 272000
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-6-astra
+            contextWindow: 272000
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-6
+            name: GPT-6 (Astra alias)
+            contextWindow: 272000
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: gpt-6-luna
+            contextWindow: 272000
+            reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          - id: codex-auto-review
             contextWindow: 272000
             reasoningEfforts: { minimal: minimal, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
       ais-2dsglm:
@@ -56,16 +80,21 @@
         baseURL: http://47.101.159.7:29988/v1
         apiKeyEnv: AIS_2DSGLM_API_KEY
         models:
-          # 2026-10-31：按中转站（AxonHub）实际目录核对后更正模型表：
-          # - deepseek-v4.1-flash 只存在于主 key 的目录里；备用 key 的 profile 白名单
-          #   没有它，请求会返回 422 invalid_model_error，而 422 不在 failover 切换面，
-          #   会直接把回合打死，因此不再把它作为本路由的声明模型；
+          # 2026-11-12：按 endpoint /v1/models 实测刷新。目录新增 deepseek-v4.1-flash、
+          # qwen3.8-flash，两者均用最小 chat 请求验证可用，reasoning_effort=high 也被接受。
           # - 原 deepseek-v4-flash 在中转站不存在（实际 id 是 deepseek-flash）；
-          # - 补 deepseek-v4-pro（实测可用）。
+          # - deepseek-v4.1-flash 仍不放进 failover tier2 的 models 列表：备用 key 的
+          #   AxonHub profile 白名单可能不含它，422 invalid_model_error 不在切换面，会
+          #   直接把回合打死；tier2 切换主模型保持 deepseek-flash；
+          # - cc/ 前缀 id 是中转站给 Claude Code 客户端的别名，不加入 DSH 模型选择器。
           # reasoningEfforts 必须显式声明：pi-ai 目录里没有这些 id，省略会被当非推理模型。
           - id: deepseek-flash
             reasoningEfforts: { off: null, low: low, high: high, max: max }
+          - id: deepseek-v4.1-flash
+            reasoningEfforts: { off: null, low: low, high: high, max: max }
           - id: deepseek-v4-pro
+            reasoningEfforts: { off: null, low: low, high: high, max: max }
+          - id: qwen3.8-flash
             reasoningEfforts: { off: null, low: low, high: high, max: max }
           - id: glm-5.3-flash
       anthropic-relay:
@@ -74,6 +103,10 @@
         baseURL: https://ai.orbitlink.me
         apiKeyEnv: CLAUDE_RELAY_TOKEN
         models:
+          # 2026-11-12：按 relay /v1/models 实测刷新；opus-4-6 / opus-4-7 补入并用
+          # /v1/messages 最小请求验证 stop_reason=end_turn。
+          - id: claude-opus-4-6
+          - id: claude-opus-4-7
           - id: claude-opus-5
           - id: claude-opus-4-8
           - id: claude-sonnet-5
@@ -102,13 +135,22 @@
             # 不声明 off 时 DSH 把 off 钉成 null，适配器直接不带 reasoning 参数（上游默认档），
             # 与上面 codex-relay 同 id 的声明一致。verify.mjs 会拦回 off。
             reasoningEfforts: { minimal: low, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
+          # 2026-11-12：pi-ai 1.5.0 目录已收录 gpt-6.1-terra；按目录值（500k / 128k）补入。
+          - id: gpt-6.1-terra
+            name: GPT-6.1 Terra
+            contextWindow: 500000
+            maxTokens: 128000
+            input: [text, image]
+            reasoningEfforts: { minimal: low, low: low, medium: medium, high: high, xhigh: xhigh, max: max }
           - id: gpt-6-sol
           - id: gpt-6-astra
           - id: gpt-6-luna
           - id: gpt-5.6-sol
           - id: gpt-5.6-terra
           - id: gpt-5.6-luna
-          # 下面两个 id 仅在 0.87.1 目录中存在（1.4.0 已移除）；保留以兼容仍装旧版 pi-ai 的设备
+          # 下面两个 id 仅在旧版 pi-ai（0.87.1）目录中存在；保留以兼容仍装旧版 pi-ai
+          # 的设备。当前 Codex ChatGPT 账号已不再服务 gpt-5.5（2026-10-14 退役），新设备
+          # 不必选它。
           - id: gpt-5.5
           - id: gpt-5.3-codex-spark
       # 2026-10-26 对齐 kimi 官网（models.dev kimi-code-plan-cn，api.kimi.com/coding）：
@@ -172,44 +214,47 @@
             maxTokens: 131072
             input: [text, image]
             reasoningEfforts: { low: low, high: high, max: max }
-      # OpenCode Go：沿用 DSH 内置目录模型清单。
       # OpenCode Go：固定当前 pi-ai 目录快照，避免设备之间因 pi-ai 版本不同而显示不同模型。
       # 来源：本机 @earendil-works/pi-ai opencode-go.json；升级 pi-ai 后需重新核对并发版。
+      # 2026-11-13 复核：下表 30 个模型均存在于当前 pi-ai 目录，API/baseURL 等元数据由目录提供。
+      # endpoint 额外返回的 hy4、longcat-2.5-free 不在当前目录，故未配置；
+      # hy4-preview、longcat-2.0 是不同 ID，不可视为上述 endpoint ID 的别名。
+      # 新增模型必须先核对目录元数据，不能仅依据 endpoint /models 的 ID 列表。
       # GENERATED by scripts/refresh-model-catalog.mjs --apply; source: current pi-ai opencode-go.json
       opencode-go:
         displayName: OpenCode Go
         apiKeyEnv: OPENCODE_API_KEY
         models:
-          - id: deepseek-v4-flash
-          - id: deepseek-v4-flash-vision-exp
+          - id: beam-free
+          - id: claude-haiku-5-5
           - id: deepseek-v4-pro
           - id: deepseek-v4.1-flash
-          - id: glm-5.1
+          - id: gemini-4-argon
           - id: glm-5.2
           - id: glm-5.3
           - id: glm-5.3-flash
           - id: gpt-5.6-luna
-          - id: grok-4.6
+          - id: gpt-6-luna
           - id: grok-4.7
           - id: hy3
           - id: hy4-preview
-          - id: kimi-k2.6
+          - id: iceman-contributor-free
           - id: kimi-k2.7-code
           - id: kimi-k3
+          - id: kimi-k3.1-pro
           - id: longcat-2.0
           - id: mimo-v2.5
           - id: mimo-v2.5-pro
           - id: mimo-v2.6-flash
           - id: mimo-v2.6-pro
-          - id: minimax-m2.7
           - id: minimax-m3
+          - id: minimax-m3.1-flash
           - id: muse-spark-1.2-contributor
           - id: muse-spark-1.3-contributor
-          - id: qwen3.6-plus
-          - id: qwen3.7-max
           - id: qwen3.7-plus
           - id: qwen3.8-flash
           - id: qwen3.8-max
+          - id: step-5-preview
 # ── 子智能体逐次模型选择（Host 偏好 subagent-model-selection-settings）────────
 # 工具侧开关由 config/50-presets.yml 的 tool-subagent 提供（modelSelectionSettings: true）；
 # 本行提供它所需的**已记录策略**：enabled + 非空精确路由白名单。缺本行时该能力对
