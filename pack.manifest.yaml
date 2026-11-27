@@ -18,6 +18,7 @@ owns:
   - tool-subagent-codex-relay
   - mcp-codegraph
   - mcp-ticktick
+  - mcp-notion
   - mcp-tencent-docs
   - mcp-slide
   - directory-picker
@@ -46,6 +47,7 @@ switches:
 requires_env:
   - { name: DSHPACK_NODE,            scope: User, required: false, why: "MCP stdio 用的 node 绝对路径；不设则用 PATH 上的 node" }
   - { name: DSHPACK_TICKTICK_ENTRY,  scope: User, required: false, why: "ticktick-mcp 的 dist/index.js 绝对路径；未设则 ticktick 行被禁用" }
+  - { name: DSHPACK_NOTION_ENTRY,    scope: User, required: false, why: "@notionhq/notion-mcp-server 的 bin/cli.mjs 绝对路径；未设则 notion 行被禁用" }
   - { name: DSHPACK_OPENCODE_CONFIG, scope: User, required: false, why: "覆盖 OPENCODE_CONFIG_CONTENT JSON；默认 ais-2dsglm/deepseek-v4.1-flash" }
   - { name: DSHPACK_DEFAULT_PROVIDER, scope: User, required: false, why: "新会话默认 provider；默认 codex-relay" }
   - { name: DSHPACK_DEFAULT_MODEL,   scope: User, required: false, why: "新会话默认 model；默认 gpt-6.1-sol" }
@@ -57,6 +59,7 @@ requires_env:
   - { name: DSHPACK_ROUTE_KIMI,              scope: User, required: false, why: "failover tier3 路由 id；默认 kimi-coding" }
   - { name: DSHPACK_ROUTE_DEEPSEEK_OFFICIAL, scope: User, required: false, why: "failover tier4 路由 id；默认 deepseek-official（档位默认禁用）" }
   - { name: TENCENT_DOCS_TOKEN,      scope: User, required: false, why: "腾讯文档 MCP 的 Authorization" }
+  - { name: NOTION_TOKEN,            scope: User, required: false, why: "Notion integration secret；与 DSHPACK_NOTION_ENTRY 同时具备才启用 notion MCP" }
   - { name: CRS_OAI_KEY,             scope: User, required: true,  why: "codex-relay 路由凭据" }
   - { name: AIS_2DSGLM_API_KEY,      scope: User, required: false, why: "ais-2dsglm 路由凭据" }
   - { name: CLAUDE_RELAY_TOKEN,      scope: User, required: false, why: "anthropic-relay 路由凭据" }
