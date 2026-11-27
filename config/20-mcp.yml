@@ -25,6 +25,23 @@
         args:
           - !!js process['env'].DSHPACK_TICKTICK_ENTRY || ''
 
+    # 本地 stdio：notion（官方 @notionhq/notion-mcp-server，暴露 Notion REST API 的 24 个工具）。
+    # 入口同样是 JS 文件，必须给出 node 与脚本两个绝对路径；令牌从环境读取、不落盘。
+    # 入口路径与 NOTION_TOKEN 缺一即自动禁用：令牌缺失时官方服务会启动失败并反复重连，
+    # 入口缺失时也没有必要挂一个连不上的服务。
+    - id: mcp-notion
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: !!js process['env'].DSHPACK_NOTION_ENTRY === undefined || !process['env'].NOTION_TOKEN
+      config:
+        serverName: notion
+        transport: stdio
+        command: !!js process['env'].DSHPACK_NODE || 'node'
+        args:
+          - !!js process['env'].DSHPACK_NOTION_ENTRY || ''
+        env:
+          # mcp-client 会擦掉子进程环境里名字含 TOKEN 的继承变量，必须在这里显式传入。
+          NOTION_TOKEN: !!js process['env'].NOTION_TOKEN || ''
+
     # 远程 Streamable HTTP：腾讯文档 / 腾讯幻灯片。Authorization 从环境变量读取，不落盘。
     - id: mcp-tencent-docs
       name: '@deepseek-ai/dsh-mcp-client'

@@ -202,7 +202,7 @@ node scripts/verify-components.mjs      # 组件锁 vs 已发布现实（匿名�
 
 ```
 config/10-subagents.yml   ACP provider 行 + claude-code/codex 权限覆盖
-config/20-mcp.yml         四个 MCP server 行（默认全关，ticktick 按入口路径自动开）
+config/20-mcp.yml         五个 MCP server 行（默认全关；ticktick 按入口路径、notion 按入口路径+NOTION_TOKEN 自动开）
 config/30-ui.yml          目录选择器接线 + 欢迎语版本
 config/40-models.yml      默认模型 + llm-pi-ai 六条路由
 config/45-failover.yml    dsh-deepseek-keypool 完整故障转移档位（route 可 DSHPACK_ROUTE_* 覆盖）
@@ -230,6 +230,8 @@ docs/ROW-OWNERSHIP-20261013.md
 | `DSHPACK_MCP_TENCENT_DOCS` | 关 | 需 `TENCENT_DOCS_TOKEN` |
 | `DSHPACK_MCP_SLIDE` | 关 | 需 `TENCENT_DOCS_TOKEN` |
 | `DSHPACK_TICKTICK_ENTRY` | 空 | 填 ticktick-mcp 的 dist/index.js 绝对路径即自动开启 |
+| `DSHPACK_NOTION_ENTRY` | 空 | 填 `@notionhq/notion-mcp-server` 的 `bin\cli.mjs` 绝对路径，并与 `NOTION_TOKEN` 同时存在才开启 notion MCP；安装见下 |
+| `NOTION_TOKEN` | 空 | Notion integration secret（`ntn_…`/`secret_…`）。子进程环境会擦除含 `TOKEN` 的继承变量，本包在行 `env` 里显式传入；目标页面/数据库须先 share 给该 integration |
 | `DSHPACK_NO_PROXY` | 空 | 逗号分隔的代理旁路条目；`setup.ps1` 把它们**合并**进用户级 `NO_PROXY`（不覆盖既有条目、幂等）。例：`ticktick.com,api.ticktick.com` —— TickTick MCP 的 `fetch failed` 多由本机代理抖动引起 |
 | `DSHPACK_NODE` | `node` | stdio MCP 用的 node 绝对路径 |
 | `DSHPACK_DEFAULT_PROVIDER` / `DSHPACK_DEFAULT_MODEL` | `codex-relay` / `gpt-6.1-sol` | 新会话默认模型 |
@@ -242,6 +244,22 @@ docs/ROW-OWNERSHIP-20261013.md
 | （profile 行 `agent-default-model.reasoningEffort`） | 未设置 | 新会话默认推理档位。`setup.ps1` 不写 profile，故按设备手工加：`agent-default-model` 的 config 里加 `reasoningEffort: max`；模型须先声明 `reasoningEfforts`（本包已为 `deepseek-v4.1-flash` 声明 low/high/max） |
 | `DSHPACK_ROUTE_KIMI` | `kimi-coding` | failover tier3 路由 id |
 | `DSHPACK_ROUTE_DEEPSEEK_OFFICIAL` | `deepseek-official` | failover tier4（默认禁用） |
+
+### Notion MCP（可选）
+
+官方 `@notionhq/notion-mcp-server` 以 stdio 挂载，暴露 Notion REST 的 24 个工具（`mcp__notion__*`，含 `API-query-data-source` / `API-post-page` / `API-patch-page`）。默认不启用，只有入口路径与令牌同时就绪才注册：
+
+1. 装包并写本机指针（`setup.ps1` 只导出 `DSHPACK_*`；`NOTION_TOKEN` 属凭据，自行写用户级环境变量）：
+
+   ```powershell
+   npm install --prefix "$env:APPDATA\notion-mcp-server" @notionhq/notion-mcp-server@2.6.1
+   [Environment]::SetEnvironmentVariable('DSHPACK_NOTION_ENTRY', "$env:APPDATA\notion-mcp-server\node_modules\@notionhq\notion-mcp-server\bin\cli.mjs", 'User')
+   [Environment]::SetEnvironmentVariable('NOTION_TOKEN', '<integration secret>', 'User')
+   ```
+
+2. 在 Notion 里建 internal integration 并把目标页面/数据库 share 给它；未 share 的对象按无权限处理（404/403）。
+
+改完重启 DSH 并**新开会话**。验收：工具表出现 `mcp__notion__API-get-self`，`API-post-search` 能返回已 share 的页面。撤下：清空 `DSHPACK_NOTION_ENTRY` 后重启（该行自动禁用）；只移除 `NOTION_TOKEN` 也会禁用。superagent 会话另需 `dsh-superagent-patch` 的 overlay `0010-notion-mcp-tools` 放行这些工具名。
 
 ### 异构设备：用引导文件让 AI 生成你本机的路由
 
